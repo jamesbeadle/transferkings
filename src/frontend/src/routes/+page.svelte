@@ -10,7 +10,9 @@ import Layout from "./Layout.svelte";
             <LogoIcon fill='#FFFFFF' className="w-10 ml-4" />
         </div>
         <p class="my-2">Become your own football agent.</p>
-        <button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button>
+        <a href="/rules">
+            <button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button>
+        </a>
         <button class="bg-Brand1d my-2 px-4 py-2 rounded-sm">Play</button>
     </div>
 </Layout>

@@ -102,7 +102,15 @@
 
 <aside class="bg-Brand5 p-4" class:expanded>
   <div class="p-2">
-    <h2 class="text-xl font-bold p-2">Options</h2>
+    <div class="p-2 flex justify-between items-center">
+      <h2 class="text-xl font-bold p-2">Options</h2>
+      <button on:click={() => expanded = false} class="close-button">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+    </div>
+    
     <ul class="mt-4 space-y-2">
       {#each options as option}
         <li>
@@ -112,7 +120,8 @@
     </ul>
   </div>
   <div class="less-important p-2">
-    <ul class="mt-4 space-y-2 text-xs">
+    <div class="horizontal-divider my-2" />
+    <ul class="space-y-2 text-xs">
       {#each lessImportantOptions as option}
         <li>
           <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2">{option.name}</a>

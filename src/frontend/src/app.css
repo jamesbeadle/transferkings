@@ -112,3 +112,8 @@ input {
 @media (min-width: 1920px) {
   /* Your CSS here */
 }
+
+.horizontal-divider {
+  min-height: 2px;
+  @apply flex-shrink-0 h-px bg-Brand5w self-stretch;
+}
