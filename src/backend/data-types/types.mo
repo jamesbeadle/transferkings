@@ -1,3 +1,4 @@
+import Countries "countries";
 
 module Types {
 
@@ -10,6 +11,7 @@ module Types {
   public type InternationalTeamId = Nat16;
   public type ClubLeagueId = Nat;
   public type AgentId = Nat;
+  public type StadiumId = Nat;
 
   public type Error = {
     #NotFound;
@@ -22,14 +24,7 @@ module Types {
     #PaymentError;
   };
 
-  public type Profile = {
-    principal : PrincipalId;
-    username : Text;
-    displayName : Text;
-    profilePicture: ?Blob;
-    profilePictureExtension: Text;
-    createDate : Int;
-  };
+  //Agent Types
 
   public type Agency = {
     id: Agency;
@@ -46,9 +41,13 @@ module Types {
   public type Agent = {
     principalId: PrincipalId;
     agencyId: AgencyId;
-    joined: Int;
     contractLimits: ContractLimits;
-    contracts: [Contract]
+    contracts: [Contract];
+    username : Text;
+    displayName : Text;
+    profilePicture: ?Blob;
+    profilePictureExtension: Text;
+    createDate : Int;
   };
 
   public type ContractLimits = {
@@ -63,6 +62,8 @@ module Types {
     playerId: PlayerId;
   };  
 
+  //Player Types
+
   public type Player = {
     id: PlayerId;
     firstName: Text;
@@ -76,14 +77,6 @@ module Types {
     valueHistory: ValueHistory;
     achievements: Achievements;
   };  
-
-  public type Club = {
-    id: ClubId;
-  };
-
-  public type InternationalTeam = {
-    id: InternationalTeamId;
-  };
 
   public type ClubHistory = {
 
@@ -110,10 +103,6 @@ module Types {
     #InternationalAward: InternationalAward;
   };
 
-  public type ClubLeague = {
-    id: ClubLeagueId;
-  };
-
   public type PlayerAward = {
     
   };
@@ -125,4 +114,53 @@ module Types {
   public type InternationalAward = {
     teamId: InternationalTeamId;
   };
+
+  //Football organisation structure
+
+  public type Association = {
+      name: Text;
+      country: Countries.Country;
+      leagues: [ClubLeagueId];
+  };
+
+  public type InternationalTournament = {
+    teamIds: [InternationalTeamId];
+  };
+
+  public type InternationalTeam = {
+    id: InternationalTeamId;
+  };
+
+  public type ClubLeague = {
+    id: ClubLeagueId;
+    clubs: [ClubId];
+  };
+
+  public type Club = {
+    id: ClubId;
+    name: Text;
+    nickname: Text;
+    stadiumId: StadiumId;
+    stadiumHistory: [StadiumHistory];
+    country: Countries.Country;
+  };
+
+  public type Stadium = {
+    id: StadiumId;
+    name: Text;
+    location: Text;
+    capacity: Nat;
+    constructed: Int;
+    abandoned: Int;
+  };
+
+  public type StadiumHistory = {
+    stadiumId: StadiumId;
+    clubId: ClubId;
+    usedFrom: Int;
+    usedUntil: Int;
+  };
+
+
+
 };

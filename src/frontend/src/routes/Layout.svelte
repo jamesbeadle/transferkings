@@ -9,6 +9,8 @@
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import "../app.css";
   import MenuIcon from "$lib/icons/menu-icon.svelte";
+    import { authSignedInStore } from "$lib/derived/auth.derived";
+    import { goto } from "$app/navigation";
 
   let expanded = false;
   let worker: { syncAuthIdle: (auth: AuthStoreData) => void } | undefined;
@@ -16,13 +18,16 @@
   let sidebar: HTMLElement;
 
   const init = async () => await Promise.all([syncAuthStore()]);
-
-  let options = [
+  
+  $: links = $authSignedInStore ? [
     { name: 'Agent Hub', href: '/agent-hub' },
     { name: 'Contract Center', href: '/contract-center' },
     { name: 'My Agencies', href: '/my-agencies' },
     { name: 'Profile', href: '/profile' },
-    { name: 'Connect (Soon)', href: '#connect' },
+    { name: 'Connect', href: '#' },
+  ] : 
+  [
+    { name: 'Connect', href: '#' },
   ];
 
   let lessImportantOptions = [
@@ -61,7 +66,6 @@
 
   const handleClickOutside = (event: MouseEvent) => {
     if (browser && expanded && sidebar && !sidebar.contains(event.target as Node)) {
-      console.log("Clicked outside sidebar, closing sidebar.");
       expanded = false;
     }
   };
@@ -69,22 +73,23 @@
   const handleButtonClick = (event: MouseEvent) => {
     event.stopPropagation();
     expanded = !expanded;
-    console.log("Menu button clicked, expanded:", expanded);
   };
 
   const handleCloseButtonClick = (event: MouseEvent) => {
     event.stopPropagation();
     expanded = false;
-    console.log("Close button clicked, expanded:", expanded);
   };
 
   onMount(async () => {
     worker = await initAuthWorker();
-    updateSidebarHeight();
     if (browser) {
       window.addEventListener('resize', updateSidebarHeight);
       document.addEventListener('click', handleClickOutside);
     }
+    requestAnimationFrame(() => {
+      updateSidebarHeight();
+    });
+
   });
 
   onDestroy(() => {
@@ -108,6 +113,20 @@
     const spinner = document.querySelector("body > #app-spinner");
     spinner?.remove();
   })();
+
+
+  function handleLogin() {
+    let params: AuthSignInParams = {
+      domain: import.meta.env.VITE_AUTH_PROVIDER_URL,
+    };
+    authStore.signIn(params);
+  }
+
+
+  function handleLogout() {
+    authStore.signOut();
+    goto("/");
+  }
 </script>
 
 <svelte:window on:storage={syncAuthStore} />
@@ -140,9 +159,19 @@
     </div>
     
     <ul class="mt-4 space-y-2">
-      {#each options as option}
+      {#each links as option}
         <li>
-          <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2">{option.name}</a>
+          
+          {#if option.name === 'Connect'}
+
+            {#if $authSignedInStore}
+              <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2" on:click={handleLogout}>Disconnect</a>
+            {:else}
+              <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2" on:click={handleLogin}>Connect</a>
+            {/if}
+          {:else}
+            <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2">{option.name}</a>
+          {/if}
         </li>
       {/each}
     </ul>

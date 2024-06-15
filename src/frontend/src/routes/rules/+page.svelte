@@ -89,7 +89,8 @@
 
             <p class="mt-2 mb-4">Career Achievements: All players listed within your Contract Center will earn you $FOOTBALL tokens based on their career achievements. 
                 Each achievement is weighted based on how difficult it is to acheive. All achievement rewards are multiplied by the change in value of a player since you signed their contract.
-                This means that if you get a player at the beginning of their career and hold him until he wins the World Cup, the $FOOTBALL earned would increase by the factor the players value changed since you purchased them.
+                This means that if you get a player at the beginning of their career and hold them until they win the World Cup, 
+                the $FOOTBALL earned would increase by the factor the player's value changed since you purchased them.
             </p>
     
             <div class="horizontal-divider my-2" />
@@ -99,8 +100,9 @@
                 As their value changes, you will be able to increase your budget through selling high performing players.
                 When a player's contract ends, the current value of that player is added back to your budget.
                 You can end a contract early, receiving 80% of a player's current value.
-                To grow your agency you will need to obtain more than the 100 contracts initially available for you to fill. This can be done when earnings are made through the players you promote in the Agent Hub.
-                When realising Agent Hub $FOOTBALL token earnings you deposit, the tokens into your Contract center, increasing the contract earnings of the player. 
+                To grow your agency you will need to obtain more than the 100 contracts initially available for you to fill. 
+                This can be done when earnings are made through the players you promote in the Agent Hub.
+                To realise Agent Hub $FOOTBALL token earnings you deposit the tokens into your Contract center, increasing the contract earnings of the player. 
                 When transferring these earnings you are able to select the % of earnings to transfer, obtaining additional contracts for the reduced amount.
             </p>
     

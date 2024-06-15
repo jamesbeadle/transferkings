@@ -1,7 +1,10 @@
 import { authStore } from "$lib/stores/auth-store";
 import { replacer } from "$lib/utils/helpers";
 import { writable } from "svelte/store";
-import type { AgentDTO, UpdateAgentDTO } from "../../../../declarations/backend/backend.did";
+import type {
+  AgentDTO,
+  UpdateAgentDTO,
+} from "../../../../declarations/backend/backend.did";
 import { ActorFactory } from "../utils/actor-factory";
 import { isError } from "$lib/utils/helpers";
 
