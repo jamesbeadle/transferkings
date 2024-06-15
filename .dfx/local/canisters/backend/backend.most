@@ -1,0 +1,25 @@
+// Version: 1.0.0
+type AgencyId = CanisterId;
+type Agent =
+  {
+    agencyId : AgencyId;
+    contractLimits : ContractLimits;
+    contracts : [Contract];
+    joined : Int;
+    principalId : PrincipalId
+  };
+type CanisterId = Text;
+type Contract = {playerId : PlayerId};
+type ContractLimits =
+  {
+    academyContractMax : Nat;
+    allStarContractMax : Nat;
+    lowerLeagueContractMax : Nat;
+    prospectsContractMax : Nat;
+    squadPlayerContractMax : Nat
+  };
+type PlayerId = Nat;
+type PrincipalId = Text;
+actor {
+  stable var stable_agents : [Agent]
+};

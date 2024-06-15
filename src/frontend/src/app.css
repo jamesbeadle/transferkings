@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.modal-backdrop {
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed !important;
+  z-index: 9999 !important;
+  background-color: rgba(36, 37, 41, 0.7) !important;
+}
+
+[data-tid="busy"] {
+  background-color: rgba(36, 37, 41, 0.7) !important;
+  z-index: 99999 !important;
+}
+
+.modal .content {
+  left: 0 !important;
+  right: 0 !important;
+  background-color: #161819 !important;
+  border-radius: 8px;
+  border: 1px solid #2e323a !important;
+}
+
+.modal .container {
+  border-radius: 0px !important;
+}
+
+.file-upload-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+.btn-file-upload {
+  width: 100%;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  display: block;
+}
+
+.times-button {
+  @apply text-white text-3xl;
+}
+
+input[type="file"] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.modal-backdrop {
+  z-index: 1000;
+}
+
+.default-text {
+  @apply text-xs xs:text-sm sm:text-lg;
+}
+.default-header {
+  @apply text-xs xs:text-sm sm:text-lg md:text-xxs lg:text-sm xl:text-base;
+}
+.book-btn {
+  @apply bg-customGreen px-4 py-2 rounded-md text-center text-black;
+}
+.book-btn.disabled {
+  @apply bg-gray-500;
+}
+
+.directory-nav-btn-active {
+  @apply bg-customGreen px-3 py-1 rounded-sm text-center text-black;
+}
+
+.directory-nav-btn {
+  @apply px-3 py-1 rounded-sm text-center;
+}
+
+.book-cancel-btn {
+  background-color: aliceblue;
+}
+
+.side-nav-icon {
+  @apply w-6 mt-8;
+}
+
+.pull-down {
+  @apply flex flex-col h-full justify-end;
+}
+
+.top-bar {
+  background-color: #1a1a1d;
+  border-bottom: 1px solid #2e323a;
+}
+
+.side-nav {
+  background-color: #1a1a1d;
+  border-right: 1px solid #2e323a;
+}
+
+.hidden-image {
+  visibility: hidden;
+}
+
+.active-border {
+  border-color: #66e094;
+}
+
+.display-value-wrapper {
+  @apply flex w-full border rounded-md px-2 py-2 mt-2;
+  background-color: #25282e;
+  border-color: #454b56 !important;
+}
+
+.directory-card {
+  background-color: #25282e !important;
+  border: 1px solid #454b56;
+  color: white !important;
+}
+
+.truncated-display-value {
+  @apply text-xxs sm:text-sm md:text-xxs lg:text-sm xl:text-base truncate max-w-[80px] xs:max-w-none md:max-w-[100px] lg:max-w-none;
+}
+
+.wide-truncated-display-value {
+  @apply text-xxs sm:text-sm md:text-xxs lg:text-sm xl:text-base truncate max-w-[200px] xs:max-w-none;
+}
+
+.display-value {
+  @apply text-xxs sm:text-sm md:text-xxs lg:text-sm xl:text-base truncate;
+}
+
+.inputHeader {
+  @apply flex text-xs md:text-xxs;
+}
+
+/* global.css */
+:root {
+  --dialog-width: 90% !important;
+  --dialog-max-width: 600px !important;
+  --dialog-min-height: 100px !important;
+  --dialog-height: auto !important;
+  --dialog-max-height: 80vh !important;
+  --dialog-border-radius: 1px !important;
+}
+
+input {
+  background-color: #25282e !important;
+}
+
+/* Extra small devices (portrait phones, less than 480px) */
+@media (min-width: 480px) {
+}
+
+/* Small devices (landscape phones, 640px and up) */
+@media (min-width: 640px) {
+  /* Your CSS here */
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  /* Your CSS here */
+}
+
+/* Large devices (desktops, 1024px and up) */
+@media (min-width: 1024px) {
+  /* Your CSS here */
+}
+
+/* Extra large devices (large desktops, 1280px and up) */
+@media (min-width: 1280px) {
+  /* Your CSS here */
+}
+
+/* 2XL devices (larger desktops, 1536px and up) */
+@media (min-width: 1536px) {
+  /* Your CSS here */
+}
+
+/* 3XL devices (extra large desktops, 1920px and up) */
+@media (min-width: 1920px) {
+  /* Your CSS here */
+}
