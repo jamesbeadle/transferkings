@@ -35,6 +35,9 @@
 
             <p class="mt-2 mb-4">After you have your contracts setup you can manage your clients through the 'Agent Hub'. </p>
 
+            <p>An agency starts with a budget of €250m. 
+                The acquisition and sale price of a player is 10% of their value, the cost associated with the on going promotion of your clients.</p>
+
             <div class="horizontal-divider my-2 mb-4" />
             <b class="text-lg"><u>Agent Hub</u></b>
 
