@@ -38,12 +38,32 @@ export default {
     },
     extend: {
       colors: {
-        Brand1: "#1A1A2E", //RGB: (26, 26, 46)
-        Brand2: "#232931", //RGB: (35, 41, 49)
-        Brand3: "#0F52BA", //RGB: (15, 82, 186)
-        Brand4: "#39FF14", //RGB: (57, 255, 20)
-        Brand5: "#EAEAEA", //RGB: (234, 234, 234)
-        Brand6: "#000000", //RGB: (0, 0, 0)
+        Brand1: "#40212E",
+        Brand1b: "#80626E",
+        Brand1c: "#BF95A7",
+        Brand1d: "#7F9580",
+        Brand1e: "#C7EDC9",
+        Brand2: "#3D2F2F",
+        Brand2b: "#7D6161",
+        Brand2c: "#BD6464",
+        Brand2d: "#669272",
+        Brand2e: "#8AEBA6",
+        Brand3: "#2F5C4A",
+        Brand3b: "#769C8D",
+        Brand3c: "#ADDBC9",
+        Brand3d: "#B19A95",
+        Brand3e: "#FFDFD9",
+        Brand4: "#132A2E",
+        Brand4b: "#48686E",
+        Brand4c: "#9AABAD",
+        Brand4d: "#837161",
+        Brand4e: "#DBC9BA",
+        Brand5: "#001824",
+        Brand5b: "#194B63",
+        Brand5c: "#5288A3",
+        Brand5d: "#795528",
+        Brand5e: "#D19D5C",
+        Brand6: "#000000",
       },
     },
   },

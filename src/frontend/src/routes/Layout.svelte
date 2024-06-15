@@ -6,8 +6,7 @@
   import { toastsError } from "$lib/stores/toasts-store";
   import { BusyScreen, Spinner, Toasts } from "@dfinity/gix-components";
   import { fade } from "svelte/transition";
-    import HomeIcon from "$lib/icons/home-icon.svelte";
-    import LogoIcon from "$lib/icons/logo-icon.svelte";
+  import LogoIcon from "$lib/icons/logo-icon.svelte";
   import "../app.css";
     import MenuIcon from "$lib/icons/menu-icon.svelte";
 
@@ -16,6 +15,19 @@
   let buttonHeight = 0;
 
   const init = async () => await Promise.all([syncAuthStore()]);
+
+  let options = [
+    { name: 'Agent Hub', href: '#dashboard' },
+    { name: 'Contract Center', href: '#profile' },
+    { name: 'My Agencies', href: '#profile' },
+    { name: 'Profile', href: '#settings' },
+    { name: 'Logout', href: '#logout' },
+  ];
+
+  let lessImportantOptions = [
+    { name: 'Game Rules', href: '#settings' }
+  ];
+
 
   const syncAuthStore = async () => {
     if (!browser) {
@@ -36,13 +48,17 @@
 
   const updateSidebarHeight = () => {
     if (browser) {
-      const button = document.querySelector(".menu-row");
-      if (button) {
-        buttonHeight = button.clientHeight;
-        const sidebarHeight = window.innerHeight - buttonHeight;
-        document.documentElement.style.setProperty('--sidebar-height', `${sidebarHeight}px`);
-        console.log(sidebarHeight);
-      }
+      requestAnimationFrame(() => {
+        const button = document.querySelector(".menu-row");
+        console.log(button)
+        if (button) {
+          buttonHeight = button.clientHeight;
+          const sidebarHeight = window.innerHeight - buttonHeight;
+          document.documentElement.style.setProperty('--sidebar-height', `${sidebarHeight}px`);
+          console.log(sidebarHeight);
+        }
+      });
+
     }
   };
 
@@ -74,21 +90,39 @@
     <Spinner />
   </div>
 {:then _}
-<div class="menu-row flex items-center bg-Brand3 w-full p-2">
-  <button on:click={() => expanded = !expanded} class="flex items-center">
-    <MenuIcon fill='#FFFFFF' className="w-5 m-1" />
-  </button>
-  <div class="flex flex-row items-center ml-auto">
-    <p class="text-sm">Transfer Kings</p>
-    <LogoIcon fill='#FFFFFF' className="w-4 m-1" />
+  <div class="menu-row flex items-center bg-Brand5b w-full p-2">
+    <button on:click={() => expanded = !expanded} class="flex items-center">
+      <MenuIcon fill='#FFFFFF' className="w-5 m-1" />
+    </button>
+    <div class="flex flex-row items-center ml-auto">
+      <p class="text-sm">Transfer Kings</p>
+      <LogoIcon fill='#FFFFFF' className="w-4 m-1" />
+    </div>
   </div>
-</div>
 
-<aside class="bg-Brand2" class:expanded>
-  Options
+<aside class="bg-Brand5 p-4" class:expanded>
+  <div class="p-2">
+    <h2 class="text-xl font-bold p-2">Options</h2>
+    <ul class="mt-4 space-y-2">
+      {#each options as option}
+        <li>
+          <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2">{option.name}</a>
+        </li>
+      {/each}
+    </ul>
+  </div>
+  <div class="less-important p-2">
+    <ul class="mt-4 space-y-2 text-xs">
+      {#each lessImportantOptions as option}
+        <li>
+          <a href={option.href} class="block rounded hover:bg-Brand5b px-4 py-2">{option.name}</a>
+        </li>
+      {/each}
+    </ul>
+  </div>
 </aside>
   <div class="flex">
-    <div class="flex-1 bg-Brand1 p-4">
+    <div class="flex-1 p-4">
       <slot />
     </div>
     <Toasts />
@@ -104,8 +138,9 @@
     transition: all 0.5s;
     height: var(--sidebar-height);
     width: 300px;
-    padding: 20px;
-    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .expanded {
