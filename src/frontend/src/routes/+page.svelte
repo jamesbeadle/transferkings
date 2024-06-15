@@ -13,6 +13,6 @@ import Layout from "./Layout.svelte";
         <a href="/rules">
             <button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button>
         </a>
-        <button class="bg-Brand1d my-2 px-4 py-2 rounded-sm">Play</button>
+        <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play <small>(Coming Soon)</small></button>
     </div>
 </Layout>

@@ -1,1 +1,1 @@
-export { default as component } from "../../../../src/frontend/src/routes/agent-hub/+page.svelte";
+export { default as component } from "../../../../src/frontend/src/routes/my-agencies/+page.svelte";

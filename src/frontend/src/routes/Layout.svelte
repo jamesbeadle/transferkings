@@ -17,15 +17,15 @@
   const init = async () => await Promise.all([syncAuthStore()]);
 
   let options = [
-    { name: 'Agent Hub', href: '#dashboard' },
-    { name: 'Contract Center', href: '#profile' },
-    { name: 'My Agencies', href: '#profile' },
-    { name: 'Profile', href: '#settings' },
+    { name: 'Agent Hub', href: '/agent-hub' },
+    { name: 'Contract Center', href: '/contract-center' },
+    { name: 'My Agencies', href: '/my-agencies' },
+    { name: 'Profile', href: '/profile' },
     { name: 'Logout', href: '#logout' },
   ];
 
   let lessImportantOptions = [
-    { name: 'Game Rules', href: '#settings' }
+    { name: 'Game Rules', href: '/rules' }
   ];
 
 
@@ -94,9 +94,11 @@
     <button on:click={() => expanded = !expanded} class="flex items-center">
       <MenuIcon fill='#FFFFFF' className="w-5 m-1" />
     </button>
-    <div class="flex flex-row items-center ml-auto">
-      <p class="text-sm">Transfer Kings</p>
-      <LogoIcon fill='#FFFFFF' className="w-4 m-1" />
+    <div class="ml-auto">
+      <a class="flex flex-row items-center ml-auto" href="/">
+        <p class="text-sm">Transfer Kings</p>
+        <LogoIcon fill='#FFFFFF' className="w-4 m-1" />
+      </a>
     </div>
   </div>
 
