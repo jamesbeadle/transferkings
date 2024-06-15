@@ -2,4 +2,6 @@
     import Layout from "./Layout.svelte";
 
 </script>
-<Layout><p class="text-white">page</p></Layout>
+<Layout>    
+    <p>Welcome to transfer kings</p>
+</Layout>

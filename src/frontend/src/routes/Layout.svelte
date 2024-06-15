@@ -6,7 +6,10 @@
   import { toastsError } from "$lib/stores/toasts-store";
   import { BusyScreen, Spinner, Toasts } from "@dfinity/gix-components";
   import { fade } from "svelte/transition";
-  import BurgerMenuIcon from "$lib/icons/burger-menu-icon.svelte";
+    import HomeIcon from "$lib/icons/home-icon.svelte";
+    import LogoIcon from "$lib/icons/logo-icon.svelte";
+  import "../app.css";
+    import MenuIcon from "$lib/icons/menu-icon.svelte";
 
   let expanded = false;
   let worker: { syncAuthIdle: (auth: AuthStoreData) => void } | undefined;
@@ -33,7 +36,7 @@
 
   const updateSidebarHeight = () => {
     if (browser) {
-      const button = document.querySelector(".menu-button");
+      const button = document.querySelector(".menu-row");
       if (button) {
         buttonHeight = button.clientHeight;
         const sidebarHeight = window.innerHeight - buttonHeight;
@@ -71,14 +74,21 @@
     <Spinner />
   </div>
 {:then _}
-  <div class="flex h-screen">
-    <button class="menu-button bg-red-600" on:click={() => expanded = !expanded}>
-      <BurgerMenuIcon />
-    </button>
-    <aside class:expanded>
-      I'm a sidebar
-    </aside>
-    <div class="flex-1 bg-Brand3">
+<div class="menu-row flex items-center bg-Brand3 w-full p-2">
+  <button on:click={() => expanded = !expanded} class="flex items-center">
+    <MenuIcon fill='#FFFFFF' className="w-5 m-1" />
+  </button>
+  <div class="flex flex-row items-center ml-auto">
+    <p class="text-sm">Transfer Kings</p>
+    <LogoIcon fill='#FFFFFF' className="w-4 m-1" />
+  </div>
+</div>
+
+<aside class="bg-Brand2" class:expanded>
+  Options
+</aside>
+  <div class="flex">
+    <div class="flex-1 bg-Brand1 p-4">
       <slot />
     </div>
     <Toasts />
@@ -96,7 +106,6 @@
     width: 300px;
     padding: 20px;
     border: 1px solid #ddd;
-    background-color: red;
   }
 
   .expanded {
