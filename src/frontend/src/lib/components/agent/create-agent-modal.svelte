@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Modal } from "@dfinity/gix-components";
+  import { Modal, Spinner } from "@dfinity/gix-components";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import { agentStore } from "$lib/stores/agent-store";
   import { writable, get } from 'svelte/store';
+    import LocalSpinner from "../shared/local-spinner.svelte";
 
   export let visible: boolean;
   export let confirmModal: () => void;
@@ -15,6 +16,7 @@
   let profilePicturePreview = "/placeholder.png";
   let isLoading = true;
   let isChecking = false;
+  let saving = false;
 
   let agentNameError = "";
   let displayNameError = "";
@@ -94,7 +96,7 @@
 
   async function handleSubmit() {
     if (get(isFormValid)) {
-
+      saving = true;
       await agentStore.createAgent(agentName, displayName, profilePicture);
       confirmModal();
     }
@@ -128,92 +130,101 @@
 
 <Modal {visible}>
   <div class="p-8 bg-Brand5c border-2 border-Brand3b">
+
     <div class="flex flex-col space-y-4">
+      
+      {#if saving}
+        <div class="flex flex-col text-center">
+          <LocalSpinner />
+          <p class="mt-4">Saving you agent profile.</p>
+        </div>
+        
+      {:else}
       <h3 class="default-header">Create Your Agent Profile</h3>
-      
-      <p class="text-xs">Your agent and display name are required fields. They should only contain letters and numbers, with a length between 5 to 50 characters. 
+        <p class="text-xs">Your agent and display name are required fields. They should only contain letters and numbers, with a length between 5 to 50 characters. 
         Your agent name must be unique.</p>
-      <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:input={handleInput} on:blur={() => handleBlur("agentName")} class="input"/>
-      {#if agentNameError}
-        <p class="text-Brand3e text-xs">{agentNameError}</p>
-      {/if}
-      {#if $checkingStatus}
-        <p>{$checkingStatus}</p>
-      {/if}
-      {#if $isAvailable !== null}
-        {#if $isAvailable}
-          <p class="text-Brand2e text-xs">Agent name available.</p>
-        {:else}
-          <p class="text-Brand3e text-xs">Agent name taken</p>
+        <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:input={handleInput} on:blur={() => handleBlur("agentName")} class="input"/>
+        {#if agentNameError}
+          <p class="text-Brand3e text-xs">{agentNameError}</p>
         {/if}
-      {/if}
-      
-      <input type="text" placeholder="Display Name" bind:value={displayName} on:input={handleInput} on:blur={() => handleBlur("displayName")} class="input"/>
-      {#if displayNameError}
-        <p class="text-Brand3e text-xs">{displayNameError}</p>
-      {/if}
+        {#if $checkingStatus}
+          <p>{$checkingStatus}</p>
+        {/if}
+        {#if $isAvailable !== null}
+          {#if $isAvailable}
+            <p class="text-Brand2e text-xs">Agent name available.</p>
+          {:else}
+            <p class="text-Brand3e text-xs">Agent name taken</p>
+          {/if}
+        {/if}
+        
+        <input type="text" placeholder="Display Name" bind:value={displayName} on:input={handleInput} on:blur={() => handleBlur("displayName")} class="input"/>
+        {#if displayNameError}
+          <p class="text-Brand3e text-xs">{displayNameError}</p>
+        {/if}
 
-      <div class="group flex flex-row items-center">
-        <div class="w-1/6">
-          <img src={profilePicturePreview} alt="Profile" class="w-full rounded-lg" />
+        <div class="group flex flex-row items-center">
+          <div class="w-1/6">
+            <img src={profilePicturePreview} alt="Profile" class="w-full rounded-lg" />
+          </div>
+          <div class="w-5/6">
+            <div class="file-upload-wrapper pl-4">
+              <button class="btn-file-upload bg-Brand5b border-2" on:click={clickFileInput}>Upload Photo</button>
+              <input
+                type="file"
+                id="profile-image"
+                accept="image/*"
+                bind:this={fileInput}
+                on:change={handleFileChange}
+                style="opacity: 0; position: absolute; left: 0; top: 0;"
+              />
+            </div> 
+            <p class="ml-4 text-xs">Maximum file size: 500KB</p>
+          </div>
         </div>
-        <div class="w-5/6">
-          <div class="file-upload-wrapper pl-4">
-            <button class="btn-file-upload bg-Brand5b border-2" on:click={clickFileInput}>Upload Photo</button>
-            <input
-              type="file"
-              id="profile-image"
-              accept="image/*"
-              bind:this={fileInput}
-              on:change={handleFileChange}
-              style="opacity: 0; position: absolute; left: 0; top: 0;"
-            />
-          </div> 
-          <p class="ml-4 text-xs">Maximum file size: 500KB</p>
+        <p>Your Agent Starter Pack</p>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-1 md:gap-4">
+            <div class="bg-Brand5w p-4 rounded-md flex flex-col items-center text-center">
+                <p class="text-3xl">5</p>
+                <div class="flex-grow"></div>
+                <p class="text-xs sm:text-sm">All Star Players</p>
+                <div class="flex-grow"></div>
+            </div>
+            <div class="bg-Brand5x p-4 rounded-md flex flex-col items-center text-center">
+                <p class="text-3xl">20</p>
+                <div class="flex-grow"></div>
+                <p class="text-xs sm:text-sm">Squad Players</p>
+                <div class="flex-grow"></div>
+            </div>
+            <div class="bg-Brand5y p-4 rounded-md flex flex-col items-center text-center">
+                <p class="text-3xl">20</p>
+                <div class="flex-grow"></div>
+                <p class="text-xs sm:text-sm">Prospects</p>
+                <div class="flex-grow"></div>
+            </div>
+            <div class="bg-Brand5z p-4 rounded-md flex flex-col items-center text-center">
+                <p class="text-3xl">25</p>
+                <div class="flex-grow"></div>
+                <p class="text-xs sm:text-sm">Academy Players</p>
+                <div class="flex-grow"></div>
+            </div>
+            <div class="bg-Brand5 p-4 rounded-md flex flex-col items-center text-center">
+                <p class="text-3xl">30</p>
+                <div class="flex-grow"></div>
+                <p class="text-xs sm:text-sm">Lower League Players</p>
+                <div class="flex-grow"></div>
+            </div>
         </div>
-      </div>
-      <p>Your Agent Starter Pack</p>
-      <div class="grid grid-cols-3 sm:grid-cols-5 gap-1 md:gap-4">
-          <div class="bg-Brand5w p-4 rounded-md flex flex-col items-center text-center">
-              <p class="text-3xl">5</p>
-              <div class="flex-grow"></div>
-              <p class="text-xs sm:text-sm">All Star Players</p>
-              <div class="flex-grow"></div>
-          </div>
-          <div class="bg-Brand5x p-4 rounded-md flex flex-col items-center text-center">
-              <p class="text-3xl">20</p>
-              <div class="flex-grow"></div>
-              <p class="text-xs sm:text-sm">Squad Players</p>
-              <div class="flex-grow"></div>
-          </div>
-          <div class="bg-Brand5y p-4 rounded-md flex flex-col items-center text-center">
-              <p class="text-3xl">20</p>
-              <div class="flex-grow"></div>
-              <p class="text-xs sm:text-sm">Prospects</p>
-              <div class="flex-grow"></div>
-          </div>
-          <div class="bg-Brand5z p-4 rounded-md flex flex-col items-center text-center">
-              <p class="text-3xl">25</p>
-              <div class="flex-grow"></div>
-              <p class="text-xs sm:text-sm">Academy Players</p>
-              <div class="flex-grow"></div>
-          </div>
-          <div class="bg-Brand5 p-4 rounded-md flex flex-col items-center text-center">
-              <p class="text-3xl">30</p>
-              <div class="flex-grow"></div>
-              <p class="text-xs sm:text-sm">Lower League Players</p>
-              <div class="flex-grow"></div>
-          </div>
-      </div>
-      
-      <p>Budget: €250m</p>
+        
+        <p>Budget: €250m</p>
 
-      <button on:click={handleSubmit} class="px-4 py-2 rounded-md {($isFormValid && !isChecking) ? 'bg-Brand5' : 'bg-gray-500'}" disabled={!$isFormValid || isChecking}>
-        <div class="flex flex-row items-center justify-center w-full text-center space-x-2 py-2">
-          <LogoIcon className='w-6' fill='#FFFFFF' />
-          <p>Begin</p>
-        </div>
-      </button>
+        <button on:click={handleSubmit} class="px-4 py-2 rounded-md {($isFormValid && !isChecking) ? 'bg-Brand5' : 'bg-gray-500'}" disabled={!$isFormValid || isChecking}>
+          <div class="flex flex-row items-center justify-center w-full text-center space-x-2 py-2">
+            <LogoIcon className='w-6' fill='#FFFFFF' />
+            <p>Begin</p>
+          </div>
+        </button>
+      {/if}
       
     </div>
   </div>
