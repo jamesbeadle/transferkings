@@ -70,7 +70,7 @@
                 <div class="w-5/6">
                 
                     <div class="file-upload-wrapper pl-4">
-                      <button class="btn-file-upload bg-Brand5b" on:click={clickFileInput}
+                      <button class="btn-file-upload bg-Brand5b border-2" on:click={clickFileInput}
                         >Upload Photo</button
                       >
                       <input
