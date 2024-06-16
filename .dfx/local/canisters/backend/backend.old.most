@@ -2,8 +2,8 @@
 type AgencyId = Nat;
 type Agent =
   {
-    agencyId : AgencyId;
-    agencyName : Text;
+    agencyId : ?AgencyId;
+    agentName : Text;
     contractLimits : ContractLimits;
     contracts : [Contract];
     createDate : Int;
@@ -24,5 +24,6 @@ type ContractLimits =
 type PlayerId = Nat;
 type PrincipalId = Text;
 actor {
-  stable var stable_agents : [Agent]
+  stable var stable_agents : [Agent];
+  stable var stable_unique_agent_names : [Text]
 };

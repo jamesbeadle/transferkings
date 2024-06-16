@@ -90,6 +90,7 @@
 
   async function handleSubmit() {
     if (get(isFormValid)) {
+
       await agentStore.createAgent(agentName, displayName, profilePicture);
       confirmModal();
     }
@@ -103,6 +104,7 @@
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      profilePicture = file;
       if (file.size > 500 * 1024) {
         alert("File size exceeds 500KB");
         return;
@@ -220,14 +222,7 @@
     margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-  }
-  .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
+  }  
   .btn-file-upload {
     cursor: pointer;
   }

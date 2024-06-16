@@ -3,8 +3,7 @@
   import { browser } from "$app/environment";
   import { initAuthWorker } from "$lib/services/worker.auth.services";
   import { authStore, type AuthSignInParams, type AuthStoreData } from "$lib/stores/auth-store";
-  import { toastsError } from "$lib/stores/toasts-store";
-  import { BusyScreen, Spinner, Toasts } from "@dfinity/gix-components";
+  import { BusyScreen, Spinner } from "@dfinity/gix-components";
   import { fade } from "svelte/transition";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import "../app.css";
@@ -42,12 +41,7 @@
     try {
       await authStore.sync();
     } catch (err: unknown) {
-      toastsError({
-        msg: {
-          text: "Unexpected issue while syncing the status of your authentication.",
-        },
-        err,
-      });
+      console.error("Error syncing auth store", err);
     }
   };
 
@@ -191,7 +185,6 @@
     <div class="flex-1 p-4">
       <slot />
     </div>
-    <Toasts />
   </div>
 {/await}
 

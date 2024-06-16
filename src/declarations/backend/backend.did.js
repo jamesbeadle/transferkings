@@ -19,7 +19,28 @@ export const idlFactory = ({ IDL }) => {
   });
   const Result_1 = IDL.Variant({ ok: IDL.Null, err: Error });
   const EndContractDTO = IDL.Record({});
-  const AgentDTO = IDL.Record({});
+  const AgencyId = IDL.Nat;
+  const PlayerId = IDL.Nat;
+  const Contract = IDL.Record({ playerId: PlayerId });
+  const ContractLimits = IDL.Record({
+    academyContractMax: IDL.Nat,
+    lowerLeagueContractMax: IDL.Nat,
+    prospectsContractMax: IDL.Nat,
+    allStarContractMax: IDL.Nat,
+    squadPlayerContractMax: IDL.Nat,
+  });
+  const PrincipalId = IDL.Text;
+  const AgentDTO = IDL.Record({
+    displayName: IDL.Text,
+    agentName: IDL.Text,
+    createDate: IDL.Int,
+    agencyId: IDL.Opt(AgencyId),
+    profilePictureExtension: IDL.Text,
+    contracts: IDL.Vec(Contract),
+    profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    contractLimits: ContractLimits,
+    principalId: PrincipalId,
+  });
   const Result_4 = IDL.Variant({ ok: AgentDTO, err: Error });
   const GetContractsDTO = IDL.Record({});
   const ContractDTO = IDL.Record({});

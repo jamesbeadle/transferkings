@@ -4,17 +4,21 @@
     import Layout from "../Layout.svelte";
     import { onMount } from "svelte";
     import CreateAgentModal from "$lib/components/agent/create-agent-modal.svelte";
-    import type { CreateAgentDTO } from "../../../../declarations/backend/backend.did";
+    import type { AgentDTO } from "../../../../declarations/backend/backend.did";
+    import { agentStore } from "$lib/stores/agent-store";
+    import { writable } from "svelte/store";
 
     let isLoading = true; 
     let showAgentCreate = false;
+    let agent = writable<AgentDTO | null>(null);
 
     onMount(async () => {
         try{
-            showAgentCreate = true;
-            //check for agent profile
-
-            //if no profile show setup profile screen
+            await agentStore.sync();
+            console.log($agentStore)
+            if(!$agentStore){
+                showAgentCreate = true;
+            }
 
         } catch (error) {
             console.error("Error loading contract center", error);

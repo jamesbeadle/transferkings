@@ -1,5 +1,4 @@
 import { authStore, type AuthSignInParams } from "$lib/stores/auth-store";
-import { toastsClean, toastsError, toastsShow } from "$lib/stores/toasts-store";
 import type { ToastMsg } from "$lib/types/toast";
 import { replaceHistory } from "$lib/utils/route.utils";
 import type { ToastLevel } from "@dfinity/gix-components";
@@ -16,21 +15,12 @@ export const signIn = async (
 
   try {
     await authStore.signIn(params);
-
-    // We clean previous messages in case user was signed out automatically before sign-in again.
-    toastsClean();
-
     return { success: "ok" };
   } catch (err: unknown) {
     if (err === "UserInterrupt") {
       // We do not display an error if user explicitly cancelled the process of sign-in
       return { success: "cancelled" };
     }
-
-    toastsError({
-      msg: { text: `Something went wrong while sign-in.` },
-      err,
-    });
 
     return { success: "error", err };
   } finally {
@@ -105,8 +95,6 @@ export const displayAndCleanLogoutMsg = () => {
   // For simplicity reason we assume the level pass as query params is one of the type ToastLevel
   const level: ToastLevel =
     (urlParams.get(PARAM_LEVEL) as ToastLevel | null) ?? "success";
-
-  toastsShow({ text: decodeURI(msg), level });
 
   cleanUpMsgUrl();
 };

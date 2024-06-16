@@ -3,7 +3,7 @@ import * as devalue from "devalue";
 import { Buffer } from "buffer";
 import { parse, serialize } from "cookie";
 import * as set_cookie_parser from "set-cookie-parser";
-import { nonNullish, isNullish } from "@dfinity/utils";
+import { nonNullish } from "@dfinity/utils";
 import "dompurify";
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
@@ -3424,7 +3424,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1yywoj9"
+  version_hash: "kyc992"
 };
 async function get_hooks() {
   return {};
@@ -3633,7 +3633,6 @@ const initAuthStore = () => {
   };
 };
 const authStore = initAuthStore();
-const DEFAULT_ICON_SIZE = 20;
 const core = {
   close: "Close",
   back: "Back",
@@ -3654,11 +3653,10 @@ const en = {
   theme,
   progress
 };
-const i18n = readable({
+readable({
   lang: "en",
   ...en
 });
-const layoutBottomOffset = writable(0);
 const initBusyStore = () => {
   const DEFAULT_STATE = [];
   const { subscribe: subscribe2, update, set } = writable(DEFAULT_STATE);
@@ -3687,7 +3685,7 @@ const initBusyStore = () => {
 const busyStore = initBusyStore();
 const busy = derived(busyStore, ($busyStore) => $busyStore.length > 0);
 const busyMessage = derived(busyStore, ($busyStore) => $busyStore.reverse().find(({ text: text2 }) => nonNullish(text2))?.text);
-const css$5 = {
+const css$2 = {
   code: ".medium.svelte-85668t{--spinner-size:30px}.small.svelte-85668t{--spinner-size:calc(var(--line-height-standard) * 1rem)}.tiny.svelte-85668t{--spinner-size:calc(var(--line-height-standard) * 0.5rem)}svg.svelte-85668t{width:var(--spinner-size);height:var(--spinner-size);animation:spinner-linear-rotate 2000ms linear infinite;position:absolute;top:calc(50% - var(--spinner-size) / 2);left:calc(50% - var(--spinner-size) / 2);--radius:45px;--circumference:calc(3.1415926536 * var(--radius) * 2);--start:calc((1 - 0.05) * var(--circumference));--end:calc((1 - 0.8) * var(--circumference))}svg.inline.svelte-85668t{display:inline-block;position:relative}circle.svelte-85668t{stroke-dasharray:var(--circumference);stroke-width:10%;transform-origin:50% 50% 0;transition-property:stroke;animation-name:spinner-stroke-rotate-100;animation-duration:4000ms;animation-timing-function:cubic-bezier(0.35, 0, 0.25, 1);animation-iteration-count:infinite;fill:transparent;stroke:currentColor;transition:stroke-dashoffset 225ms linear}@keyframes spinner-linear-rotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes spinner-stroke-rotate-100{0%{stroke-dashoffset:var(--start);transform:rotate(0)}12.5%{stroke-dashoffset:var(--end);transform:rotate(0)}12.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(72.5deg)}25%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(72.5deg)}25.0001%{stroke-dashoffset:var(--start);transform:rotate(270deg)}37.5%{stroke-dashoffset:var(--end);transform:rotate(270deg)}37.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(161.5deg)}50%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(161.5deg)}50.0001%{stroke-dashoffset:var(--start);transform:rotate(180deg)}62.5%{stroke-dashoffset:var(--end);transform:rotate(180deg)}62.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(251.5deg)}75%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(251.5deg)}75.0001%{stroke-dashoffset:var(--start);transform:rotate(90deg)}87.5%{stroke-dashoffset:var(--end);transform:rotate(90deg)}87.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(341.5deg)}100%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(341.5deg)}}",
   map: '{"version":3,"file":"Spinner.svelte","sources":["Spinner.svelte"],"sourcesContent":["<!-- adapted source: https://github.com/angular/components/tree/master/src/material/progress-spinner -->\\n<script>export let inline = false;\\nexport let size = \\"medium\\";\\n<\/script>\\n\\n<svg\\n  class:inline\\n  class={size}\\n  preserveAspectRatio=\\"xMidYMid meet\\"\\n  focusable=\\"false\\"\\n  aria-hidden=\\"true\\"\\n  data-tid=\\"spinner\\"\\n  viewBox=\\"0 0 100 100\\"><circle cx=\\"50%\\" cy=\\"50%\\" r=\\"45\\" /></svg\\n>\\n\\n<style>.medium {\\n  --spinner-size: 30px;\\n}\\n\\n.small {\\n  --spinner-size: calc(var(--line-height-standard) * 1rem);\\n}\\n\\n.tiny {\\n  --spinner-size: calc(var(--line-height-standard) * 0.5rem);\\n}\\n\\nsvg {\\n  width: var(--spinner-size);\\n  height: var(--spinner-size);\\n  animation: spinner-linear-rotate 2000ms linear infinite;\\n  position: absolute;\\n  top: calc(50% - var(--spinner-size) / 2);\\n  left: calc(50% - var(--spinner-size) / 2);\\n  --radius: 45px;\\n  --circumference: calc(3.1415926536 * var(--radius) * 2);\\n  --start: calc((1 - 0.05) * var(--circumference));\\n  --end: calc((1 - 0.8) * var(--circumference));\\n}\\nsvg.inline {\\n  display: inline-block;\\n  position: relative;\\n}\\n\\ncircle {\\n  stroke-dasharray: var(--circumference);\\n  stroke-width: 10%;\\n  transform-origin: 50% 50% 0;\\n  transition-property: stroke;\\n  animation-name: spinner-stroke-rotate-100;\\n  animation-duration: 4000ms;\\n  animation-timing-function: cubic-bezier(0.35, 0, 0.25, 1);\\n  animation-iteration-count: infinite;\\n  fill: transparent;\\n  stroke: currentColor;\\n  transition: stroke-dashoffset 225ms linear;\\n}\\n\\n/* -global- */\\n@keyframes -global-spinner-linear-rotate {\\n  0% {\\n    transform: rotate(0deg);\\n  }\\n  100% {\\n    transform: rotate(360deg);\\n  }\\n}\\n/* -global- */\\n@keyframes -global-spinner-stroke-rotate-100 {\\n  0% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(0);\\n  }\\n  12.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(0);\\n  }\\n  12.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(72.5deg);\\n  }\\n  25% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(72.5deg);\\n  }\\n  25.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(270deg);\\n  }\\n  37.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(270deg);\\n  }\\n  37.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(161.5deg);\\n  }\\n  50% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(161.5deg);\\n  }\\n  50.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(180deg);\\n  }\\n  62.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(180deg);\\n  }\\n  62.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(251.5deg);\\n  }\\n  75% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(251.5deg);\\n  }\\n  75.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(90deg);\\n  }\\n  87.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(90deg);\\n  }\\n  87.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(341.5deg);\\n  }\\n  100% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(341.5deg);\\n  }\\n}</style>\\n"],"names":[],"mappings":"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"}'
 };
@@ -3696,10 +3694,10 @@ const Spinner = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { size = "medium" } = $$props;
   if ($$props.inline === void 0 && $$bindings.inline && inline !== void 0) $$bindings.inline(inline);
   if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  $$result.css.add(css$5);
+  $$result.css.add(css$2);
   return `  <svg class="${[escape(null_to_empty(size), true) + " svelte-85668t", inline ? "inline" : ""].join(" ").trim()}" preserveAspectRatio="xMidYMid meet" focusable="false" aria-hidden="true" data-tid="spinner" viewBox="0 0 100 100"><circle cx="50%" cy="50%" r="45" class="svelte-85668t"></circle></svg>`;
 });
-const css$4 = {
+const css$1 = {
   code: "div.svelte-14plyno{z-index:calc(var(--z-index) + 1000);position:fixed;top:0;right:0;bottom:0;left:0;background:var(--backdrop);color:var(--backdrop-contrast)}.content.svelte-14plyno{display:flex;flex-direction:column;justify-content:center;align-items:center}p.svelte-14plyno{padding-bottom:var(--padding);max-width:calc(var(--section-max-width) / 2)}",
   map: '{"version":3,"file":"BusyScreen.svelte","sources":["BusyScreen.svelte"],"sourcesContent":["<script>import { fade } from \\"svelte/transition\\";\\nimport { busy, busyMessage } from \\"../stores/busy.store\\";\\nimport Spinner from \\"./Spinner.svelte\\";\\nimport { nonNullish } from \\"@dfinity/utils\\";\\n<\/script>\\n\\n<!-- Display spinner and lock UI if busyStore is not empty -->\\n{#if $busy}\\n  <div data-tid=\\"busy\\" transition:fade|global>\\n    <div class=\\"content\\">\\n      {#if nonNullish($busyMessage)}\\n        <p>{$busyMessage}</p>\\n      {/if}\\n      <span>\\n        <Spinner inline />\\n      </span>\\n    </div>\\n  </div>\\n{/if}\\n\\n<style>div {\\n  z-index: calc(var(--z-index) + 1000);\\n  position: fixed;\\n  top: 0;\\n  right: 0;\\n  bottom: 0;\\n  left: 0;\\n  background: var(--backdrop);\\n  color: var(--backdrop-contrast);\\n}\\n\\n.content {\\n  display: flex;\\n  flex-direction: column;\\n  justify-content: center;\\n  align-items: center;\\n}\\n\\np {\\n  padding-bottom: var(--padding);\\n  max-width: calc(var(--section-max-width) / 2);\\n}</style>\\n"],"names":[],"mappings":"AAoBO,kBAAI,CACT,OAAO,CAAE,KAAK,IAAI,SAAS,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,CACpC,QAAQ,CAAE,KAAK,CACf,GAAG,CAAE,CAAC,CACN,KAAK,CAAE,CAAC,CACR,MAAM,CAAE,CAAC,CACT,IAAI,CAAE,CAAC,CACP,UAAU,CAAE,IAAI,UAAU,CAAC,CAC3B,KAAK,CAAE,IAAI,mBAAmB,CAChC,CAEA,uBAAS,CACP,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,MAAM,CACvB,WAAW,CAAE,MACf,CAEA,gBAAE,CACA,cAAc,CAAE,IAAI,SAAS,CAAC,CAC9B,SAAS,CAAE,KAAK,IAAI,mBAAmB,CAAC,CAAC,CAAC,CAAC,CAAC,CAC9C"}'
 };
@@ -3708,45 +3706,10 @@ const BusyScreen = create_ssr_component(($$result, $$props, $$bindings, slots) =
   let $busyMessage, $$unsubscribe_busyMessage;
   $$unsubscribe_busy = subscribe(busy, (value) => $busy = value);
   $$unsubscribe_busyMessage = subscribe(busyMessage, (value) => $busyMessage = value);
-  $$result.css.add(css$4);
+  $$result.css.add(css$1);
   $$unsubscribe_busy();
   $$unsubscribe_busyMessage();
   return ` ${$busy ? `<div data-tid="busy" class="svelte-14plyno"><div class="content svelte-14plyno">${nonNullish($busyMessage) ? `<p class="svelte-14plyno">${escape($busyMessage)}</p>` : ``} <span>${validate_component(Spinner, "Spinner").$$render($$result, { inline: true }, {}, {})}</span></div></div>` : ``}`;
-});
-const IconCheckCircle = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { size = `24px` } = $$props;
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  return `  <svg${add_attribute("width", size, 0)}${add_attribute("height", size, 0)} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1.25" y="1.25" width="21.5" height="21.5" rx="10.75" fill="var(--icon-check-circle-background, transparent)"></rect><path d="M7 11L11 15L17 9" stroke="var(--icon-check-circle-color, currentColor)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><rect x="1.25" y="1.25" width="21.5" height="21.5" rx="10.75" stroke="var(--icon-check-circle-background, currentColor)" stroke-width="1.5"></rect></svg>`;
-});
-const IconClose = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { size = `${DEFAULT_ICON_SIZE}px` } = $$props;
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  return `  <svg${add_attribute("height", size, 0)}${add_attribute("width", size, 0)} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14.4194" y="4.52441" width="1.5" height="14" rx="0.75" transform="rotate(45 14.4194 4.52441)" fill="currentColor"></rect><rect x="4.5199" y="5.58496" width="1.5" height="14" rx="0.75" transform="rotate(-45 4.5199 5.58496)" fill="currentColor"></rect></svg>`;
-});
-const IconError = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { size = `${DEFAULT_ICON_SIZE}px` } = $$props;
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  return `  <svg xmlns="http://www.w3.org/2000/svg"${add_attribute("height", size, 0)} viewBox="0 0 24 24"${add_attribute("width", size, 0)} fill="currentColor"><path d="M0 0h24v24H0z" fill="none"></path><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>`;
-});
-const css$3 = {
-  code: "svg.svelte-1lui9gh{vertical-align:middle}",
-  map: '{"version":3,"file":"IconInfo.svelte","sources":["IconInfo.svelte"],"sourcesContent":["<!-- source: DFINITY foundation -->\\n<script>import { DEFAULT_ICON_SIZE } from \\"../constants/constants\\";\\nexport let size = `${DEFAULT_ICON_SIZE}px`;\\n<\/script>\\n\\n<svg\\n  width={size}\\n  height={size}\\n  viewBox=\\"0 0 20 20\\"\\n  fill=\\"none\\"\\n  xmlns=\\"http://www.w3.org/2000/svg\\"\\n  data-tid=\\"icon-info\\"\\n>\\n  <path\\n    d=\\"M10.2222 17.5C14.3643 17.5 17.7222 14.1421 17.7222 10C17.7222 5.85786 14.3643 2.5 10.2222 2.5C6.08003 2.5 2.72217 5.85786 2.72217 10C2.72217 14.1421 6.08003 17.5 10.2222 17.5Z\\"\\n    stroke=\\"currentColor\\"\\n    stroke-width=\\"1.5\\"\\n    stroke-linecap=\\"round\\"\\n    stroke-linejoin=\\"round\\"\\n  />\\n  <path\\n    d=\\"M10.2222 13.3333V10\\"\\n    stroke=\\"currentColor\\"\\n    stroke-width=\\"1.5\\"\\n    stroke-linecap=\\"round\\"\\n    stroke-linejoin=\\"round\\"\\n  />\\n  <path\\n    d=\\"M10.2222 6.66699H10.2305\\"\\n    stroke=\\"currentColor\\"\\n    stroke-width=\\"1.5\\"\\n    stroke-linecap=\\"round\\"\\n    stroke-linejoin=\\"round\\"\\n  />\\n</svg>\\n\\n<style>svg {\\n  vertical-align: middle;\\n}</style>\\n"],"names":[],"mappings":"AAoCO,kBAAI,CACT,cAAc,CAAE,MAClB"}'
-};
-const IconInfo = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { size = `${DEFAULT_ICON_SIZE}px` } = $$props;
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  $$result.css.add(css$3);
-  return `  <svg${add_attribute("width", size, 0)}${add_attribute("height", size, 0)} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" data-tid="icon-info" class="svelte-1lui9gh"><path d="M10.2222 17.5C14.3643 17.5 17.7222 14.1421 17.7222 10C17.7222 5.85786 14.3643 2.5 10.2222 2.5C6.08003 2.5 2.72217 5.85786 2.72217 10C2.72217 14.1421 6.08003 17.5 10.2222 17.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10.2222 13.3333V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10.2222 6.66699H10.2305" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
-});
-const IconWarning = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { size = `${DEFAULT_ICON_SIZE}px` } = $$props;
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  return `  <svg xmlns="http://www.w3.org/2000/svg"${add_attribute("height", size, 0)} viewBox="0 0 24 24"${add_attribute("width", size, 0)} fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"></path></svg>`;
-});
-const Html = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { text: text2 = void 0 } = $$props;
-  if ($$props.text === void 0 && $$bindings.text && text2 !== void 0) $$bindings.text(text2);
-  return `${``}`;
 });
 var Theme;
 (function(Theme2) {
@@ -3821,117 +3784,6 @@ const initMenuStore = () => {
 };
 const menuStore = initMenuStore();
 derived(menuStore, ($menuStore) => $menuStore === Menu.COLLAPSED);
-const initToastsStore = () => {
-  const { subscribe: subscribe2, update, set } = writable([]);
-  return {
-    subscribe: subscribe2,
-    show({ id, ...rest }) {
-      const toastId = id ?? Symbol("toast");
-      update((messages) => {
-        return [...messages, { ...rest, id: toastId }];
-      });
-      return toastId;
-    },
-    hide(idToHide) {
-      update((messages) => messages.filter(({ id }) => id !== idToHide));
-    },
-    update({ id, content }) {
-      update((messages) => (
-        // use map to preserve order
-        messages.map((message) => {
-          if (message.id !== id) {
-            return message;
-          }
-          return {
-            ...message,
-            ...content
-          };
-        })
-      ));
-    },
-    reset(levels) {
-      if (nonNullish(levels) && levels.length > 0) {
-        update((messages) => messages.filter(({ level }) => !levels.includes(level)));
-        return;
-      }
-      set([]);
-    }
-  };
-};
-const toastsStore = initToastsStore();
-const css$2 = {
-  code: ".toast.svelte-w1j1kj.svelte-w1j1kj{display:flex;justify-content:space-between;align-items:center;gap:var(--padding-1_5x);background:var(--overlay-background);color:var(--overlay-background-contrast);--button-secondary-background:var(--focus-background);border-radius:var(--border-radius);box-shadow:var(--strong-shadow, 8px 8px 16px 0 rgba(0, 0, 0, 0.25));padding:var(--padding-1_5x);box-sizing:border-box}.toast.inverted.svelte-w1j1kj.svelte-w1j1kj{background:var(--toast-inverted-background);color:var(--toast-inverted-background-contrast)}.toast.svelte-w1j1kj .icon.svelte-w1j1kj{line-height:0}.toast.svelte-w1j1kj .icon.success.svelte-w1j1kj{color:var(--positive-emphasis)}.toast.svelte-w1j1kj .icon.info.svelte-w1j1kj{color:var(--primary)}.toast.svelte-w1j1kj .icon.warn.svelte-w1j1kj{color:var(--warning-emphasis-shade)}.toast.svelte-w1j1kj .icon.error.svelte-w1j1kj{color:var(--negative-emphasis)}.toast.svelte-w1j1kj .msg.svelte-w1j1kj{flex-grow:1;margin:0;word-break:break-word}.toast.svelte-w1j1kj .msg.scroll.svelte-w1j1kj{overflow-y:auto;max-height:calc(var(--font-size-standard) * 3 * 1.3);line-height:normal}.toast.svelte-w1j1kj .msg.truncate.svelte-w1j1kj{white-space:var(--text-white-space, nowrap);overflow:hidden;text-overflow:ellipsis}.toast.svelte-w1j1kj .msg.truncate .title.svelte-w1j1kj{white-space:var(--text-white-space, nowrap);overflow:hidden;text-overflow:ellipsis}.toast.svelte-w1j1kj .msg.clamp.svelte-w1j1kj{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}.toast.svelte-w1j1kj .msg.clamp .title.svelte-w1j1kj{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.toast.svelte-w1j1kj .title.svelte-w1j1kj{display:block;font-size:var(--font-size-standard);line-height:var(--line-height-standard);font-weight:var(--font-weight-bold);line-height:normal}.toast.svelte-w1j1kj button.close.svelte-w1j1kj{padding:0;line-height:0;color:inherit}",
-  map: '{"version":3,"file":"Toast.svelte","sources":["Toast.svelte"],"sourcesContent":["<script>import { toastsStore } from \\"../stores/toasts.store\\";\\nimport { fade, fly } from \\"svelte/transition\\";\\nimport { i18n } from \\"../stores/i18n\\";\\nimport { onDestroy, onMount } from \\"svelte\\";\\nimport Spinner from \\"./Spinner.svelte\\";\\nimport IconWarning from \\"../icons/IconWarning.svelte\\";\\nimport IconClose from \\"../icons/IconClose.svelte\\";\\nimport IconInfo from \\"../icons/IconInfo.svelte\\";\\nimport IconCheckCircle from \\"../icons/IconCheckCircle.svelte\\";\\nimport IconError from \\"../icons/IconError.svelte\\";\\nimport { DEFAULT_ICON_SIZE } from \\"../constants/constants\\";\\nimport { isNullish, nonNullish } from \\"@dfinity/utils\\";\\nimport Html from \\"./Html.svelte\\";\\nexport let msg;\\nconst iconMapper = (level2) => ({\\n  [\\"success\\"]: IconCheckCircle,\\n  [\\"warn\\"]: IconWarning,\\n  [\\"error\\"]: IconError,\\n  [\\"info\\"]: IconInfo,\\n  [\\"custom\\"]: void 0\\n})[level2];\\nconst close = () => toastsStore.hide(msg.id);\\nlet text;\\nlet level;\\nlet spinner;\\nlet title;\\nlet overflow;\\nlet position;\\nlet icon;\\nlet theme;\\nlet renderAsHtml;\\n$:\\n  ({\\n    text,\\n    level,\\n    spinner,\\n    title,\\n    overflow,\\n    position,\\n    icon,\\n    theme,\\n    renderAsHtml\\n  } = msg);\\nlet scroll;\\n$:\\n  scroll = overflow === void 0 || overflow === \\"scroll\\";\\nlet truncate;\\n$:\\n  truncate = overflow === \\"truncate\\";\\nlet clamp;\\n$:\\n  clamp = overflow === \\"clamp\\";\\nlet timeoutId = void 0;\\nconst autoHide = () => {\\n  const { duration } = msg;\\n  if (isNullish(duration)) {\\n    return;\\n  }\\n  timeoutId = setTimeout(close, duration);\\n};\\nconst cleanUpAutoHide = () => {\\n  if (isNullish(timeoutId)) {\\n    return;\\n  }\\n  clearTimeout(timeoutId);\\n};\\nconst minHeightMessage = `min-height: ${DEFAULT_ICON_SIZE}px;`;\\nonMount(autoHide);\\nonDestroy(cleanUpAutoHide);\\n<\/script>\\n\\n<div\\n  role=\\"dialog\\"\\n  class={`toast ${theme ?? \\"themed\\"}`}\\n  in:fly|global={{ y: (position === \\"top\\" ? -1 : 1) * 100, duration: 200 }}\\n  out:fade|global={{ delay: 100 }}\\n>\\n  <div class=\\"icon {level}\\" aria-hidden=\\"true\\">\\n    {#if spinner}\\n      <Spinner size=\\"small\\" inline />\\n    {:else if nonNullish(icon)}\\n      <svelte:component this={icon} />\\n    {:else if iconMapper(level)}\\n      <svelte:component this={iconMapper(level)} size={DEFAULT_ICON_SIZE} />\\n    {/if}\\n  </div>\\n\\n  <p\\n    class=\\"msg\\"\\n    class:truncate\\n    class:clamp\\n    class:scroll\\n    style={minHeightMessage}\\n  >\\n    {#if nonNullish(title)}\\n      <span class=\\"title\\">{title}</span>\\n    {/if}\\n    {#if renderAsHtml}\\n      <Html {text} />\\n    {:else}\\n      {text}\\n    {/if}\\n  </p>\\n\\n  <button class=\\"close\\" on:click={close} aria-label={$i18n.core.close}\\n    ><IconClose /></button\\n  >\\n</div>\\n\\n<style>.toast {\\n  display: flex;\\n  justify-content: space-between;\\n  align-items: center;\\n  gap: var(--padding-1_5x);\\n  background: var(--overlay-background);\\n  color: var(--overlay-background-contrast);\\n  --button-secondary-background: var(--focus-background);\\n  border-radius: var(--border-radius);\\n  box-shadow: var(--strong-shadow, 8px 8px 16px 0 rgba(0, 0, 0, 0.25));\\n  padding: var(--padding-1_5x);\\n  box-sizing: border-box;\\n}\\n.toast.inverted {\\n  background: var(--toast-inverted-background);\\n  color: var(--toast-inverted-background-contrast);\\n}\\n.toast .icon {\\n  line-height: 0;\\n}\\n.toast .icon.success {\\n  color: var(--positive-emphasis);\\n}\\n.toast .icon.info {\\n  color: var(--primary);\\n}\\n.toast .icon.warn {\\n  color: var(--warning-emphasis-shade);\\n}\\n.toast .icon.error {\\n  color: var(--negative-emphasis);\\n}\\n.toast .msg {\\n  flex-grow: 1;\\n  margin: 0;\\n  word-break: break-word;\\n}\\n.toast .msg.scroll {\\n  overflow-y: auto;\\n  max-height: calc(var(--font-size-standard) * 3 * 1.3);\\n  line-height: normal;\\n}\\n.toast .msg.truncate {\\n  white-space: var(--text-white-space, nowrap);\\n  overflow: hidden;\\n  text-overflow: ellipsis;\\n}\\n.toast .msg.truncate .title {\\n  white-space: var(--text-white-space, nowrap);\\n  overflow: hidden;\\n  text-overflow: ellipsis;\\n}\\n.toast .msg.clamp {\\n  display: -webkit-box;\\n  -webkit-box-orient: vertical;\\n  -webkit-line-clamp: 3;\\n  overflow: hidden;\\n}\\n.toast .msg.clamp .title {\\n  display: -webkit-box;\\n  -webkit-box-orient: vertical;\\n  -webkit-line-clamp: 2;\\n  overflow: hidden;\\n}\\n.toast .title {\\n  display: block;\\n  font-size: var(--font-size-standard);\\n  line-height: var(--line-height-standard);\\n  font-weight: var(--font-weight-bold);\\n  line-height: normal;\\n}\\n.toast button.close {\\n  padding: 0;\\n  line-height: 0;\\n  color: inherit;\\n}</style>\\n"],"names":[],"mappings":"AA6GO,kCAAO,CACZ,OAAO,CAAE,IAAI,CACb,eAAe,CAAE,aAAa,CAC9B,WAAW,CAAE,MAAM,CACnB,GAAG,CAAE,IAAI,cAAc,CAAC,CACxB,UAAU,CAAE,IAAI,oBAAoB,CAAC,CACrC,KAAK,CAAE,IAAI,6BAA6B,CAAC,CACzC,6BAA6B,CAAE,uBAAuB,CACtD,aAAa,CAAE,IAAI,eAAe,CAAC,CACnC,UAAU,CAAE,IAAI,eAAe,CAAC,mCAAmC,CAAC,CACpE,OAAO,CAAE,IAAI,cAAc,CAAC,CAC5B,UAAU,CAAE,UACd,CACA,MAAM,qCAAU,CACd,UAAU,CAAE,IAAI,2BAA2B,CAAC,CAC5C,KAAK,CAAE,IAAI,oCAAoC,CACjD,CACA,oBAAM,CAAC,mBAAM,CACX,WAAW,CAAE,CACf,CACA,oBAAM,CAAC,KAAK,sBAAS,CACnB,KAAK,CAAE,IAAI,mBAAmB,CAChC,CACA,oBAAM,CAAC,KAAK,mBAAM,CAChB,KAAK,CAAE,IAAI,SAAS,CACtB,CACA,oBAAM,CAAC,KAAK,mBAAM,CAChB,KAAK,CAAE,IAAI,wBAAwB,CACrC,CACA,oBAAM,CAAC,KAAK,oBAAO,CACjB,KAAK,CAAE,IAAI,mBAAmB,CAChC,CACA,oBAAM,CAAC,kBAAK,CACV,SAAS,CAAE,CAAC,CACZ,MAAM,CAAE,CAAC,CACT,UAAU,CAAE,UACd,CACA,oBAAM,CAAC,IAAI,qBAAQ,CACjB,UAAU,CAAE,IAAI,CAChB,UAAU,CAAE,KAAK,IAAI,oBAAoB,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC,CACrD,WAAW,CAAE,MACf,CACA,oBAAM,CAAC,IAAI,uBAAU,CACnB,WAAW,CAAE,IAAI,kBAAkB,CAAC,OAAO,CAAC,CAC5C,QAAQ,CAAE,MAAM,CAChB,aAAa,CAAE,QACjB,CACA,oBAAM,CAAC,IAAI,SAAS,CAAC,oBAAO,CAC1B,WAAW,CAAE,IAAI,kBAAkB,CAAC,OAAO,CAAC,CAC5C,QAAQ,CAAE,MAAM,CAChB,aAAa,CAAE,QACjB,CACA,oBAAM,CAAC,IAAI,oBAAO,CAChB,OAAO,CAAE,WAAW,CACpB,kBAAkB,CAAE,QAAQ,CAC5B,kBAAkB,CAAE,CAAC,CACrB,QAAQ,CAAE,MACZ,CACA,oBAAM,CAAC,IAAI,MAAM,CAAC,oBAAO,CACvB,OAAO,CAAE,WAAW,CACpB,kBAAkB,CAAE,QAAQ,CAC5B,kBAAkB,CAAE,CAAC,CACrB,QAAQ,CAAE,MACZ,CACA,oBAAM,CAAC,oBAAO,CACZ,OAAO,CAAE,KAAK,CACd,SAAS,CAAE,IAAI,oBAAoB,CAAC,CACpC,WAAW,CAAE,IAAI,sBAAsB,CAAC,CACxC,WAAW,CAAE,IAAI,kBAAkB,CAAC,CACpC,WAAW,CAAE,MACf,CACA,oBAAM,CAAC,MAAM,oBAAO,CAClB,OAAO,CAAE,CAAC,CACV,WAAW,CAAE,CAAC,CACd,KAAK,CAAE,OACT"}'
-};
-const Toast = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $i18n, $$unsubscribe_i18n;
-  $$unsubscribe_i18n = subscribe(i18n, (value) => $i18n = value);
-  let { msg } = $$props;
-  const iconMapper = (level2) => ({
-    ["success"]: IconCheckCircle,
-    ["warn"]: IconWarning,
-    ["error"]: IconError,
-    ["info"]: IconInfo,
-    ["custom"]: void 0
-  })[level2];
-  let text2;
-  let level;
-  let spinner;
-  let title;
-  let overflow;
-  let position;
-  let icon;
-  let theme2;
-  let renderAsHtml;
-  let scroll;
-  let truncate;
-  let clamp;
-  let timeoutId = void 0;
-  const cleanUpAutoHide = () => {
-    if (isNullish(timeoutId)) {
-      return;
-    }
-    clearTimeout(timeoutId);
-  };
-  const minHeightMessage = `min-height: ${DEFAULT_ICON_SIZE}px;`;
-  onDestroy(cleanUpAutoHide);
-  if ($$props.msg === void 0 && $$bindings.msg && msg !== void 0) $$bindings.msg(msg);
-  $$result.css.add(css$2);
-  ({ text: text2, level, spinner, title, overflow, position, icon, theme: theme2, renderAsHtml } = msg);
-  scroll = overflow === void 0 || overflow === "scroll";
-  truncate = overflow === "truncate";
-  clamp = overflow === "clamp";
-  $$unsubscribe_i18n();
-  return `<div role="dialog" class="${escape(null_to_empty(`toast ${theme2 ?? "themed"}`), true) + " svelte-w1j1kj"}"><div class="${"icon " + escape(level, true) + " svelte-w1j1kj"}" aria-hidden="true">${spinner ? `${validate_component(Spinner, "Spinner").$$render($$result, { size: "small", inline: true }, {}, {})}` : `${nonNullish(icon) ? `${validate_component(icon || missing_component, "svelte:component").$$render($$result, {}, {}, {})}` : `${iconMapper(level) ? `${validate_component(iconMapper(level) || missing_component, "svelte:component").$$render($$result, { size: DEFAULT_ICON_SIZE }, {}, {})}` : ``}`}`}</div> <p class="${[
-    "msg svelte-w1j1kj",
-    (truncate ? "truncate" : "") + " " + (clamp ? "clamp" : "") + " " + (scroll ? "scroll" : "")
-  ].join(" ").trim()}"${add_attribute("style", minHeightMessage, 0)}>${nonNullish(title) ? `<span class="title svelte-w1j1kj">${escape(title)}</span>` : ``} ${renderAsHtml ? `${validate_component(Html, "Html").$$render($$result, { text: text2 }, {}, {})}` : `${escape(text2)}`}</p> <button class="close svelte-w1j1kj"${add_attribute("aria-label", $i18n.core.close, 0)}>${validate_component(IconClose, "IconClose").$$render($$result, {}, {}, {})}</button> </div>`;
-});
-const css$1 = {
-  code: ".wrapper.svelte-24m335{position:fixed;left:50%;transform:translate(-50%, 0);bottom:calc(var(--layout-bottom-offset, 0) + var(--padding-2x));width:calc(100% - var(--padding-8x) - var(--padding-0_5x));display:flex;flex-direction:column;gap:var(--padding);z-index:var(--toast-info-z-index)}.wrapper.error.svelte-24m335{z-index:var(--toast-error-z-index)}@media(min-width: 1024px){.wrapper.svelte-24m335{max-width:calc(var(--section-max-width) - var(--padding-2x))}}.top.svelte-24m335{top:calc(var(--header-height) + var(--padding-3x));bottom:unset;width:calc(100% - var(--padding-6x))}@media(min-width: 1024px){.top.svelte-24m335{right:var(--padding-2x);left:unset;transform:none;max-width:calc(var(--section-max-width) / 1.5 - var(--padding-2x))}}",
-  map: '{"version":3,"file":"Toasts.svelte","sources":["Toasts.svelte"],"sourcesContent":["<script>import { toastsStore } from \\"../stores/toasts.store\\";\\nimport Toast from \\"./Toast.svelte\\";\\nimport { layoutBottomOffset } from \\"../stores/layout.store\\";\\nexport let position = \\"bottom\\";\\nlet toasts = [];\\n$:\\n  toasts = $toastsStore.filter(\\n    ({ position: pos }) => (pos ?? \\"bottom\\") === position\\n  );\\nlet hasErrors;\\n$:\\n  hasErrors = toasts.find(({ level }) => [\\"error\\", \\"warn\\"].includes(level)) !== void 0;\\n<\/script>\\n\\n{#if toasts.length > 0}\\n  <div\\n    class={`wrapper ${position}`}\\n    class:error={hasErrors}\\n    style={`--layout-bottom-offset: ${$layoutBottomOffset}px`}\\n  >\\n    {#each toasts as msg (msg.id)}\\n      <Toast {msg} />\\n    {/each}\\n  </div>\\n{/if}\\n\\n<style>.wrapper {\\n  position: fixed;\\n  left: 50%;\\n  transform: translate(-50%, 0);\\n  bottom: calc(var(--layout-bottom-offset, 0) + var(--padding-2x));\\n  width: calc(100% - var(--padding-8x) - var(--padding-0_5x));\\n  display: flex;\\n  flex-direction: column;\\n  gap: var(--padding);\\n  z-index: var(--toast-info-z-index);\\n}\\n.wrapper.error {\\n  z-index: var(--toast-error-z-index);\\n}\\n@media (min-width: 1024px) {\\n  .wrapper {\\n    max-width: calc(var(--section-max-width) - var(--padding-2x));\\n  }\\n}\\n\\n.top {\\n  top: calc(var(--header-height) + var(--padding-3x));\\n  bottom: unset;\\n  width: calc(100% - var(--padding-6x));\\n}\\n@media (min-width: 1024px) {\\n  .top {\\n    right: var(--padding-2x);\\n    left: unset;\\n    transform: none;\\n    max-width: calc(var(--section-max-width) / 1.5 - var(--padding-2x));\\n  }\\n}</style>\\n"],"names":[],"mappings":"AA0BO,sBAAS,CACd,QAAQ,CAAE,KAAK,CACf,IAAI,CAAE,GAAG,CACT,SAAS,CAAE,UAAU,IAAI,CAAC,CAAC,CAAC,CAAC,CAC7B,MAAM,CAAE,KAAK,IAAI,sBAAsB,CAAC,EAAE,CAAC,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CAAC,CAChE,KAAK,CAAE,KAAK,IAAI,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CAAC,CAAC,CAAC,IAAI,cAAc,CAAC,CAAC,CAC3D,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,GAAG,CAAE,IAAI,SAAS,CAAC,CACnB,OAAO,CAAE,IAAI,oBAAoB,CACnC,CACA,QAAQ,oBAAO,CACb,OAAO,CAAE,IAAI,qBAAqB,CACpC,CACA,MAAO,YAAY,MAAM,CAAE,CACzB,sBAAS,CACP,SAAS,CAAE,KAAK,IAAI,mBAAmB,CAAC,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CAC9D,CACF,CAEA,kBAAK,CACH,GAAG,CAAE,KAAK,IAAI,eAAe,CAAC,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CAAC,CACnD,MAAM,CAAE,KAAK,CACb,KAAK,CAAE,KAAK,IAAI,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CACtC,CACA,MAAO,YAAY,MAAM,CAAE,CACzB,kBAAK,CACH,KAAK,CAAE,IAAI,YAAY,CAAC,CACxB,IAAI,CAAE,KAAK,CACX,SAAS,CAAE,IAAI,CACf,SAAS,CAAE,KAAK,IAAI,mBAAmB,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC,CAAC,CAAC,IAAI,YAAY,CAAC,CACpE,CACF"}'
-};
-const Toasts = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $toastsStore, $$unsubscribe_toastsStore;
-  let $layoutBottomOffset, $$unsubscribe_layoutBottomOffset;
-  $$unsubscribe_toastsStore = subscribe(toastsStore, (value) => $toastsStore = value);
-  $$unsubscribe_layoutBottomOffset = subscribe(layoutBottomOffset, (value) => $layoutBottomOffset = value);
-  let { position = "bottom" } = $$props;
-  let toasts = [];
-  let hasErrors;
-  if ($$props.position === void 0 && $$bindings.position && position !== void 0) $$bindings.position(position);
-  $$result.css.add(css$1);
-  toasts = $toastsStore.filter(({ position: pos }) => (pos ?? "bottom") === position);
-  hasErrors = toasts.find(({ level }) => ["error", "warn"].includes(level)) !== void 0;
-  $$unsubscribe_toastsStore();
-  $$unsubscribe_layoutBottomOffset();
-  return `${toasts.length > 0 ? `<div class="${[
-    escape(null_to_empty(`wrapper ${position}`), true) + " svelte-24m335",
-    hasErrors ? "error" : ""
-  ].join(" ").trim()}"${add_attribute("style", `--layout-bottom-offset: ${$layoutBottomOffset}px`, 0)}>${each(toasts, (msg) => {
-    return `${validate_component(Toast, "Toast").$$render($$result, { msg }, {}, {})}`;
-  })}</div>` : ``}`;
-});
 const Menu_icon = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { className = "w-6" } = $$props;
   let { fill = "#FFFFFF" } = $$props;
@@ -3950,7 +3802,7 @@ derived(
 );
 const css = {
   code: "aside.svelte-4loizu{position:absolute;left:-500px;transition:all 0.5s;height:var(--sidebar-height);width:300px;display:flex;flex-direction:column;justify-content:space-between}aside.expanded.svelte-4loizu{left:0px}",
-  map: `{"version":3,"file":"Layout.svelte","sources":["Layout.svelte"],"sourcesContent":["<script lang=\\"ts\\">import { onMount, onDestroy } from \\"svelte\\";\\nimport { browser } from \\"$app/environment\\";\\nimport { initAuthWorker } from \\"$lib/services/worker.auth.services\\";\\nimport { authStore } from \\"$lib/stores/auth-store\\";\\nimport { toastsError } from \\"$lib/stores/toasts-store\\";\\nimport { BusyScreen, Spinner, Toasts } from \\"@dfinity/gix-components\\";\\nimport { fade } from \\"svelte/transition\\";\\nimport LogoIcon from \\"$lib/icons/logo-icon.svelte\\";\\nimport \\"../app.css\\";\\nimport MenuIcon from \\"$lib/icons/menu-icon.svelte\\";\\nimport { authSignedInStore } from \\"$lib/derived/auth.derived\\";\\nimport { goto } from \\"$app/navigation\\";\\nlet expanded = false;\\nlet worker;\\nlet buttonHeight = 0;\\nlet sidebar;\\nconst init = async () => await Promise.all([syncAuthStore()]);\\n$: links = $authSignedInStore ? [\\n    { name: 'Contract Center', href: '/contract-center' },\\n    { name: 'Agent Hub', href: '/agent-hub' },\\n    { name: 'Private Agencies', href: '/private-agencies' },\\n    { name: 'Profile', href: '/profile' },\\n    { name: 'Connect', href: '#' },\\n] :\\n    [\\n        { name: 'Connect', href: '#' },\\n    ];\\nlet lessImportantOptions = [\\n    { name: 'Game Rules', href: '/rules' }\\n];\\nconst syncAuthStore = async () => {\\n    if (!browser) {\\n        return;\\n    }\\n    try {\\n        await authStore.sync();\\n    }\\n    catch (err) {\\n        toastsError({\\n            msg: {\\n                text: \\"Unexpected issue while syncing the status of your authentication.\\",\\n            },\\n            err,\\n        });\\n    }\\n};\\nconst updateSidebarHeight = () => {\\n    if (browser) {\\n        requestAnimationFrame(() => {\\n            const button = document.querySelector(\\".menu-row\\");\\n            if (button) {\\n                buttonHeight = button.clientHeight;\\n                const sidebarHeight = window.innerHeight - buttonHeight;\\n                document.documentElement.style.setProperty('--sidebar-height', \`\${sidebarHeight}px\`);\\n            }\\n        });\\n    }\\n};\\nconst handleClickOutside = (event) => {\\n    if (browser && expanded && sidebar && !sidebar.contains(event.target)) {\\n        expanded = false;\\n    }\\n};\\nconst handleButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = !expanded;\\n};\\nconst handleCloseButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = false;\\n};\\nonMount(async () => {\\n    worker = await initAuthWorker();\\n    if (browser) {\\n        window.addEventListener('resize', updateSidebarHeight);\\n        document.addEventListener('click', handleClickOutside);\\n    }\\n    requestAnimationFrame(() => {\\n        updateSidebarHeight();\\n    });\\n});\\nonDestroy(() => {\\n    if (browser) {\\n        document.removeEventListener('click', handleClickOutside);\\n        window.removeEventListener('resize', updateSidebarHeight);\\n    }\\n});\\n$: worker, $authStore, (() => worker?.syncAuthIdle($authStore))();\\n$: (() => {\\n    if (!browser) {\\n        return;\\n    }\\n    if ($authStore === undefined) {\\n        return;\\n    }\\n    const spinner = document.querySelector(\\"body > #app-spinner\\");\\n    spinner?.remove();\\n})();\\nfunction handleLogin() {\\n    let params = {\\n        domain: import.meta.env.VITE_AUTH_PROVIDER_URL,\\n    };\\n    authStore.signIn(params);\\n}\\nfunction handleLogout() {\\n    authStore.signOut();\\n    goto(\\"/\\");\\n}\\n<\/script>\\n\\n<svelte:window on:storage={syncAuthStore} />\\n{#await init()}\\n  <div in:fade>\\n    <Spinner />\\n  </div>\\n{:then _}\\n  <div class=\\"menu-row flex items-center bg-Brand5b w-full p-2\\">\\n    <button on:click={handleButtonClick} class=\\"flex items-center\\">\\n      <MenuIcon fill='#FFFFFF' className=\\"w-5 m-1\\" />\\n    </button>\\n    <div class=\\"ml-auto\\">\\n      <a class=\\"flex flex-row items-center ml-auto\\" href=\\"/\\">\\n        <p class=\\"text-sm\\">Transfer Kings</p>\\n        <LogoIcon fill='#FFFFFF' className=\\"w-4 m-1\\" />\\n      </a>\\n    </div>\\n  </div>\\n\\n<aside class=\\"bg-Brand5 p-4\\" bind:this={sidebar} class:expanded={expanded}>\\n  <div class=\\"p-2\\">\\n    <div class=\\"p-2 flex justify-between items-center\\">\\n      <h2 class=\\"text-xl font-bold p-2\\">Options</h2>\\n      <button on:click={handleCloseButtonClick} class=\\"close-button\\">\\n        <svg xmlns=\\"http://www.w3.org/2000/svg\\" class=\\"h-6 w-6\\" fill=\\"none\\" viewBox=\\"0 0 24 24\\" stroke=\\"currentColor\\">\\n          <path stroke-linecap=\\"round\\" stroke-linejoin=\\"round\\" stroke-width=\\"2\\" d=\\"M15 19l-7-7 7-7\\" />\\n        </svg>\\n      </button>\\n    </div>\\n    \\n    <ul class=\\"mt-4 space-y-2\\">\\n      {#each links as option}\\n        <li>\\n          \\n          {#if option.name === 'Connect'}\\n\\n            {#if $authSignedInStore}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogout}>Disconnect</a>\\n            {:else}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogin}>Connect</a>\\n            {/if}\\n          {:else}\\n            <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n          {/if}\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n  <div class=\\"less-important p-2\\">\\n    <div class=\\"horizontal-divider my-2\\" />\\n    <ul class=\\"space-y-2 text-xs\\">\\n      {#each lessImportantOptions as option}\\n        <li>\\n          <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n</aside>\\n  <div class=\\"flex\\">\\n    <div class=\\"flex-1 p-4\\">\\n      <slot />\\n    </div>\\n    <Toasts />\\n  </div>\\n{/await}\\n\\n<BusyScreen />\\n\\n<style>\\n  aside {\\n    position: absolute;\\n    left: -500px;\\n    transition: all 0.5s;\\n    height: var(--sidebar-height);\\n    width: 300px;\\n    display: flex;\\n    flex-direction: column;\\n    justify-content: space-between;\\n  }\\n\\n  aside.expanded {\\n    left: 0px;\\n  }</style>\\n"],"names":[],"mappings":"AAmLE,mBAAM,CACJ,QAAQ,CAAE,QAAQ,CAClB,IAAI,CAAE,MAAM,CACZ,UAAU,CAAE,GAAG,CAAC,IAAI,CACpB,MAAM,CAAE,IAAI,gBAAgB,CAAC,CAC7B,KAAK,CAAE,KAAK,CACZ,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,aACnB,CAEA,KAAK,uBAAU,CACb,IAAI,CAAE,GACR"}`
+  map: `{"version":3,"file":"Layout.svelte","sources":["Layout.svelte"],"sourcesContent":["<script lang=\\"ts\\">import { onMount, onDestroy } from \\"svelte\\";\\nimport { browser } from \\"$app/environment\\";\\nimport { initAuthWorker } from \\"$lib/services/worker.auth.services\\";\\nimport { authStore } from \\"$lib/stores/auth-store\\";\\nimport { BusyScreen, Spinner } from \\"@dfinity/gix-components\\";\\nimport { fade } from \\"svelte/transition\\";\\nimport LogoIcon from \\"$lib/icons/logo-icon.svelte\\";\\nimport \\"../app.css\\";\\nimport MenuIcon from \\"$lib/icons/menu-icon.svelte\\";\\nimport { authSignedInStore } from \\"$lib/derived/auth.derived\\";\\nimport { goto } from \\"$app/navigation\\";\\nlet expanded = false;\\nlet worker;\\nlet buttonHeight = 0;\\nlet sidebar;\\nconst init = async () => await Promise.all([syncAuthStore()]);\\n$: links = $authSignedInStore ? [\\n    { name: 'Contract Center', href: '/contract-center' },\\n    { name: 'Agent Hub', href: '/agent-hub' },\\n    { name: 'Private Agencies', href: '/private-agencies' },\\n    { name: 'Profile', href: '/profile' },\\n    { name: 'Connect', href: '#' },\\n] :\\n    [\\n        { name: 'Connect', href: '#' },\\n    ];\\nlet lessImportantOptions = [\\n    { name: 'Game Rules', href: '/rules' }\\n];\\nconst syncAuthStore = async () => {\\n    if (!browser) {\\n        return;\\n    }\\n    try {\\n        await authStore.sync();\\n    }\\n    catch (err) {\\n        console.error(\\"Error syncing auth store\\", err);\\n    }\\n};\\nconst updateSidebarHeight = () => {\\n    if (browser) {\\n        requestAnimationFrame(() => {\\n            const button = document.querySelector(\\".menu-row\\");\\n            if (button) {\\n                buttonHeight = button.clientHeight;\\n                const sidebarHeight = window.innerHeight - buttonHeight;\\n                document.documentElement.style.setProperty('--sidebar-height', \`\${sidebarHeight}px\`);\\n            }\\n        });\\n    }\\n};\\nconst handleClickOutside = (event) => {\\n    if (browser && expanded && sidebar && !sidebar.contains(event.target)) {\\n        expanded = false;\\n    }\\n};\\nconst handleButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = !expanded;\\n};\\nconst handleCloseButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = false;\\n};\\nonMount(async () => {\\n    worker = await initAuthWorker();\\n    if (browser) {\\n        window.addEventListener('resize', updateSidebarHeight);\\n        document.addEventListener('click', handleClickOutside);\\n    }\\n    requestAnimationFrame(() => {\\n        updateSidebarHeight();\\n    });\\n});\\nonDestroy(() => {\\n    if (browser) {\\n        document.removeEventListener('click', handleClickOutside);\\n        window.removeEventListener('resize', updateSidebarHeight);\\n    }\\n});\\n$: worker, $authStore, (() => worker?.syncAuthIdle($authStore))();\\n$: (() => {\\n    if (!browser) {\\n        return;\\n    }\\n    if ($authStore === undefined) {\\n        return;\\n    }\\n    const spinner = document.querySelector(\\"body > #app-spinner\\");\\n    spinner?.remove();\\n})();\\nfunction handleLogin() {\\n    let params = {\\n        domain: import.meta.env.VITE_AUTH_PROVIDER_URL,\\n    };\\n    authStore.signIn(params);\\n}\\nfunction handleLogout() {\\n    authStore.signOut();\\n    goto(\\"/\\");\\n}\\n<\/script>\\n\\n<svelte:window on:storage={syncAuthStore} />\\n{#await init()}\\n  <div in:fade>\\n    <Spinner />\\n  </div>\\n{:then _}\\n  <div class=\\"menu-row flex items-center bg-Brand5b w-full p-2\\">\\n    <button on:click={handleButtonClick} class=\\"flex items-center\\">\\n      <MenuIcon fill='#FFFFFF' className=\\"w-5 m-1\\" />\\n    </button>\\n    <div class=\\"ml-auto\\">\\n      <a class=\\"flex flex-row items-center ml-auto\\" href=\\"/\\">\\n        <p class=\\"text-sm\\">Transfer Kings</p>\\n        <LogoIcon fill='#FFFFFF' className=\\"w-4 m-1\\" />\\n      </a>\\n    </div>\\n  </div>\\n\\n<aside class=\\"bg-Brand5 p-4\\" bind:this={sidebar} class:expanded={expanded}>\\n  <div class=\\"p-2\\">\\n    <div class=\\"p-2 flex justify-between items-center\\">\\n      <h2 class=\\"text-xl font-bold p-2\\">Options</h2>\\n      <button on:click={handleCloseButtonClick} class=\\"close-button\\">\\n        <svg xmlns=\\"http://www.w3.org/2000/svg\\" class=\\"h-6 w-6\\" fill=\\"none\\" viewBox=\\"0 0 24 24\\" stroke=\\"currentColor\\">\\n          <path stroke-linecap=\\"round\\" stroke-linejoin=\\"round\\" stroke-width=\\"2\\" d=\\"M15 19l-7-7 7-7\\" />\\n        </svg>\\n      </button>\\n    </div>\\n    \\n    <ul class=\\"mt-4 space-y-2\\">\\n      {#each links as option}\\n        <li>\\n          \\n          {#if option.name === 'Connect'}\\n\\n            {#if $authSignedInStore}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogout}>Disconnect</a>\\n            {:else}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogin}>Connect</a>\\n            {/if}\\n          {:else}\\n            <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n          {/if}\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n  <div class=\\"less-important p-2\\">\\n    <div class=\\"horizontal-divider my-2\\" />\\n    <ul class=\\"space-y-2 text-xs\\">\\n      {#each lessImportantOptions as option}\\n        <li>\\n          <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n</aside>\\n  <div class=\\"flex\\">\\n    <div class=\\"flex-1 p-4\\">\\n      <slot />\\n    </div>\\n  </div>\\n{/await}\\n\\n<BusyScreen />\\n\\n<style>\\n  aside {\\n    position: absolute;\\n    left: -500px;\\n    transition: all 0.5s;\\n    height: var(--sidebar-height);\\n    width: 300px;\\n    display: flex;\\n    flex-direction: column;\\n    justify-content: space-between;\\n  }\\n\\n  aside.expanded {\\n    left: 0px;\\n  }</style>\\n"],"names":[],"mappings":"AA4KE,mBAAM,CACJ,QAAQ,CAAE,QAAQ,CAClB,IAAI,CAAE,MAAM,CACZ,UAAU,CAAE,GAAG,CAAC,IAAI,CACpB,MAAM,CAAE,IAAI,gBAAgB,CAAC,CAC7B,KAAK,CAAE,KAAK,CACZ,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,aACnB,CAEA,KAAK,uBAAU,CACb,IAAI,CAAE,GACR"}`
 };
 const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let links;
@@ -3994,7 +3846,7 @@ const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
         return `<li>${option.name === "Connect" ? `${$authSignedInStore ? `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">Disconnect</a>` : `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">Connect</a>`}` : `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">${escape(option.name)}</a>`} </li>`;
       })}</ul></div> <div class="less-important p-2"><div class="horizontal-divider my-2"></div> <ul class="space-y-2 text-xs">${each(lessImportantOptions, (option) => {
         return `<li><a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">${escape(option.name)}</a> </li>`;
-      })}</ul></div></aside> <div class="flex"><div class="flex-1 p-4">${slots.default ? slots.default({}) : ``}</div> ${validate_component(Toasts, "Toasts").$$render($$result, {}, {}, {})}</div> `;
+      })}</ul></div></aside> <div class="flex"><div class="flex-1 p-4">${slots.default ? slots.default({}) : ``}</div></div> `;
     }();
   }(init2())} ${validate_component(BusyScreen, "BusyScreen").$$render($$result, {}, {}, {})}`;
 });
@@ -4033,7 +3885,28 @@ const idlFactory = ({ IDL }) => {
   });
   const Result_1 = IDL.Variant({ ok: IDL.Null, err: Error2 });
   const EndContractDTO = IDL.Record({});
-  const AgentDTO = IDL.Record({});
+  const AgencyId = IDL.Nat;
+  const PlayerId = IDL.Nat;
+  const Contract = IDL.Record({ playerId: PlayerId });
+  const ContractLimits = IDL.Record({
+    academyContractMax: IDL.Nat,
+    lowerLeagueContractMax: IDL.Nat,
+    prospectsContractMax: IDL.Nat,
+    allStarContractMax: IDL.Nat,
+    squadPlayerContractMax: IDL.Nat
+  });
+  const PrincipalId = IDL.Text;
+  const AgentDTO = IDL.Record({
+    displayName: IDL.Text,
+    agentName: IDL.Text,
+    createDate: IDL.Int,
+    agencyId: IDL.Opt(AgencyId),
+    profilePictureExtension: IDL.Text,
+    contracts: IDL.Vec(Contract),
+    profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    contractLimits: ContractLimits,
+    principalId: PrincipalId
+  });
   const Result_4 = IDL.Variant({ ok: AgentDTO, err: Error2 });
   const GetContractsDTO = IDL.Record({});
   const ContractDTO = IDL.Record({});

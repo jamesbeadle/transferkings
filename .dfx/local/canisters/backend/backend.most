@@ -24,5 +24,6 @@ type ContractLimits =
 type PlayerId = Nat;
 type PrincipalId = Text;
 actor {
-  stable var stable_agents : [Agent]
+  stable var stable_agents : [Agent];
+  stable var stable_unique_agent_names : [Text]
 };

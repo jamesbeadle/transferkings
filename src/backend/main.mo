@@ -64,15 +64,18 @@ actor Self {
     return #ok(agentManager.isAgentNameTaken(agentName));
   };
   
-  //TODO: Stable Variables  
+  //stable storage
   private stable var stable_agents: [T.Agent] = [];
+  private stable var stable_unique_agent_names: [Text] = [];
   
   system func preupgrade() {
     stable_agents := agentManager.getStableAgents();
+    stable_unique_agent_names := agentManager.getStableUniqueAgentNames();
   };
 
   system func postupgrade() {
     agentManager.setStableAgents(stable_agents);
+    agentManager.setStableUniqueAgentNames(stable_unique_agent_names);
   };
 
 };

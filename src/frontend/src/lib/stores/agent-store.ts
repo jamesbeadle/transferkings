@@ -32,6 +32,7 @@ function createAgentStore() {
     );
 
     let getAgentResponse = await identityActor.getAgent();
+    console.log(getAgentResponse)
     let error = isError(getAgentResponse);
     if (error) {
       console.error("Error fetching user agent");
@@ -54,39 +55,38 @@ function createAgentStore() {
         process.env.BACKEND_CANISTER_ID ?? "",
       );
 
-      var updatedProfilePicture: [] | [Uint8Array | number[]] = [];
-      var extension = "";
+      var updatedProfilePicture: Uint8Array = new Uint8Array([]);
+      try {
+        var extension = "";
+        const maxPictureSize = 500;
+        console.log(profilePicture)
+        extension = getFileExtensionFromFile(profilePicture);
 
-      if (profilePicture) {
-        try {
-          const maxPictureSize = 500;
-          extension = getFileExtensionFromFile(profilePicture);
-
-          if (profilePicture.size > maxPictureSize * 1024) {
-            return null;
-          }
-          const reader = new FileReader();
-          reader.readAsArrayBuffer(profilePicture);
-          reader.onloadend = async () => {
-            const arrayBuffer = reader.result as ArrayBuffer;
-            const uint8Array = new Uint8Array(arrayBuffer);
-            updatedProfilePicture = [uint8Array];
-          };
-        } catch (error) {
-          console.error("Error updating username:", error);
-          throw error;
+        if (profilePicture.size > maxPictureSize * 1024) {
+          return null;
         }
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(profilePicture);
+        reader.onloadend = async () => {
+          const arrayBuffer = reader.result as ArrayBuffer;
+          const uint8Array = new Uint8Array(arrayBuffer);
+          updatedProfilePicture = uint8Array;
+
+          let dto: CreateAgentDTO = {
+            agentName: agentName,
+            displayName: displayName,
+            profilePicture: [updatedProfilePicture],
+            profilePictureExtension: extension,
+          };
+    
+          const result = await identityActor.createAgent(dto);
+
+          return result;
+        };
+      } catch (error) {
+        console.error("Error updating username:", error);
+        throw error;
       }
-
-      let dto: CreateAgentDTO = {
-        agentName: agentName,
-        displayName: displayName,
-        profilePicture: updatedProfilePicture,
-        profilePictureExtension: extension,
-      };
-
-      const result = await identityActor.createAgent(dto);
-      return result;
     } catch (error) {
       console.error("Error updating username:", error);
       throw error;

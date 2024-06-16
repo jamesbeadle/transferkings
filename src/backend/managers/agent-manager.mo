@@ -3,21 +3,17 @@ import DTOs "../dtos/DTOs";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
-import Principal "mo:base/Principal";
-import Management "../utilities/Management";
-import Utilities "../utilities/Utilities";
-import Cycles "mo:base/ExperimentalCycles";
 import Option "mo:base/Option";
 import Blob "mo:base/Blob";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
-import Environment "../utilities/Environment";
+import Debug "mo:base/Debug";
 
 module {
   public class AgentManager() {
     
     private var agents: [T.Agent] = [];
-    private var uniqueAgentNames: [Text] = []; //TODO BACKUP
+    private var uniqueAgentNames: [Text] = [];
 
     public func getStableAgents() : [T.Agent] {
       return agents;
@@ -27,12 +23,43 @@ module {
       agents := stable_agents;
     };
 
+    public func getStableUniqueAgentNames() : [Text] {
+      return uniqueAgentNames;
+    };
+
+    public func setStableUniqueAgentNames(stable_unique_agent_names: [Text]) {
+      uniqueAgentNames := stable_unique_agent_names;
+    };
+
     public func getAgent(principalId: T.PrincipalId) : Result.Result<DTOs.AgentDTO, T.Error> {
-      return #err(#NotFound);
+      let agent = Array.find<T.Agent>(agents, func(agent: T.Agent){
+        return agent.principalId == principalId;
+      });
+      switch(agent){
+        case (null){
+          return #err(#NotFound);
+        };
+        case (?foundAgent){
+          let dto: DTOs.AgentDTO = {
+            principalId = foundAgent.principalId;
+            agencyId = foundAgent.agencyId;
+            contractLimits = foundAgent.contractLimits;
+            contracts = foundAgent.contracts;
+            agentName = foundAgent.agentName;
+            displayName = foundAgent.displayName;
+            profilePicture = foundAgent.profilePicture;
+            profilePictureExtension = foundAgent.profilePictureExtension;
+            createDate = foundAgent.createDate;
+          };
+          return #ok(dto);
+        }
+      };
     };
     
     public func createAgent(principalId: T.PrincipalId, dto: DTOs.CreateAgentDTO) : Result.Result<(), T.Error> {
 
+          Debug.print(debug_show "dto");
+          Debug.print(debug_show dto);
       let existingAgent = Array.find<T.Agent>(agents, func(agent: T.Agent){
         agent.principalId == principalId
       });
@@ -50,7 +77,7 @@ module {
         return #err(#InvalidData);
       };
       
-      if(Text.size(dto.displayName) < 50 or Text.size(dto.displayName) > 50){
+      if(Text.size(dto.displayName) < 5 or Text.size(dto.displayName) > 50){
         return #err(#InvalidData);
       };
 
@@ -58,6 +85,8 @@ module {
         case (null){ };
         case (?foundProfilePicture){
           let sizeInKB = Array.size(Blob.toArray(foundProfilePicture)) / 1024;
+          //TODO LOG FROM HERE
+          Debug.print(debug_show sizeInKB);
           if(sizeInKB <= 0 or sizeInKB > 500){
             return #err(#InvalidData);
           };
@@ -87,6 +116,10 @@ module {
       let agentBuffer = Buffer.fromArray<T.Agent>(agents);
       agentBuffer.add(newAgent);
       agents := Buffer.toArray(agentBuffer);
+
+      let uniqueAgentNamesBuffer = Buffer.fromArray<Text>(uniqueAgentNames);
+      uniqueAgentNamesBuffer.add(newAgent.agentName);
+      uniqueAgentNames := Buffer.toArray(uniqueAgentNamesBuffer);
 
       return #ok();
     };
