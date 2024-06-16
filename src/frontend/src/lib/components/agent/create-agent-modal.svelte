@@ -88,6 +88,10 @@
     }
   };
 
+  const handleInput = () => {
+    validateForm();
+  };
+
   async function handleSubmit() {
     if (get(isFormValid)) {
 
@@ -129,7 +133,7 @@
       
       <p class="text-xs">Your agent and display name are required fields. They should only contain letters and numbers, with a length between 5 to 50 characters. 
         Your agent name must be unique.</p>
-      <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:blur={() => handleBlur("agentName")} class="input"/>
+      <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:input={handleInput} on:blur={() => handleBlur("agentName")} class="input"/>
       {#if agentNameError}
         <p class="text-Brand3e text-xs">{agentNameError}</p>
       {/if}
@@ -144,7 +148,7 @@
         {/if}
       {/if}
       
-      <input type="text" placeholder="Display Name" bind:value={displayName} on:blur={() => handleBlur("displayName")} class="input"/>
+      <input type="text" placeholder="Display Name" bind:value={displayName} on:input={handleInput} on:blur={() => handleBlur("displayName")} class="input"/>
       {#if displayNameError}
         <p class="text-Brand3e text-xs">{displayNameError}</p>
       {/if}
