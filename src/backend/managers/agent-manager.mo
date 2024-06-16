@@ -58,8 +58,6 @@ module {
     
     public func createAgent(principalId: T.PrincipalId, dto: DTOs.CreateAgentDTO) : Result.Result<(), T.Error> {
 
-          Debug.print(debug_show "dto");
-          Debug.print(debug_show dto);
       let existingAgent = Array.find<T.Agent>(agents, func(agent: T.Agent){
         agent.principalId == principalId
       });
@@ -85,8 +83,6 @@ module {
         case (null){ };
         case (?foundProfilePicture){
           let sizeInKB = Array.size(Blob.toArray(foundProfilePicture)) / 1024;
-          //TODO LOG FROM HERE
-          Debug.print(debug_show sizeInKB);
           if(sizeInKB <= 0 or sizeInKB > 500){
             return #err(#InvalidData);
           };

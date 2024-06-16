@@ -3424,7 +3424,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1c4npei"
+  version_hash: "1slmprz"
 };
 async function get_hooks() {
   return {};
@@ -3932,7 +3932,7 @@ const idlFactory = ({ IDL }) => {
     updateAgent: IDL.Func([UpdateAgentDTO], [Result], [])
   });
 };
-var define_process_env_default$2 = { __CANDID_UI_CANISTER_ID: "gq3rs-huaaa-aaaaa-qaasa-cai", BACKEND_CANISTER_ID: "gc5gl-leaaa-aaaaa-qaara-cai", FRONTEND_CANISTER_ID: "gf4a7-g4aaa-aaaaa-qaarq-cai", DFX_NETWORK: "local" };
+var define_process_env_default$2 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
 const canisterId = define_process_env_default$2.CANISTER_ID_BACKEND;
 const createActor = (canisterId2, options2 = {}) => {
   const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });
@@ -3941,14 +3941,6 @@ const createActor = (canisterId2, options2 = {}) => {
       "Detected both agent and agentOptions passed to createActor. Ignoring agentOptions and proceeding with the provided agent."
     );
   }
-  {
-    agent.fetchRootKey().catch((err) => {
-      console.warn(
-        "Unable to fetch root key. Check to ensure that your local replica is running"
-      );
-      console.error(err);
-    });
-  }
   return Actor.createActor(idlFactory, {
     agent,
     canisterId: canisterId2,
@@ -3956,11 +3948,11 @@ const createActor = (canisterId2, options2 = {}) => {
   });
 };
 canisterId ? createActor(canisterId) : void 0;
-var define_process_env_default$1 = { __CANDID_UI_CANISTER_ID: "gq3rs-huaaa-aaaaa-qaasa-cai", BACKEND_CANISTER_ID: "gc5gl-leaaa-aaaaa-qaara-cai", FRONTEND_CANISTER_ID: "gf4a7-g4aaa-aaaaa-qaarq-cai", DFX_NETWORK: "local" };
+var define_process_env_default$1 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
 class ActorFactory {
   static createActor(idlFactory2, canisterId2 = "", identity = null, options2 = null) {
     const hostOptions = {
-      host: "http://127.0.0.1:8080",
+      host: `https://${canisterId2}.icp-api.io`,
       identity
     };
     if (!options2) {
@@ -4009,7 +4001,7 @@ function getFileExtensionFromFile(file) {
   const lastIndex = filename.lastIndexOf(".");
   return lastIndex !== -1 ? filename.substring(lastIndex + 1) : "";
 }
-var define_process_env_default = { __CANDID_UI_CANISTER_ID: "gq3rs-huaaa-aaaaa-qaasa-cai", BACKEND_CANISTER_ID: "gc5gl-leaaa-aaaaa-qaara-cai", FRONTEND_CANISTER_ID: "gf4a7-g4aaa-aaaaa-qaarq-cai", DFX_NETWORK: "local" };
+var define_process_env_default = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
 function createAgentStore() {
   const { subscribe: subscribe2, set } = writable(null);
   async function sync() {
