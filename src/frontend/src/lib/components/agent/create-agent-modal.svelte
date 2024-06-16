@@ -57,7 +57,7 @@
 </script>
   
 <Modal {visible}>
-    <div class="p-8 bg-Brand5c">
+    <div class="p-8 bg-Brand5c border-2 border-Brand3b">
         <div class="flex flex-col space-y-4">
             <h3 class="default-header">Create Your Agent Profile</h3>
             
