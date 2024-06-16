@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { Modal } from "@dfinity/gix-components";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
-  import { agentStore }  from "$lib/stores/agent-store";
+  import { agentStore } from "$lib/stores/agent-store";
   import { writable } from 'svelte/store';
 
   export let visible: boolean;
@@ -12,17 +12,18 @@
   let agencyName = "";
   let displayName = "";
   let profilePicture: File;
-  let isFormValid = false;
   let profilePicturePreview = "/placeholder.png";
   let isLoading = true;
+  let isChecking = false;
 
   let agencyNameError = "";
   let displayNameError = "";
   let checkingStatus = writable('');
   let isAvailable = writable<boolean | null>(null);
-    
+  let isFormValid = writable(false);
 
   const checkAgencyName = async () => {
+    isChecking = true;
     checkingStatus.set('Checking agency name...');
     let dots = '';
     const interval = setInterval(() => {
@@ -32,54 +33,63 @@
 
     try {
       const result = await agentStore.isAgencyNameTaken(agencyName);
-      console.log("result")
-      console.log(result)
       clearInterval(interval);
       checkingStatus.set('');
+      isChecking = false;
+
       if (result.ok) {
         isAvailable.set(false);
+        agencyNameError = "Agency name is already taken.";
       } else {
         isAvailable.set(true);
+        agencyNameError = "";
       }
     } catch (error) {
       clearInterval(interval);
       checkingStatus.set('Error checking agency name');
+      isChecking = false;
       console.error(error);
     }
+    validateForm();
   };
-
-
-
-  onMount(async () => {
-    try {
-    } catch (error) {
-    } finally {
-      isLoading = false;
-    }
-  });
 
   const validateForm = () => {
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
-    isFormValid = namePattern.test(agencyName) && namePattern.test(displayName);
+    const validAgencyName = namePattern.test(agencyName);
+    const validDisplayName = namePattern.test(displayName);
+    
+    if($isAvailable){
+      isFormValid.set(validAgencyName && validDisplayName && !isChecking && $isAvailable);
+    }
   };
 
-  const handleBlur =  async (field: string) => {
+  const handleBlur = async (field: string) => {
+
+    if(agencyName.length < 5 || agencyName.length > 50){
+      console.log("yo")
+      isFormValid.set(false)
+      isAvailable.set(null);
+      return;
+    }
+    
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
     if (field === "uniqueAgencyName") {
       if (!namePattern.test(agencyName)) {
         agencyNameError = "Agency name must be 5-50 characters long and contain only letters and numbers.";
+        isAvailable.set(false);
+        validateForm();
       } else {
         agencyNameError = "";
         await checkAgencyName();
       }
     } else if (field === "displayName") {
       displayNameError = namePattern.test(displayName) ? "" : "Display name must be 5-50 characters long and contain only letters and numbers.";
+      validateForm();
     }
-    validateForm();
   };
 
   async function handleSubmit() {
-    if (isFormValid) {
+    if ($isFormValid) {
       await agentStore.createAgent(agencyName, displayName, profilePicture);
       confirmModal();
     }
@@ -105,6 +115,9 @@
     }
   };
 
+  onMount(async () => {
+    isLoading = false;
+  });
 </script>
 
 <Modal {visible}>
@@ -114,24 +127,24 @@
       
       <p class="text-xs">Your agency and display name are required fields. They should only contain letter and numbers, with a length between 5 to 50 characters. 
         Your agency name must be unique.</p>
-      <input type="text" placeholder="Unique Agency Name" bind:value={agencyName} on:input={validateForm} on:blur={() => handleBlur("uniqueAgencyName")} class="input"/>
+      <input type="text" placeholder="Unique Agency Name" bind:value={agencyName} on:blur={() => handleBlur("uniqueAgencyName")} class="input"/>
       {#if agencyNameError}
-        <p class="error-message">{agencyNameError}</p>
+        <p class="text-Brand3e text-xs">{agencyNameError}</p>
       {/if}
       {#if $checkingStatus}
         <p>{$checkingStatus}</p>
       {/if}
       {#if $isAvailable !== null}
         {#if $isAvailable}
-          <p style="color: green;">Agency name available</p>
+          <p class="text-Brand2e text-xs">Agency name available.</p>
         {:else}
-          <p style="color: red;">Agency name taken</p>
+          <p class="text-Brand3e text-xs">Agency name taken</p>
         {/if}
       {/if}
       
-      <input type="text" placeholder="Display Name" bind:value={displayName} on:input={validateForm} on:blur={() => handleBlur("displayName")} class="input"/>
+      <input type="text" placeholder="Display Name" bind:value={displayName} on:blur={() => handleBlur("displayName")} class="input"/>
       {#if displayNameError}
-        <p class="error-message">{displayNameError}</p>
+        <p class="text-Brand3e text-xs">{displayNameError}</p>
       {/if}
 
       <div class="group flex flex-row items-center">
@@ -187,18 +200,20 @@
           </div>
       </div>
       
-
       <p>Budget: €250m</p>
 
-      <button on:click={handleSubmit} class="px-4 py-2 rounded-md {isFormValid ? 'bg-Brand5' : 'bg-gray-500'}" disabled={!isFormValid}>
+      <button on:click={handleSubmit} class="px-4 py-2 rounded-md {($isFormValid && !isChecking) ? 'bg-Brand5' : 'bg-gray-500'}" disabled={!$isFormValid || isChecking}>
         <div class="flex flex-row items-center justify-center w-full text-center space-x-2 py-2">
           <LogoIcon className='w-6' fill='#FFFFFF' />
           <p>Begin</p>
         </div>
       </button>
+      
     </div>
   </div>
 </Modal>
+
+
 
 <style>
   .input {
@@ -208,22 +223,13 @@
     border: 1px solid #ccc;
     border-radius: 4px;
   }
-  .error-message {
-    color: red;
-    font-size: 0.875rem;
-    margin-bottom: 10px;
-  }
   .btn {
     padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
   }
-  .btn-primary {
-    background-color: #007bff;
-  }
+  
   .btn-file-upload {
     cursor: pointer;
   }
