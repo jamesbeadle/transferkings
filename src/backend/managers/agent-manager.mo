@@ -17,7 +17,7 @@ module {
   public class AgentManager() {
     
     private var agents: [T.Agent] = [];
-    private var uniqueAgencyNames: [Text] = [];
+    private var uniqueAgentNames: [Text] = []; //TODO BACKUP
 
     public func getStableAgents() : [T.Agent] {
       return agents;
@@ -41,12 +41,12 @@ module {
         return #err(#AlreadyExists);
       };
       
-      let nameTaken = isAgencyNameTaken(dto.agencyName);
+      let nameTaken = isAgentNameTaken(dto.agentName);
       if(nameTaken){
         return #err(#AlreadyExists);
       };
       
-      if(Text.size(dto.agencyName) < 5 or Text.size(dto.agencyName) > 50){
+      if(Text.size(dto.agentName) < 5 or Text.size(dto.agentName) > 50){
         return #err(#InvalidData);
       };
       
@@ -80,8 +80,8 @@ module {
         principalId = principalId;
         profilePicture = dto.profilePicture;
         profilePictureExtension = dto.profilePictureExtension;
-        agencyName = dto.agencyName;
-        agencyId = 0;
+        agentName = dto.agentName;
+        agencyId = null;
       };
 
       let agentBuffer = Buffer.fromArray<T.Agent>(agents);
@@ -125,10 +125,10 @@ module {
       //either putting in empty space or swapping for current
     };
 
-    public func isAgencyNameTaken(username: Text) : Bool {
+    public func isAgentNameTaken(agentName: Text) : Bool {
 
-      let nameTaken = Array.find<Text>(uniqueAgencyNames, func(name: Text){
-        name == username
+      let nameTaken = Array.find<Text>(uniqueAgentNames, func(name: Text){
+        name == agentName
       });
 
       return Option.isSome(nameTaken);

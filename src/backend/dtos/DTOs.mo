@@ -6,7 +6,7 @@ module DTOs {
   };
 
   public type CreateAgentDTO = {
-    agencyName: Text;
+    agentName: Text;
     displayName: Text;
     profilePicture: ?Blob;
     profilePictureExtension: Text;

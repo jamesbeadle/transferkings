@@ -3,50 +3,50 @@
   import { Modal } from "@dfinity/gix-components";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import { agentStore } from "$lib/stores/agent-store";
-  import { writable } from 'svelte/store';
+  import { writable, get } from 'svelte/store';
 
   export let visible: boolean;
   export let confirmModal: () => void;
 
   let fileInput: HTMLInputElement;
-  let agencyName = "";
+  let agentName = "";
   let displayName = "";
   let profilePicture: File;
   let profilePicturePreview = "/placeholder.png";
   let isLoading = true;
   let isChecking = false;
 
-  let agencyNameError = "";
+  let agentNameError = "";
   let displayNameError = "";
   let checkingStatus = writable('');
   let isAvailable = writable<boolean | null>(null);
   let isFormValid = writable(false);
 
-  const checkAgencyName = async () => {
+  const checkAgentName = async () => {
     isChecking = true;
-    checkingStatus.set('Checking agency name...');
+    checkingStatus.set('Checking agent name...');
     let dots = '';
     const interval = setInterval(() => {
       dots = dots.length < 3 ? dots + '.' : '';
-      checkingStatus.set(`Checking agency name${dots}`);
+      checkingStatus.set(`Checking agent name${dots}`);
     }, 500);
 
     try {
-      const result = await agentStore.isAgencyNameTaken(agencyName);
+      const result = await agentStore.isAgentNameTaken(agentName);
       clearInterval(interval);
       checkingStatus.set('');
       isChecking = false;
 
       if (result.ok) {
         isAvailable.set(false);
-        agencyNameError = "Agency name is already taken.";
+        agentNameError = "Agent name is already taken.";
       } else {
         isAvailable.set(true);
-        agencyNameError = "";
+        agentNameError = "";
       }
     } catch (error) {
       clearInterval(interval);
-      checkingStatus.set('Error checking agency name');
+      checkingStatus.set('Error checking agent name');
       isChecking = false;
       console.error(error);
     }
@@ -55,32 +55,32 @@
 
   const validateForm = () => {
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
-    const validAgencyName = namePattern.test(agencyName);
+    const validAgentName = namePattern.test(agentName);
     const validDisplayName = namePattern.test(displayName);
     
-    if($isAvailable){
-      isFormValid.set(validAgencyName && validDisplayName && !isChecking && $isAvailable);
+    const available = get(isAvailable);
+    
+    if(available){
+      isFormValid.set(validAgentName && validDisplayName && !isChecking && available);
     }
   };
 
   const handleBlur = async (field: string) => {
-
-    if(agencyName.length < 5 || agencyName.length > 50){
-      console.log("yo")
-      isFormValid.set(false)
-      isAvailable.set(null);
-      return;
-    }
-    
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
-    if (field === "uniqueAgencyName") {
-      if (!namePattern.test(agencyName)) {
-        agencyNameError = "Agency name must be 5-50 characters long and contain only letters and numbers.";
+    if (field === "agentName") {
+      if (agentName.length < 5 || agentName.length > 50) {
+        agentNameError = "Agent name must be 5-50 characters long and contain only letters and numbers.";
+        isAvailable.set(null);
+        validateForm();
+        return;
+      } else if (!namePattern.test(agentName)) {
+        agentNameError = "Agent name must be 5-50 characters long and contain only letters and numbers.";
         isAvailable.set(false);
         validateForm();
+        return;
       } else {
-        agencyNameError = "";
-        await checkAgencyName();
+        agentNameError = "";
+        await checkAgentName();
       }
     } else if (field === "displayName") {
       displayNameError = namePattern.test(displayName) ? "" : "Display name must be 5-50 characters long and contain only letters and numbers.";
@@ -89,8 +89,8 @@
   };
 
   async function handleSubmit() {
-    if ($isFormValid) {
-      await agentStore.createAgent(agencyName, displayName, profilePicture);
+    if (get(isFormValid)) {
+      await agentStore.createAgent(agentName, displayName, profilePicture);
       confirmModal();
     }
   };
@@ -125,20 +125,20 @@
     <div class="flex flex-col space-y-4">
       <h3 class="default-header">Create Your Agent Profile</h3>
       
-      <p class="text-xs">Your agency and display name are required fields. They should only contain letter and numbers, with a length between 5 to 50 characters. 
-        Your agency name must be unique.</p>
-      <input type="text" placeholder="Unique Agency Name" bind:value={agencyName} on:blur={() => handleBlur("uniqueAgencyName")} class="input"/>
-      {#if agencyNameError}
-        <p class="text-Brand3e text-xs">{agencyNameError}</p>
+      <p class="text-xs">Your agent and display name are required fields. They should only contain letters and numbers, with a length between 5 to 50 characters. 
+        Your agent name must be unique.</p>
+      <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:blur={() => handleBlur("agentName")} class="input"/>
+      {#if agentNameError}
+        <p class="text-Brand3e text-xs">{agentNameError}</p>
       {/if}
       {#if $checkingStatus}
         <p>{$checkingStatus}</p>
       {/if}
       {#if $isAvailable !== null}
         {#if $isAvailable}
-          <p class="text-Brand2e text-xs">Agency name available.</p>
+          <p class="text-Brand2e text-xs">Agent name available.</p>
         {:else}
-          <p class="text-Brand3e text-xs">Agency name taken</p>
+          <p class="text-Brand3e text-xs">Agent name taken</p>
         {/if}
       {/if}
       
@@ -166,7 +166,7 @@
           <p class="ml-4 text-xs">Maximum file size: 500KB</p>
         </div>
       </div>
-      <p>Your Agency Starter Pack</p>
+      <p>Your Agent Starter Pack</p>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-1 md:gap-4">
           <div class="bg-Brand5w p-4 rounded-md flex flex-col items-center text-center">
               <p class="text-3xl">5</p>
@@ -212,8 +212,6 @@
     </div>
   </div>
 </Modal>
-
-
 
 <style>
   .input {

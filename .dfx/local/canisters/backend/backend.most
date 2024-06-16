@@ -2,8 +2,8 @@
 type AgencyId = Nat;
 type Agent =
   {
-    agencyId : AgencyId;
-    agencyName : Text;
+    agencyId : ?AgencyId;
+    agentName : Text;
     contractLimits : ContractLimits;
     contracts : [Contract];
     createDate : Int;

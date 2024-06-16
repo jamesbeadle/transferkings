@@ -60,7 +60,7 @@ service : {
   endContract: (EndContractDTO) -> (Result_1);
   getAgent: () -> (Result_4) query;
   getContracts: (GetContractsDTO) -> (Result_3) query;
-  isAgencyNameTaken: (text) -> (Result_2);
+  isAgencyNameTaken: (text) -> (Result_2) query;
   promoteClient: (PromoteClientDTO) -> (Result_1);
   swapClientFocus: (SwapClientFocusDTO) -> (Result_1);
   updateAgent: (UpdateAgentDTO) -> (Result);

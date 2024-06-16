@@ -3424,7 +3424,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "fbrfeh"
+  version_hash: "1yywoj9"
 };
 async function get_hooks() {
   return {};
@@ -4024,17 +4024,15 @@ const idlFactory = ({ IDL }) => {
     AlreadyExists: IDL.Null,
     PaymentError: IDL.Null
   });
-  const Result_6 = IDL.Variant({ ok: AddContractDTO, err: Error2 });
+  const Result_5 = IDL.Variant({ ok: AddContractDTO, err: Error2 });
   const CreateAgentDTO = IDL.Record({
     displayName: IDL.Text,
+    agentName: IDL.Text,
     profilePictureExtension: IDL.Text,
-    agencyName: IDL.Text,
     profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8))
   });
-  const AgentId = IDL.Nat;
-  const Result_5 = IDL.Variant({ ok: AgentId, err: Error2 });
-  const EndContractDTO = IDL.Record({});
   const Result_1 = IDL.Variant({ ok: IDL.Null, err: Error2 });
+  const EndContractDTO = IDL.Record({});
   const AgentDTO = IDL.Record({});
   const Result_4 = IDL.Variant({ ok: AgentDTO, err: Error2 });
   const GetContractsDTO = IDL.Record({});
@@ -4046,18 +4044,18 @@ const idlFactory = ({ IDL }) => {
   const UpdateAgentDTO = IDL.Record({});
   const Result = IDL.Variant({ ok: UpdateAgentDTO, err: Error2 });
   return IDL.Service({
-    addContract: IDL.Func([AddContractDTO], [Result_6], []),
-    createAgent: IDL.Func([CreateAgentDTO], [Result_5], []),
+    addContract: IDL.Func([AddContractDTO], [Result_5], []),
+    createAgent: IDL.Func([CreateAgentDTO], [Result_1], []),
     endContract: IDL.Func([EndContractDTO], [Result_1], []),
     getAgent: IDL.Func([], [Result_4], ["query"]),
     getContracts: IDL.Func([GetContractsDTO], [Result_3], ["query"]),
-    isAgencyNameTaken: IDL.Func([IDL.Text], [Result_2], []),
+    isAgentNameTaken: IDL.Func([IDL.Text], [Result_2], ["query"]),
     promoteClient: IDL.Func([PromoteClientDTO], [Result_1], []),
     swapClientFocus: IDL.Func([SwapClientFocusDTO], [Result_1], []),
     updateAgent: IDL.Func([UpdateAgentDTO], [Result], [])
   });
 };
-var define_process_env_default = { BACKEND_CANISTER_ID: "gc5gl-leaaa-aaaaa-qaara-cai", FRONTEND_CANISTER_ID: "gf4a7-g4aaa-aaaaa-qaarq-cai", DFX_NETWORK: "local" };
+var define_process_env_default = { __CANDID_UI_CANISTER_ID: "gq3rs-huaaa-aaaaa-qaasa-cai", BACKEND_CANISTER_ID: "gc5gl-leaaa-aaaaa-qaara-cai", FRONTEND_CANISTER_ID: "gf4a7-g4aaa-aaaaa-qaarq-cai", DFX_NETWORK: "local" };
 const canisterId = define_process_env_default.CANISTER_ID_BACKEND;
 const createActor = (canisterId2, options2 = {}) => {
   const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });

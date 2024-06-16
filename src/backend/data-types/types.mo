@@ -39,10 +39,10 @@ module Types {
 
   public type Agent = {
     principalId: PrincipalId;
-    agencyId: AgencyId;
+    agencyId: ?AgencyId;
     contractLimits: ContractLimits;
     contracts: [Contract];
-    agencyName : Text;
+    agentName : Text;
     displayName : Text;
     profilePicture: ?Blob;
     profilePictureExtension: Text;

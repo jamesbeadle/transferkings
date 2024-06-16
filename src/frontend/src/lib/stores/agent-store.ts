@@ -44,7 +44,7 @@ function createAgentStore() {
   }
 
   async function createAgent(
-    agencyName: string,
+    agentName: string,
     displayName: string,
     profilePicture: File,
   ): Promise<any> {
@@ -79,7 +79,7 @@ function createAgentStore() {
       }
 
       let dto: CreateAgentDTO = {
-        agencyName: agencyName,
+        agentName: agentName,
         displayName: displayName,
         profilePicture: updatedProfilePicture,
         profilePictureExtension: extension,
@@ -108,13 +108,13 @@ function createAgentStore() {
     }
   }
 
-  async function isAgencyNameTaken(username: string): Promise<any> {
+  async function isAgentNameTaken(username: string): Promise<any> {
     try {
       const identityActor = await ActorFactory.createIdentityActor(
         authStore,
         process.env.BACKEND_CANISTER_ID ?? "",
       );
-      const result = await identityActor.isAgencyNameTaken(username);
+      const result = await identityActor.isAgentNameTaken(username);
       return result;
     } catch (error) {
       console.error("Error getting agent:", error);
@@ -158,7 +158,7 @@ function createAgentStore() {
     createAgent,
     updateAgent,
     updateAgentPicture,
-    isAgencyNameTaken
+    isAgentNameTaken,
   };
 }
 
