@@ -1,18 +1,17 @@
 // Version: 1.0.0
-type AgencyId = CanisterId;
+type AgencyId = Nat;
 type Agent =
   {
     agencyId : AgencyId;
+    agencyName : Text;
     contractLimits : ContractLimits;
     contracts : [Contract];
     createDate : Int;
     displayName : Text;
     principalId : PrincipalId;
     profilePicture : ?Blob;
-    profilePictureExtension : Text;
-    username : Text
+    profilePictureExtension : Text
   };
-type CanisterId = Text;
 type Contract = {playerId : PlayerId};
 type ContractLimits =
   {

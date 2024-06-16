@@ -1,14 +1,9 @@
 type UpdateAgentDTO = record {};
 type SwapClientFocusDTO = record {};
-type Result_6 = 
- variant {
-   err: Error;
-   ok: AddContractDTO;
- };
 type Result_5 = 
  variant {
    err: Error;
-   ok: AgentId;
+   ok: AddContractDTO;
  };
 type Result_4 = 
  variant {
@@ -51,21 +46,21 @@ type Error =
 type EndContractDTO = record {};
 type CreateAgentDTO = 
  record {
-   firstName: text;
-   lastName: text;
-   username: text;
+   agencyName: text;
+   displayName: text;
+   profilePicture: opt blob;
+   profilePictureExtension: text;
  };
 type ContractDTO = record {};
-type AgentId = nat;
 type AgentDTO = record {};
 type AddContractDTO = record {};
 service : {
-  addContract: (AddContractDTO) -> (Result_6);
-  createAgent: (CreateAgentDTO) -> (Result_5);
+  addContract: (AddContractDTO) -> (Result_5);
+  createAgent: (CreateAgentDTO) -> (Result_1);
   endContract: (EndContractDTO) -> (Result_1);
   getAgent: () -> (Result_4) query;
   getContracts: (GetContractsDTO) -> (Result_3) query;
-  isUsernameTaken: (text) -> (Result_2);
+  isAgencyNameTaken: (text) -> (Result_2);
   promoteClient: (PromoteClientDTO) -> (Result_1);
   swapClientFocus: (SwapClientFocusDTO) -> (Result_1);
   updateAgent: (UpdateAgentDTO) -> (Result);

@@ -8,12 +8,16 @@ import Management "../utilities/Management";
 import Utilities "../utilities/Utilities";
 import Cycles "mo:base/ExperimentalCycles";
 import Option "mo:base/Option";
+import Blob "mo:base/Blob";
+import Time "mo:base/Time";
+import Buffer "mo:base/Buffer";
 import Environment "../utilities/Environment";
 
 module {
   public class AgentManager() {
     
     private var agents: [T.Agent] = [];
+    private var uniqueAgencyNames: [Text] = [];
 
     public func getStableAgents() : [T.Agent] {
       return agents;
@@ -27,16 +31,20 @@ module {
       return #err(#NotFound);
     };
     
-    public func createAgent(principalId: T.PrincipalId, dto: DTOs.CreateAgentDTO) : Result.Result<T.AgentId, T.Error> {
+    public func createAgent(principalId: T.PrincipalId, dto: DTOs.CreateAgentDTO) : Result.Result<(), T.Error> {
 
-      var newAgentId: T.AgentId = 0;
+      let existingAgent = Array.find<T.Agent>(agents, func(agent: T.Agent){
+        agent.principalId == principalId
+      });
+
+      if(Option.isSome(existingAgent)){
+        return #err(#AlreadyExists);
+      };
       
       let nameTaken = isAgencyNameTaken(dto.agencyName);
       if(nameTaken){
         return #err(#AlreadyExists);
       };
-
-      //TODO: VALIDATE AND ADD AGENT
       
       if(Text.size(dto.agencyName) < 5 or Text.size(dto.agencyName) > 50){
         return #err(#InvalidData);
@@ -46,9 +54,41 @@ module {
         return #err(#InvalidData);
       };
 
-      //todo: add agent and return id
+      switch(dto.profilePicture){
+        case (null){ };
+        case (?foundProfilePicture){
+          let sizeInKB = Array.size(Blob.toArray(foundProfilePicture)) / 1024;
+          if(sizeInKB <= 0 or sizeInKB > 500){
+            return #err(#InvalidData);
+          };
+        }
+      };
 
-      return #ok(newAgentId);
+      let defaultContractLimits: T.ContractLimits = {
+        academyContractMax = 25;
+        allStarContractMax = 5;
+        lowerLeagueContractMax = 30;
+        prospectsContractMax = 20;
+        squadPlayerContractMax = 20;
+      };
+
+      let newAgent: T.Agent = {
+        contractLimits = defaultContractLimits;
+        contracts = [];
+        createDate = Time.now();
+        displayName = dto.displayName;
+        principalId = principalId;
+        profilePicture = dto.profilePicture;
+        profilePictureExtension = dto.profilePictureExtension;
+        agencyName = dto.agencyName;
+        agencyId = 0;
+      };
+
+      let agentBuffer = Buffer.fromArray<T.Agent>(agents);
+      agentBuffer.add(newAgent);
+      agents := Buffer.toArray(agentBuffer);
+
+      return #ok();
     };
 
     public func updateAgent(principalId: T.PrincipalId, dto: DTOs.UpdateAgentDTO) :  Result.Result<DTOs.UpdateAgentDTO, T.Error> {
@@ -86,7 +126,12 @@ module {
     };
 
     public func isAgencyNameTaken(username: Text) : Bool {
-      return true; //TODO
+
+      let nameTaken = Array.find<Text>(uniqueAgencyNames, func(name: Text){
+        name == username
+      });
+
+      return Option.isSome(nameTaken);
     };
 
     

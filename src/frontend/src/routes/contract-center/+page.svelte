@@ -23,7 +23,7 @@
         }
     });
 
-    function confirmAgentCreate(dto: CreateAgentDTO){
+    function confirmAgentCreate(){
         showAgentCreate = false;
     }
 

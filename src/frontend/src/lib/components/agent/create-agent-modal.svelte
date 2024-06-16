@@ -3,12 +3,13 @@
   import { Modal } from "@dfinity/gix-components";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import { agentStore }  from "$lib/stores/agent-store";
+  import { writable } from 'svelte/store';
 
   export let visible: boolean;
   export let confirmModal: () => void;
 
   let fileInput: HTMLInputElement;
-  let uniqueAgencyName = "";
+  let agencyName = "";
   let displayName = "";
   let profilePicture: File;
   let isFormValid = false;
@@ -17,6 +18,37 @@
 
   let agencyNameError = "";
   let displayNameError = "";
+  let checkingStatus = writable('');
+  let isAvailable = writable<boolean | null>(null);
+    
+
+  const checkAgencyName = async () => {
+    checkingStatus.set('Checking agency name...');
+    let dots = '';
+    const interval = setInterval(() => {
+      dots = dots.length < 3 ? dots + '.' : '';
+      checkingStatus.set(`Checking agency name${dots}`);
+    }, 500);
+
+    try {
+      const result = await agentStore.isAgencyNameTaken(agencyName);
+      console.log("result")
+      console.log(result)
+      clearInterval(interval);
+      checkingStatus.set('');
+      if (result.ok) {
+        isAvailable.set(false);
+      } else {
+        isAvailable.set(true);
+      }
+    } catch (error) {
+      clearInterval(interval);
+      checkingStatus.set('Error checking agency name');
+      console.error(error);
+    }
+  };
+
+
 
   onMount(async () => {
     try {
@@ -28,13 +60,18 @@
 
   const validateForm = () => {
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
-    isFormValid = namePattern.test(uniqueAgencyName) && namePattern.test(displayName);
+    isFormValid = namePattern.test(agencyName) && namePattern.test(displayName);
   };
 
-  const handleBlur = (field: string) => {
+  const handleBlur =  async (field: string) => {
     const namePattern = /^[a-zA-Z0-9 ]{5,50}$/;
     if (field === "uniqueAgencyName") {
-      agencyNameError = namePattern.test(uniqueAgencyName) ? "" : "Agency name must be 5-50 characters long and contain only letters and numbers.";
+      if (!namePattern.test(agencyName)) {
+        agencyNameError = "Agency name must be 5-50 characters long and contain only letters and numbers.";
+      } else {
+        agencyNameError = "";
+        await checkAgencyName();
+      }
     } else if (field === "displayName") {
       displayNameError = namePattern.test(displayName) ? "" : "Display name must be 5-50 characters long and contain only letters and numbers.";
     }
@@ -43,7 +80,7 @@
 
   async function handleSubmit() {
     if (isFormValid) {
-      await agentStore.createAgent(uniqueAgencyName, displayName, profilePicture);
+      await agentStore.createAgent(agencyName, displayName, profilePicture);
       confirmModal();
     }
   };
@@ -77,9 +114,19 @@
       
       <p class="text-xs">Your agency and display name are required fields. They should only contain letter and numbers, with a length between 5 to 50 characters. 
         Your agency name must be unique.</p>
-      <input type="text" placeholder="Unique Agency Name" bind:value={uniqueAgencyName} on:input={validateForm} on:blur={() => handleBlur("uniqueAgencyName")} class="input"/>
+      <input type="text" placeholder="Unique Agency Name" bind:value={agencyName} on:input={validateForm} on:blur={() => handleBlur("uniqueAgencyName")} class="input"/>
       {#if agencyNameError}
         <p class="error-message">{agencyNameError}</p>
+      {/if}
+      {#if $checkingStatus}
+        <p>{$checkingStatus}</p>
+      {/if}
+      {#if $isAvailable !== null}
+        {#if $isAvailable}
+          <p style="color: green;">Agency name available</p>
+        {:else}
+          <p style="color: red;">Agency name taken</p>
+        {/if}
       {/if}
       
       <input type="text" placeholder="Display Name" bind:value={displayName} on:input={validateForm} on:blur={() => handleBlur("displayName")} class="input"/>

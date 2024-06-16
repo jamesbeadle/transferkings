@@ -16,7 +16,7 @@ actor Self {
     return agentManager.getAgent(principalId);
   };
     
-  public shared ({ caller }) func createAgent(dto: DTOs.CreateAgentDTO) : async Result.Result<T.AgentId, T.Error> {
+  public shared ({ caller }) func createAgent(dto: DTOs.CreateAgentDTO) : async Result.Result<(), T.Error> {
     assert not Principal.isAnonymous(caller);
     let principalId = Principal.toText(caller);
     return agentManager.createAgent(principalId, dto);
@@ -59,7 +59,7 @@ actor Self {
     return agentManager.promoteClient(principalId, dto);
   };
 
-  public shared ({ caller }) func isAgencyNameTaken(agencyName : Text) : async Result.Result<Bool, T.Error> {
+  public shared query ({ caller }) func isAgencyNameTaken(agencyName : Text) : async Result.Result<Bool, T.Error> {
     assert not Principal.isAnonymous(caller);
     return #ok(agentManager.isAgencyNameTaken(agencyName));
   };
