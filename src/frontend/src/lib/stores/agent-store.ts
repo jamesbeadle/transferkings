@@ -32,7 +32,6 @@ function createAgentStore() {
     );
 
     let getAgentResponse = await identityActor.getAgent();
-    console.log(getAgentResponse)
     let error = isError(getAgentResponse);
     if (error) {
       console.error("Error fetching user agent");
@@ -47,14 +46,14 @@ function createAgentStore() {
   async function createAgent(
     agentName: string,
     displayName: string,
-    profilePicture: File,
+    profilePicture: File | null,
   ): Promise<any> {
     try {
       const identityActor = await ActorFactory.createIdentityActor(
         authStore,
         process.env.BACKEND_CANISTER_ID ?? "",
       );
-  
+
       const readFileAsArrayBuffer = (file: File): Promise<Uint8Array> => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -68,25 +67,27 @@ function createAgentStore() {
           };
         });
       };
-  
+
       try {
         var extension = "";
         const maxPictureSize = 500;
         if (profilePicture && profilePicture.size > maxPictureSize * 1024) {
           throw new Error("File size exceeds the limit of 500KB");
         }
-  
-        if(profilePicture){
+
+        if (profilePicture) {
           extension = getFileExtensionFromFile(profilePicture);
         }
-  
+
         let dto: CreateAgentDTO = {
           agentName: agentName,
           displayName: displayName,
-          profilePicture: profilePicture ? [ await readFileAsArrayBuffer(profilePicture)] : [],
+          profilePicture: profilePicture
+            ? [await readFileAsArrayBuffer(profilePicture)]
+            : [],
           profilePictureExtension: extension,
         };
-  
+
         const result = await identityActor.createAgent(dto);
         return result;
       } catch (error) {
@@ -98,7 +99,6 @@ function createAgentStore() {
       throw error;
     }
   }
-  
 
   async function updateAgent(updatedAgent: UpdateAgentDTO): Promise<any> {
     try {

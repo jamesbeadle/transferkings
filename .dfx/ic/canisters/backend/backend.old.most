@@ -1,14 +1,17 @@
 // Version: 1.0.0
-type AgencyId = CanisterId;
+type AgencyId = Nat;
 type Agent =
   {
-    agencyId : AgencyId;
+    agencyId : ?AgencyId;
+    agentName : Text;
     contractLimits : ContractLimits;
     contracts : [Contract];
-    joined : Int;
-    principalId : PrincipalId
+    createDate : Int;
+    displayName : Text;
+    principalId : PrincipalId;
+    profilePicture : ?Blob;
+    profilePictureExtension : Text
   };
-type CanisterId = Text;
 type Contract = {playerId : PlayerId};
 type ContractLimits =
   {
@@ -21,5 +24,6 @@ type ContractLimits =
 type PlayerId = Nat;
 type PrincipalId = Text;
 actor {
-  stable var stable_agents : [Agent]
+  stable var stable_agents : [Agent];
+  stable var stable_unique_agent_names : [Text]
 };

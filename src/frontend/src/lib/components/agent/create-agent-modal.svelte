@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Modal, Spinner } from "@dfinity/gix-components";
+  import { Modal } from "@dfinity/gix-components";
   import LogoIcon from "$lib/icons/logo-icon.svelte";
   import { agentStore } from "$lib/stores/agent-store";
   import { writable, get } from 'svelte/store';
-    import LocalSpinner from "../shared/local-spinner.svelte";
+  import LocalSpinner from "../shared/local-spinner.svelte";
 
   export let visible: boolean;
   export let confirmModal: () => void;
@@ -12,11 +12,12 @@
   let fileInput: HTMLInputElement;
   let agentName = "";
   let displayName = "";
-  let profilePicture: File;
+  let profilePicture: File | null = null;
   let profilePicturePreview = "/placeholder.png";
   let isLoading = true;
   let isChecking = false;
   let saving = false;
+  let uploadTooLarge = false;
 
   let agentNameError = "";
   let displayNameError = "";
@@ -112,7 +113,10 @@
       const file = input.files[0];
       profilePicture = file;
       if (file.size > 500 * 1024) {
-        alert("File size exceeds 500KB");
+        uploadTooLarge = true;
+        profilePicture = null;
+        profilePicturePreview = "/placeholder.png";
+        validateForm();
         return;
       }
       const reader = new FileReader();
@@ -121,6 +125,7 @@
       };
       reader.readAsDataURL(file);
     }
+    validateForm();
   };
 
   onMount(async () => {
@@ -132,7 +137,13 @@
   <div class="p-8 bg-Brand5c border-2 border-Brand3b">
 
     <div class="flex flex-col space-y-4">
-      
+      {#if isLoading}
+        <div class="flex flex-col text-center">
+          <LocalSpinner />
+          <p class="mt-4">Loading</p>
+        </div>
+      {:else}
+
       {#if saving}
         <div class="flex flex-col text-center">
           <LocalSpinner />
@@ -140,12 +151,12 @@
         </div>
         
       {:else}
-      <h3 class="default-header">Create Your Agent Profile</h3>
+        <h3 class="default-header">Create Your Agent Profile</h3>
         <p class="text-xs">Your agent and display name are required fields. They should only contain letters and numbers, with a length between 5 to 50 characters. 
         Your agent name must be unique.</p>
         <input type="text" placeholder="Unique Agent Name" bind:value={agentName} on:input={handleInput} on:blur={() => handleBlur("agentName")} class="input"/>
         {#if agentNameError}
-          <p class="text-Brand3e text-xs">{agentNameError}</p>
+          <p class="text-Brand1c text-xs">{agentNameError}</p>
         {/if}
         {#if $checkingStatus}
           <p>{$checkingStatus}</p>
@@ -154,13 +165,13 @@
           {#if $isAvailable}
             <p class="text-Brand2e text-xs">Agent name available.</p>
           {:else}
-            <p class="text-Brand3e text-xs">Agent name taken</p>
+            <p class="text-Brand1c text-xs">Agent name taken.</p>
           {/if}
         {/if}
         
         <input type="text" placeholder="Display Name" bind:value={displayName} on:input={handleInput} on:blur={() => handleBlur("displayName")} class="input"/>
         {#if displayNameError}
-          <p class="text-Brand3e text-xs">{displayNameError}</p>
+          <p class="text-Brand1c text-xs">{displayNameError}</p>
         {/if}
 
         <div class="group flex flex-row items-center">
@@ -179,7 +190,12 @@
                 style="opacity: 0; position: absolute; left: 0; top: 0;"
               />
             </div> 
+            {#if uploadTooLarge}
+            <p class="ml-4 text-Brand1c text-xs">Maximum file size: 500KB</p>
+
+            {:else}
             <p class="ml-4 text-xs">Maximum file size: 500KB</p>
+            {/if}
           </div>
         </div>
         <p>Your Agent Starter Pack</p>
@@ -224,6 +240,8 @@
             <p>Begin</p>
           </div>
         </button>
+      {/if}
+
       {/if}
       
     </div>

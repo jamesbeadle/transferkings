@@ -2,13 +2,11 @@ import {
   AUTH_MAX_TIME_TO_LIVE,
   AUTH_POPUP_HEIGHT,
   AUTH_POPUP_WIDTH,
-  localIdentityCanisterId,
 } from "$lib/constants/app.constants";
 import type { OptionIdentity } from "$lib/types/identity";
 import { createAuthClient } from "$lib/utils/auth.utils";
 import { popupCenter } from "$lib/utils/window.utils";
 import type { AuthClient } from "@dfinity/auth-client";
-import { nonNullish } from "@dfinity/utils";
 import { writable, type Readable } from "svelte/store";
 
 export interface AuthStoreData {
@@ -19,9 +17,10 @@ let authClient: AuthClient | undefined | null;
 
 const NNS_IC_ORG_ALTERNATIVE_ORIGIN = "https://transferkings.xyz";
 const NNS_IC_APP_DERIVATION_ORIGIN =
-  "https://etq35-qqaaa-aaaal-qcrvq-cai.icp0.io";
+  "https://f2lwq-yaaaa-aaaal-qjfca-cai.icp0.io";
 
 const isNnsAlternativeOrigin = () => {
+  if (typeof window === "undefined") return false;
   return window.location.origin === NNS_IC_ORG_ALTERNATIVE_ORIGIN;
 };
 
@@ -56,10 +55,7 @@ const initAuthStore = (): AuthStore => {
       // eslint-disable-next-line no-async-promise-executor
       new Promise<void>(async (resolve, reject) => {
         authClient = authClient ?? (await createAuthClient());
-
-        const identityProvider = nonNullish(localIdentityCanisterId)
-          ? `http://localhost:4943?canisterId=${localIdentityCanisterId}`
-          : `${domain ?? "https://identity.ic0.app"}`;
+        const identityProvider = domain;
 
         await authClient?.login({
           maxTimeToLive: AUTH_MAX_TIME_TO_LIVE,
@@ -88,13 +84,13 @@ const initAuthStore = (): AuthStore => {
 
       await client.logout();
 
-      // This fix a "sign in -> sign out -> sign in again" flow without window reload.
       authClient = null;
 
       update((state: AuthStoreData) => ({
         ...state,
         identity: null,
       }));
+      localStorage.removeItem("user_profile_data");
     },
   };
 };

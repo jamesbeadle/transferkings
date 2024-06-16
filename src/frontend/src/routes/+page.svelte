@@ -22,12 +22,12 @@ import Layout from "./Layout.svelte";
         <a href="/rules">
             <button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button>
         </a>
-            {#if $authSignedInStore}
-                <a href="/contract-center">
-                    <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play</button>
-                </a>
-            {:else}
-                <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm" on:click={handleLogin}>Connect</button>
-            {/if}
+        {#if $authSignedInStore}
+            <a href="/contract-center">
+                <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play</button>
+            </a>
+        {:else}
+            <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm" on:click={handleLogin}>Connect</button>
+        {/if}
     </div>
 </Layout>

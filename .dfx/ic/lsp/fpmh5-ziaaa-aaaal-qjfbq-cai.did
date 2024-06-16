@@ -31,6 +31,8 @@ type Result =
    ok: UpdateAgentDTO;
  };
 type PromoteClientDTO = record {};
+type PrincipalId = text;
+type PlayerId = nat;
 type GetContractsDTO = record {};
 type Error = 
  variant {
@@ -46,13 +48,34 @@ type Error =
 type EndContractDTO = record {};
 type CreateAgentDTO = 
  record {
-   agencyName: text;
+   agentName: text;
    displayName: text;
    profilePicture: opt blob;
    profilePictureExtension: text;
  };
+type ContractLimits = 
+ record {
+   academyContractMax: nat;
+   allStarContractMax: nat;
+   lowerLeagueContractMax: nat;
+   prospectsContractMax: nat;
+   squadPlayerContractMax: nat;
+ };
 type ContractDTO = record {};
-type AgentDTO = record {};
+type Contract = record {playerId: PlayerId;};
+type AgentDTO = 
+ record {
+   agencyId: opt AgencyId;
+   agentName: text;
+   contractLimits: ContractLimits;
+   contracts: vec Contract;
+   createDate: int;
+   displayName: text;
+   principalId: PrincipalId;
+   profilePicture: opt blob;
+   profilePictureExtension: text;
+ };
+type AgencyId = nat;
 type AddContractDTO = record {};
 service : {
   addContract: (AddContractDTO) -> (Result_5);
@@ -60,7 +83,7 @@ service : {
   endContract: (EndContractDTO) -> (Result_1);
   getAgent: () -> (Result_4) query;
   getContracts: (GetContractsDTO) -> (Result_3) query;
-  isAgencyNameTaken: (text) -> (Result_2);
+  isAgentNameTaken: (text) -> (Result_2) query;
   promoteClient: (PromoteClientDTO) -> (Result_1);
   swapClientFocus: (SwapClientFocusDTO) -> (Result_1);
   updateAgent: (UpdateAgentDTO) -> (Result);
