@@ -7,9 +7,10 @@ export type AgentDTO = {};
 export type AgentId = bigint;
 export type ContractDTO = {};
 export interface CreateAgentDTO {
-  username: string;
-  lastName: string;
-  firstName: string;
+  displayName: string;
+  profilePictureExtension: string;
+  agencyName: string;
+  profilePicture: [] | [Uint8Array | number[]];
 }
 export type EndContractDTO = {};
 export type Error =
@@ -38,7 +39,7 @@ export interface _SERVICE {
   endContract: ActorMethod<[EndContractDTO], Result_1>;
   getAgent: ActorMethod<[], Result_4>;
   getContracts: ActorMethod<[GetContractsDTO], Result_3>;
-  isUsernameTaken: ActorMethod<[string], Result_2>;
+  isAgencyNameTaken: ActorMethod<[string], Result_2>;
   promoteClient: ActorMethod<[PromoteClientDTO], Result_1>;
   swapClientFocus: ActorMethod<[SwapClientFocusDTO], Result_1>;
   updateAgent: ActorMethod<[UpdateAgentDTO], Result>;

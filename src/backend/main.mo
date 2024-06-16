@@ -59,9 +59,9 @@ actor Self {
     return agentManager.promoteClient(principalId, dto);
   };
 
-  public shared ({ caller }) func isUsernameTaken(username : Text) : async Result.Result<Bool, T.Error> {
+  public shared ({ caller }) func isAgencyNameTaken(agencyName : Text) : async Result.Result<Bool, T.Error> {
     assert not Principal.isAnonymous(caller);
-    return #ok(agentManager.isUsernameTaken(username));
+    return #ok(agentManager.isAgencyNameTaken(agencyName));
   };
   
   //TODO: Stable Variables  

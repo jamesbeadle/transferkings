@@ -31,22 +31,18 @@ module {
 
       var newAgentId: T.AgentId = 0;
       
-      let nameTaken = isUsernameTaken(dto.username);
+      let nameTaken = isAgencyNameTaken(dto.agencyName);
       if(nameTaken){
         return #err(#AlreadyExists);
       };
 
       //TODO: VALIDATE AND ADD AGENT
       
-      if(Text.size(dto.username) < 5 or Text.size(dto.username) > 20){
+      if(Text.size(dto.agencyName) < 5 or Text.size(dto.agencyName) > 50){
         return #err(#InvalidData);
       };
       
-      if(Text.size(dto.firstName) < 1 or Text.size(dto.firstName) > 50){
-        return #err(#InvalidData);
-      };
-      
-      if(Text.size(dto.lastName) < 1 or Text.size(dto.lastName) > 50){
+      if(Text.size(dto.displayName) < 50 or Text.size(dto.displayName) > 50){
         return #err(#InvalidData);
       };
 
@@ -89,7 +85,7 @@ module {
       //either putting in empty space or swapping for current
     };
 
-    public func isUsernameTaken(username: Text) : Bool {
+    public func isAgencyNameTaken(username: Text) : Bool {
       return true; //TODO
     };
 

@@ -336,3 +336,14 @@ export function isProfessionValid(profession: string): boolean {
     );
   }
 }
+
+export function getFileExtensionFromFile(file: File): string {
+  // Use the name property of the File object to get the filename
+  const filename = file.name;
+
+  // Extract the extension
+  const lastIndex = filename.lastIndexOf(".");
+
+  // Return the extension, ensuring it doesn't return -1 for files without an extension
+  return lastIndex !== -1 ? filename.substring(lastIndex + 1) : "";
+}

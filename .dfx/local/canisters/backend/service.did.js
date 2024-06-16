@@ -12,9 +12,10 @@ export const idlFactory = ({ IDL }) => {
   });
   const Result_6 = IDL.Variant({ ok: AddContractDTO, err: Error });
   const CreateAgentDTO = IDL.Record({
-    username: IDL.Text,
-    lastName: IDL.Text,
-    firstName: IDL.Text,
+    displayName: IDL.Text,
+    profilePictureExtension: IDL.Text,
+    agencyName: IDL.Text,
+    profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8)),
   });
   const AgentId = IDL.Nat;
   const Result_5 = IDL.Variant({ ok: AgentId, err: Error });
@@ -36,7 +37,7 @@ export const idlFactory = ({ IDL }) => {
     endContract: IDL.Func([EndContractDTO], [Result_1], []),
     getAgent: IDL.Func([], [Result_4], ["query"]),
     getContracts: IDL.Func([GetContractsDTO], [Result_3], ["query"]),
-    isUsernameTaken: IDL.Func([IDL.Text], [Result_2], []),
+    isAgencyNameTaken: IDL.Func([IDL.Text], [Result_2], []),
     promoteClient: IDL.Func([PromoteClientDTO], [Result_1], []),
     swapClientFocus: IDL.Func([SwapClientFocusDTO], [Result_1], []),
     updateAgent: IDL.Func([UpdateAgentDTO], [Result], []),

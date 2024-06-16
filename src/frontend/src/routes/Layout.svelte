@@ -20,9 +20,9 @@
   const init = async () => await Promise.all([syncAuthStore()]);
   
   $: links = $authSignedInStore ? [
-    { name: 'Agent Hub', href: '/agent-hub' },
     { name: 'Contract Center', href: '/contract-center' },
-    { name: 'My Agencies', href: '/my-agencies' },
+    { name: 'Agent Hub', href: '/agent-hub' },
+    { name: 'Private Agencies', href: '/private-agencies' },
     { name: 'Profile', href: '/profile' },
     { name: 'Connect', href: '#' },
   ] : 

@@ -51,9 +51,10 @@ type Error =
 type EndContractDTO = record {};
 type CreateAgentDTO = 
  record {
-   firstName: text;
-   lastName: text;
-   username: text;
+   agencyName: text;
+   displayName: text;
+   profilePicture: opt blob;
+   profilePictureExtension: text;
  };
 type ContractDTO = record {};
 type AgentId = nat;
@@ -65,7 +66,7 @@ service : {
   endContract: (EndContractDTO) -> (Result_1);
   getAgent: () -> (Result_4) query;
   getContracts: (GetContractsDTO) -> (Result_3) query;
-  isUsernameTaken: (text) -> (Result_2);
+  isAgencyNameTaken: (text) -> (Result_2);
   promoteClient: (PromoteClientDTO) -> (Result_1);
   swapClientFocus: (SwapClientFocusDTO) -> (Result_1);
   updateAgent: (UpdateAgentDTO) -> (Result);

@@ -6,9 +6,10 @@ module DTOs {
   };
 
   public type CreateAgentDTO = {
-    firstName: Text;
-    lastName: Text;
-    username: Text;
+    agencyName: Text;
+    displayName: Text;
+    profilePicture: ?Blob;
+    profilePictureExtension: Text;
   };
 
   public type UpdateAgentDTO = {

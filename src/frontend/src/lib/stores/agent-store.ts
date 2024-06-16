@@ -1,12 +1,11 @@
 import { authStore } from "$lib/stores/auth-store";
-import { replacer } from "$lib/utils/helpers";
 import { writable } from "svelte/store";
 import type {
-  AgentDTO,
+  CreateAgentDTO,
   UpdateAgentDTO,
 } from "../../../../declarations/backend/backend.did";
 import { ActorFactory } from "../utils/actor-factory";
-import { isError } from "$lib/utils/helpers";
+import { getFileExtensionFromFile, isError } from "$lib/utils/helpers";
 
 function createAgentStore() {
   const { subscribe, set } = writable<any>(null);
@@ -44,13 +43,48 @@ function createAgentStore() {
     set(agentData);
   }
 
-  async function createAgent(agentDTO: UpdateAgentDTO): Promise<any> {
+  async function createAgent(agencyName: string, displayName: string, profilePicture: File): Promise<any> {
     try {
       const identityActor = await ActorFactory.createIdentityActor(
         authStore,
         process.env.BACKEND_CANISTER_ID ?? "",
       );
-      const result = await identityActor.createAgent(agentDTO);
+
+      var updatedProfilePicture: [] | [Uint8Array | number[]] = [];
+      var extension = "";
+
+      if(profilePicture){
+
+        try {
+          const maxPictureSize = 500;
+          extension = getFileExtensionFromFile(profilePicture);
+    
+          if (profilePicture.size > maxPictureSize * 1024) {
+            return null;
+          }
+          const reader = new FileReader();
+          reader.readAsArrayBuffer(profilePicture);
+          reader.onloadend = async () => {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            updatedProfilePicture = [uint8Array];
+          };
+        } catch (error) {
+          console.error("Error updating username:", error);
+          throw error;
+        }
+
+      }
+
+      let dto: CreateAgentDTO = {
+        agencyName: agencyName,
+        displayName: displayName,
+        profilePicture: updatedProfilePicture,
+        profilePictureExtension: extension
+      };
+
+
+      const result = await identityActor.createAgent(dto);
       return result;
     } catch (error) {
       console.error("Error updating username:", error);
@@ -126,4 +160,4 @@ function createAgentStore() {
   };
 }
 
-export const userStore = createAgentStore();
+export const agentStore = createAgentStore();

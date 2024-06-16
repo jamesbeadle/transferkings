@@ -17,7 +17,7 @@ export const dictionary = {
 		"/": [2],
 		"/agent-hub": [3],
 		"/contract-center": [4],
-		"/my-agencies": [5],
+		"/private-agencies": [5],
 		"/profile": [6],
 		"/rules": [7]
 	};
