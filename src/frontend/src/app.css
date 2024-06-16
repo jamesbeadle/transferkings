@@ -76,7 +76,8 @@ input[type="file"] {
 }
 
 input {
-  background-color: #25282e !important;
+  background-color: #194B63 !important;
+  color: white !important;
 }
 
 /* Extra small devices (portrait phones, less than 480px) */

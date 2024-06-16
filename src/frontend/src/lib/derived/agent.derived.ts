@@ -9,5 +9,5 @@ export const userGetAgentPicture: Readable<string> = derived(
     user.agentPicture !== undefined &&
     user.agentPicture.length > 0
       ? URL.createObjectURL(new Blob([new Uint8Array(user.agentPicture)]))
-      : "agent_placeholder.png",
+      : "placeholder.png",
 );
