@@ -11,18 +11,26 @@
         </div>
         <div class="bg-Brand5z w-full p-4 mt-4 rounded-lg border-solid border-Brand5w border-2">
             <b class="text-lg"><u>How It Works</u></b>
-            <p class="mt-2 mb-4">Transfer Kings is all about being a good football agent. 
-                You run your own agency, creating contracts with football players from around the world at at all levels. 
-                As your clients perform well in the real world, your portfolio value increases, earning you $FOOTBALL tokens.</p>
+            <p class="mt-2 mb-4">
+                Transfer Kings is the 2nd installment in the OpenFPL ecosystem, building on the existing dataset being curated by the OpenFPL DAO. 
+                The OpenFPL dataset will be extended to manage every professional league in the world, allowing agents to find players at any stage of their career.
+            </p>
+            <p> 
+                Transfer Kings is a pay to play game, allowing users to purchase a football agency with $FPL. 
+                Users who purchase an agency can add up to 100 agents to their agency. 
+                Users are able to customise the entry requirements of the agency, inviting people directly or asking for an entry fee to be paid. 
+                Users can customise their agency's rewards, setting them up in any ICRC-1 token, for any period. 
+                Users are also able to request contribution to a reward pool for continuing to have access to an agency.
+            </p>
 
             <div class="horizontal-divider my-2 mb-4" />
             <b class="text-lg"><u>Contract Center</u></b>
             <b class="text-lg"></b>
 
-            <p class="mt-2">You can fill contracts by accessing the 'Contract Center' through the side navigation panel.
-            </p>
+            <p class="mt-2">You can fill contracts by accessing the 'Contract Center' through the side navigation panel.</p>
             
-            <p class="my-2">When you setup your agency you receive a default set of contracts you can fill, selecting from any player around the world.
+            <p class="my-2">
+                When you setup your agency you receive a default set of contracts you can fill, selecting from any player around the world.
                 There are 5 Transfer Kings contract types, each is listed below with the number allocated with your starting team:
             </p>
             <ul class="my-2">
