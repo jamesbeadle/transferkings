@@ -2,6 +2,55 @@ import Countries "countries";
 
 module Types {
 
+  public type CardType = {
+    #Shirt;
+    #Player;
+    #Badge;
+    #Moment;
+    #Art;
+  };
+
+  public type CardStyle = {
+    #Normal;
+    #Pearlescent; //Break losing sream
+    #Bronze; //2 consecutive weeks
+    #Silver; //3 goals in 4 games
+    #Gold; //5 goals in 8 games
+    #AllStar; //Weekly Best Player
+    #Elite; //Monthly Best Player
+    #Ultimate; //Season Best Player
+  };
+
+
+  public type Card = {
+    minted: Int;
+    selected: Int;
+    cardType: CardType;
+    cardStyle: CardStyle;
+    number: Nat;
+    sourcePackId: Nat;
+  };
+
+  public type Pack = {
+    created: Int;
+    cards: [Card];
+    soldOn: ?Int;
+    packType: PackType;
+  };
+
+  public type PackType = {
+    #Purchased;
+    #Prize;
+    #SpecialEdition;
+  };
+
+
+
+
+
+
+
+
   public type PrincipalId = Text;
   public type AgencyId = Nat;
   public type CanisterId = Text;
