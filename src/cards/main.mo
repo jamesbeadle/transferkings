@@ -11,7 +11,6 @@ actor Self {
         assert not Principal.isAnonymous(caller);
         let principalId = Principal.toText(caller);
 
-
         //return a random pack of cards
 
         //remove cards from the pool
