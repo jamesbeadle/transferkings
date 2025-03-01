@@ -1,6 +1,6 @@
 <script>
-    export let className = "";
-    export let fill = ""
+    export let className = "white";
+    export let fill = "white"
   </script>
   
     
