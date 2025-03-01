@@ -4,7 +4,6 @@
   import { fade } from "svelte/transition";
   import { browser } from "$app/environment";
   import { authStore, type AuthStoreData } from "$lib/stores/auth-store";
-  import { userStore } from "$lib/stores/user-store";
   
   import "../app.css";
 
@@ -12,11 +11,12 @@
   import { storeManager} from "$lib/managers/store-manager";
   import { toasts } from "$lib/stores/toasts-store";
   import Toasts from "$lib/components/toasts/toasts.svelte";
-  import { appStore } from "$lib/stores/app-store";
-    import FullScreenSpinner from "$lib/components/shared/full-screen-spinner.svelte";
+  import FullScreenSpinner from "$lib/components/shared/full-screen-spinner.svelte";
+  import Header from "$lib/components/shared/header.svelte";
+    import LandingPage from "$lib/components/landing/landing-page.svelte";
 
-  export let showHeader = true;
   let isLoading = true;
+  let isLoggedIn: Boolean;  
   
   const init = async () => {
     await Promise.all([syncAuthStore()]);
@@ -38,27 +38,23 @@
 
   onMount(async () => {
     worker = await initAuthWorker();
-    await storeManager.syncStores();
-    isLoading = false;
+    try{
+      await storeManager.syncStores();
+      authStore.subscribe((store) => {
+        isLoggedIn = store.identity !== null && store.identity !== undefined;
+      });
+    } catch {
+
+    } finally {
+      isLoading = false;
+    }
+    
   });
 
   async function onLogout() {
     await authStore.signOut();
     isLoading = false;
   }
-
-  async function syncPage() {
-    isLoading = true;
-    try {
-        await storeManager.syncStores();
-        await appStore.checkServerVersion();
-        isLoading = false;
-    } catch (error) {
-        console.error('[Layout] Error in syncPage:', error);
-        isLoading = false;
-    }
-  }
-  
 
   $: worker, $authStore, (() => worker?.syncAuthIdle($authStore))();
 
@@ -82,15 +78,14 @@
     <FullScreenSpinner />
   </div>
 {:then _}
-  <div class="flex flex-col justify-between h-screen default-text ${showHeader ? 'bg-background' : ''}">
-    {#if showHeader}
+  <div class="flex flex-col justify-between h-screen default-text">
+    {#if isLoggedIn}
+      <Header {onLogout} />
       <main class="page-wrapper">
         <slot />
       </main>
     {:else}
-      <main class="flex-1">
-        <slot />
-      </main>
+      <LandingPage />
     {/if}
     <Toasts />
   </div>

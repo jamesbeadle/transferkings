@@ -6,10 +6,7 @@ import { parse, serialize } from "cookie";
 import * as set_cookie_parser from "set-cookie-parser";
 import { HttpAgent, Actor } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { createAgent } from "@dfinity/utils";
-import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
-import { Principal } from "@dfinity/principal";
-import { Text as Text$1 } from "@dfinity/candid/lib/cjs/idl.js";
+import "@dfinity/utils";
 let base = "";
 let assets = base;
 const app_dir = "_app";
@@ -4803,9 +4800,6 @@ function render(component, options2 = {}) {
     body: payload.out
   };
 }
-function stringify(value) {
-  return typeof value === "string" ? value : value == null ? "" : value + "";
-}
 function store_get(store_values, store_name, store) {
   if (store_name in store_values && store_values[store_name][0] === store) {
     return store_values[store_name][2];
@@ -4823,15 +4817,6 @@ function store_get(store_values, store_name, store) {
 function unsubscribe_stores(store_values) {
   for (const store_name in store_values) {
     store_values[store_name][1]();
-  }
-}
-function slot(payload, $$props, name, slot_props, fallback_fn) {
-  var slot_fn = $$props.$$slots?.[name];
-  if (slot_fn === true) {
-    slot_fn = $$props["children"];
-  }
-  if (slot_fn !== void 0) {
-    slot_fn(payload, slot_props);
   }
 }
 function bind_props(props_parent, props_now) {
@@ -5012,7 +4997,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1acpugk"
+  version_hash: "mnebw8"
 };
 async function get_hooks() {
   let handle;
@@ -5159,6 +5144,11 @@ get(SNAPSHOT_KEY) ?? {};
 const stores = {
   updated: /* @__PURE__ */ create_updated_store()
 };
+function goto(url, opts = {}) {
+  {
+    throw new Error("Cannot call goto(...) on the server");
+  }
+}
 ({
   check: stores.updated.check
 });
@@ -5257,7 +5247,7 @@ const initAuthStore = () => {
 };
 const authStore = initAuthStore();
 const authRemainingTimeStore = writable(void 0);
-const authSignedInStore = derived(
+derived(
   authStore,
   ({ identity }) => identity !== null && identity !== void 0
 );
@@ -5267,6 +5257,78 @@ function Logo_icon($$payload, $$props) {
   $$payload.out += `<svg xmlns="http://www.w3.org/2000/svg"${attr("class", clsx(className))} viewBox="0 0 119 118" fill="none"><path d="M46.6292 95.4787C42.6798 96.3015 39.6731 96.7241 37.73 96.9196C36.5527 97.038 35.6089 98.0884 35.6364 99.2713C35.6872 101.455 35.661 104.079 35.8442 104.995C37.1747 111.647 40.2975 113.94 41.0643 114.412C41.177 114.482 41.2938 114.526 41.422 114.559C42.8638 114.924 52.5373 117.274 64.1689 117.658C64.7159 117.676 65.2461 117.464 65.6331 117.077L74.9523 107.758C75.8724 106.838 75.684 105.298 74.5723 104.622C72.2459 103.207 69.2335 101.349 67.5647 100.237C65.6133 98.9359 61.9793 95.2268 59.7095 92.7894C59.0976 92.1323 58.1266 91.9495 57.2969 92.2924C55.1665 93.1727 51.3886 94.4872 46.6292 95.4787Z"${attr("fill", fill)}></path><path d="M117.683 76.7635C119.161 72.6979 119.159 67.6006 118.804 63.9461C118.657 62.4284 116.898 61.8085 115.742 62.8035L107.915 69.5441C107.3 70.0736 106.998 70.941 107.024 71.7521C107.056 72.7482 107.04 74.3482 106.898 76.7635C106.676 80.5448 103.837 88.1768 101.929 92.7808C101.522 93.7635 101.933 94.9015 102.896 95.3536C104.832 96.2625 107.151 97.2554 107.532 97.0646C108.167 96.7474 115.145 83.742 117.683 76.7635Z"${attr("fill", fill)}></path><path d="M0.482453 49.1884L9.96382 37.1445C10.8242 36.0516 12.5097 36.1488 13.2386 37.3334L21.4796 50.725C21.7417 51.1509 21.8347 51.6597 21.7403 52.1509L17.4628 74.3938C17.2722 75.385 16.3729 76.0788 15.3658 76.0117L4.11115 75.2614C3.34335 75.2102 2.66998 74.7238 2.43392 73.9914C2.24231 73.3969 2.03932 72.686 1.90323 72.0056C1.65867 70.7828 0.608827 57.6772 0.0597851 50.5764C0.0211178 50.0763 0.172196 49.5825 0.482453 49.1884Z"${attr("fill", fill)}></path><path d="M43.1398 1.58602C37.697 2.53261 29.6243 7.23081 25.5588 9.91831C25.0437 10.2588 24.7419 10.8368 24.7419 11.4542C24.7419 12.7933 26.1094 13.7081 27.3592 13.2274C29.8488 12.2698 33.3065 11.0317 36.4785 10.1506C40.5949 9.00711 45.1922 8.46477 47.5309 8.29137C47.9748 8.25846 48.3977 8.08906 48.7341 7.79757L52.808 4.26679C52.9178 4.17166 53.0376 4.08876 53.1653 4.01958L56.8741 2.01066C57.8012 1.50847 57.4236 0.137308 56.3711 0.200833C52.4309 0.438651 47.2056 0.878937 43.1398 1.58602Z"${attr("fill", fill)}></path><path d="M102.14 18.3978C97.9668 13.8453 93.2974 10.3089 90.1455 8.2392C89.6724 7.92853 89.2364 8.47056 89.6238 8.88321C90.9694 10.3167 92.4651 11.895 93.2583 12.6881C94.406 13.8359 96.3324 18.0117 97.394 20.52C97.5927 20.9897 97.9572 21.3691 98.4192 21.585C99.7758 22.2188 101.935 23.2651 103.409 24.1075C104.693 24.8414 107.934 28.3829 110.59 31.4475C110.976 31.8936 111.59 31.4806 111.292 30.9711C109.25 27.482 106.047 22.6603 102.14 18.3978Z"${attr("fill", fill)}></path><path transform="translate(40, 25)" d="M44.6021 24.8356L16.4245 36.8429C15.8284 37.0969 15.5485 37.7924 15.8025 38.3885L16.7262 40.556C16.9802 41.152 17.6757 41.4319 18.2718 41.1779L46.4494 29.1706C47.0455 28.9166 47.3253 28.2211 47.0713 27.625L46.1477 25.4575C45.8937 24.8614 45.1982 24.5816 44.6021 24.8356ZM39.7008 1.31318C37.9058 2.07807 37.0701 4.15493 37.8349 5.9499C38.0399 6.43082 38.3388 6.83169 38.7045 7.16405L35.0532 12.1935C34.2756 13.2611 32.7776 13.4833 31.7245 12.6835L22.0881 5.37695C22.5589 4.47204 22.652 3.3759 22.2191 2.35988C21.4542 0.564907 19.3773 -0.27082 17.5823 0.49407C15.7874 1.25896 14.9516 3.33583 15.7165 5.1308C16.1495 6.14682 17.0046 6.83887 17.9834 7.12609L16.579 19.1375C16.4264 20.451 15.2218 21.3805 13.9199 21.199L7.77002 20.3461C7.77973 19.8618 7.70149 19.3589 7.49655 18.878C6.73167 17.083 4.6548 16.2473 2.85983 17.0122C1.06486 17.7771 0.222357 19.8568 0.987246 21.6518C1.75214 23.4468 3.829 24.2825 5.62397 23.5176C5.80008 23.4425 5.96465 23.3404 6.12244 23.2412L16.5846 34.2136L42.5947 23.1299L41.927 7.98378C42.1079 7.93871 42.2956 7.89076 42.4717 7.81571C44.2666 7.05082 45.1024 4.97396 44.3375 3.17898C43.5726 1.38401 41.4957 0.548287 39.7008 1.31318Z"${attr("fill", fill)}></path></svg>`;
   bind_props($$props, { className, fill });
 }
+const idleSignOut = async () => logout();
+const logout = async () => {
+  await authStore.signOut();
+  window.location.reload();
+};
+const initAuthWorker = async () => {
+  const AuthWorker = await Promise.resolve().then(() => auth_worker);
+  const authWorker = new AuthWorker.default();
+  authWorker.onmessage = async ({
+    data
+  }) => {
+    const { msg, data: value } = data;
+    switch (msg) {
+      case "signOutIdleTimer":
+        await idleSignOut();
+        return;
+      case "delegationRemainingTime":
+        authRemainingTimeStore.set(value?.authRemainingTime);
+        return;
+    }
+  };
+  return {
+    syncAuthIdle: (auth) => {
+      if (!auth.identity) {
+        authWorker.postMessage({ msg: "stopIdleTimer" });
+        return;
+      }
+      authWorker.postMessage({
+        msg: "startIdleTimer"
+      });
+    }
+  };
+};
+function createCountryStore() {
+  const { subscribe, set: set2 } = writable([]);
+  return {
+    subscribe,
+    setCountries: (countries) => set2(countries)
+  };
+}
+createCountryStore();
+function createSeasonStore() {
+  const { subscribe, set: set2 } = writable([]);
+  async function getSeasonName(seasonId) {
+    let seasons = [];
+    await subscribe((value) => {
+      seasons = value;
+    })();
+    if (seasons.length == 0) {
+      return;
+    }
+    let season = seasons.find((x) => x.id == seasonId);
+    if (season == null) {
+      return;
+    }
+    return season.name;
+  }
+  return {
+    subscribe,
+    setSeasons: (seasons) => set2(seasons),
+    getSeasonName
+  };
+}
+createSeasonStore();
+function createClubStore() {
+  const { subscribe, set: set2 } = writable([]);
+  return {
+    subscribe,
+    setClubs: (clubs) => set2(clubs.sort((a, b) => a.friendlyName.localeCompare(b.friendlyName)))
+  };
+}
+createClubStore();
 const idlFactory$1 = ({ IDL }) => {
   const AppStatusDTO = IDL.Record({
     version: IDL.Text,
@@ -5906,8 +5968,8 @@ const idlFactory = ({ IDL }) => {
     validateUpdatePlayer: IDL.Func([UpdatePlayerDTO], [RustResult], [])
   });
 };
-var define_process_env_default$4 = {};
-const canisterId = define_process_env_default$4.CANISTER_ID_DATA_CANISTER;
+var define_process_env_default$3 = {};
+const canisterId = define_process_env_default$3.CANISTER_ID_DATA_CANISTER;
 const createActor = (canisterId2, options2 = {}) => {
   const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });
   if (options2.agent && options2.agentOptions) {
@@ -5990,278 +6052,6 @@ class ActorFactory {
 function isError(response) {
   return response && response.err !== void 0;
 }
-var define_process_env_default$3 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
-function createUserStore() {
-  const { subscribe, set: set2 } = writable(null);
-  async function sync() {
-    let localStorageString = localStorage.getItem("user_profile_data");
-    if (localStorageString) {
-      const localProfile = JSON.parse(localStorageString);
-      set2(localProfile);
-      return;
-    }
-    try {
-      await cacheProfile();
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      throw error;
-    }
-  }
-  async function updateUsername(username) {
-    try {
-      const identityActor = await ActorFactory.createBackendIdentityActor(
-        authStore,
-        define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
-      );
-      const result = await identityActor.updateDisplayName(username);
-      if (isError(result)) {
-        console.error("Error updating username");
-        return;
-      }
-      await cacheProfile();
-      return result;
-    } catch (error) {
-      console.error("Error updating username:", error);
-      throw error;
-    }
-  }
-  async function withdrawFPL(withdrawalAddress, withdrawalAmount) {
-    try {
-      let identity;
-      authStore.subscribe(async (auth) => {
-        identity = auth.identity;
-      });
-      if (!identity) {
-        return;
-      }
-      let principalId = identity.getPrincipal();
-      const agent = await createAgent({
-        identity,
-        host: void 0,
-        fetchRootKey: define_process_env_default$3.DFX_NETWORK === "local"
-      });
-      const { transfer } = IcrcLedgerCanister.create({
-        agent,
-        canisterId: define_process_env_default$3.DFX_NETWORK === "ic" ? Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai") : Principal.fromText("avqkn-guaaa-aaaaa-qaaea-cai")
-      });
-      if (principalId) {
-        try {
-          let transfer_result = await transfer({
-            to: {
-              owner: Principal.fromText(withdrawalAddress),
-              subaccount: []
-            },
-            fee: 100000n,
-            memo: new Uint8Array(Text$1.encodeValue("0")),
-            from_subaccount: void 0,
-            created_at_time: BigInt(Date.now()) * BigInt(1e6),
-            amount: withdrawalAmount - 100000n
-          });
-        } catch (err) {
-          console.error(err.errorType);
-        }
-      }
-    } catch (error) {
-      console.error("Error withdrawing FPL.", error);
-      throw error;
-    }
-  }
-  async function agreeTerms() {
-    try {
-      const identityActor = await ActorFactory.createBackendIdentityActor(
-        authStore,
-        define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
-      );
-      const result = await identityActor.agreeTerms();
-      if (isError(result)) {
-        console.error("Error agreeing terms");
-        return;
-      }
-      await cacheProfile();
-      return result;
-    } catch (error) {
-      console.error(error);
-      console.error("Error agreeing terms:", error);
-    }
-  }
-  async function updateProfilePicture(picture) {
-    try {
-      const maxPictureSize = 1e3;
-      const extension = getFileExtensionFromFile(picture);
-      if (picture.size > maxPictureSize * 1024) {
-        return null;
-      }
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(picture);
-      reader.onloadend = async () => {
-        const arrayBuffer = reader.result;
-        const uint8Array = new Uint8Array(arrayBuffer);
-        try {
-          const identityActor = await ActorFactory.createBackendIdentityActor(
-            authStore,
-            define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
-          );
-          const result = await identityActor.updateProfilePicture(
-            uint8Array,
-            extension
-          );
-          if (isError(result)) {
-            console.error("Error updating profile picture");
-            return;
-          }
-          await cacheProfile();
-          return result;
-        } catch (error) {
-          console.error(error);
-        }
-      };
-    } catch (error) {
-      console.error("Error updating username:", error);
-      throw error;
-    }
-  }
-  function getFileExtensionFromFile(file) {
-    const filename = file.name;
-    const lastIndex = filename.lastIndexOf(".");
-    return lastIndex !== -1 ? filename.substring(lastIndex + 1) : "";
-  }
-  async function isUsernameAvailable(username) {
-    const identityActor = await ActorFactory.createBackendIdentityActor(
-      authStore,
-      define_process_env_default$3.BACKEND_CANISTER_ID
-    );
-    return await identityActor.isUsernameValid(username);
-  }
-  async function cacheProfile() {
-    const identityActor = await ActorFactory.createBackendIdentityActor(
-      authStore,
-      define_process_env_default$3.BACKEND_CANISTER_ID
-    );
-    let getProfileResponse = await identityActor.getProfile();
-    let error = isError(getProfileResponse);
-    if (error) {
-      console.error("Error fetching user profile");
-      return;
-    }
-    let profileData = getProfileResponse.ok;
-    set2(profileData);
-  }
-  async function getFPLBalance() {
-    let identity;
-    authStore.subscribe(async (auth) => {
-      identity = auth.identity;
-    });
-    if (!identity) {
-      return 0n;
-    }
-    let principalId = identity.getPrincipal();
-    const agent = await createAgent({
-      identity,
-      host: void 0,
-      fetchRootKey: define_process_env_default$3.DFX_NETWORK === "local"
-    });
-    const { balance } = IcrcLedgerCanister.create({
-      agent,
-      canisterId: Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai")
-    });
-    if (principalId) {
-      try {
-        let result = await balance({
-          owner: principalId,
-          certified: false
-        });
-        return result;
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    return 0n;
-  }
-  return {
-    subscribe,
-    sync,
-    agreeTerms,
-    updateUsername,
-    updateProfilePicture,
-    isUsernameAvailable,
-    cacheProfile,
-    withdrawFPL,
-    getFPLBalance
-  };
-}
-createUserStore();
-const idleSignOut = async () => logout();
-const logout = async () => {
-  await authStore.signOut();
-  window.location.reload();
-};
-const initAuthWorker = async () => {
-  const AuthWorker = await Promise.resolve().then(() => auth_worker);
-  const authWorker = new AuthWorker.default();
-  authWorker.onmessage = async ({
-    data
-  }) => {
-    const { msg, data: value } = data;
-    switch (msg) {
-      case "signOutIdleTimer":
-        await idleSignOut();
-        return;
-      case "delegationRemainingTime":
-        authRemainingTimeStore.set(value?.authRemainingTime);
-        return;
-    }
-  };
-  return {
-    syncAuthIdle: (auth) => {
-      if (!auth.identity) {
-        authWorker.postMessage({ msg: "stopIdleTimer" });
-        return;
-      }
-      authWorker.postMessage({
-        msg: "startIdleTimer"
-      });
-    }
-  };
-};
-function createCountryStore() {
-  const { subscribe, set: set2 } = writable([]);
-  return {
-    subscribe,
-    setCountries: (countries) => set2(countries)
-  };
-}
-createCountryStore();
-function createSeasonStore() {
-  const { subscribe, set: set2 } = writable([]);
-  async function getSeasonName(seasonId) {
-    let seasons = [];
-    await subscribe((value) => {
-      seasons = value;
-    })();
-    if (seasons.length == 0) {
-      return;
-    }
-    let season = seasons.find((x) => x.id == seasonId);
-    if (season == null) {
-      return;
-    }
-    return season.name;
-  }
-  return {
-    subscribe,
-    setSeasons: (seasons) => set2(seasons),
-    getSeasonName
-  };
-}
-createSeasonStore();
-function createClubStore() {
-  const { subscribe, set: set2 } = writable([]);
-  return {
-    subscribe,
-    setClubs: (clubs) => set2(clubs.sort((a, b) => a.friendlyName.localeCompare(b.friendlyName)))
-  };
-}
-createClubStore();
 function createToastsStore() {
   const { subscribe, update } = writable([]);
   let idCounter = 0;
@@ -6560,10 +6350,52 @@ function Toasts($$payload) {
 function Full_screen_spinner($$payload) {
   $$payload.out += `<div class="local-spinner svelte-pvdm52"></div>`;
 }
+function Icp_icon($$payload, $$props) {
+  let className = fallback($$props["className"], "");
+  let fill = fallback($$props["fill"], "#FFFFFF");
+  $$payload.out += `<svg xmlns="http://www.w3.org/2000/svg"${attr("class", clsx(className))} viewBox="0 0 24 24" fill="none"><g clip-path="url(#clip0_143_3542)"><path d="M23.055 7.33252C22.1423 5.1788 20.6205 3.34753 18.7057 2.05266C16.7914 0.757781 14.4794 -0.000328019 12 1.0647e-07C10.3475 -9.36435e-05 8.76816 0.336563 7.33261 0.944906C5.17894 1.85766 3.34763 3.37936 2.0527 5.2942C0.757828 7.20844 -0.000328019 9.5205 1.06464e-07 12C-9.36435e-05 13.6526 0.336609 15.2319 0.944953 16.6675C1.85766 18.8212 3.3795 20.6525 5.2943 21.9473C7.20858 23.2422 9.52064 24.0003 12 24C13.6525 24.0001 15.2318 23.6634 16.6674 23.0551C18.8211 22.1424 20.6524 20.6206 21.9473 18.7058C23.2422 16.7916 24.0003 14.4794 24 12C24.0001 10.3474 23.6634 8.76806 23.055 7.33252ZM21.5819 16.0434C20.792 17.9081 19.4704 19.4992 17.8095 20.622C16.1482 21.7447 14.1524 22.3997 12 22.4001C10.5648 22.4 9.20025 22.1086 7.95684 21.5819C6.09211 20.792 4.50103 19.4705 3.37823 17.8096C2.25534 16.1482 1.60031 14.1524 1.59998 12C1.60008 10.5647 1.8915 9.20011 2.41814 7.9567C3.20803 6.09197 4.52962 4.50089 6.19045 3.37814C7.85184 2.2553 9.84769 1.60031 12 1.59998C13.4353 1.60008 14.7998 1.89145 16.0432 2.41814C17.9079 3.20798 19.499 4.52958 20.6218 6.19041C21.7446 7.8518 22.3996 9.84759 22.4 12C22.3999 13.4354 22.1085 14.7999 21.5819 16.0434Z"${attr("fill", fill)}></path><path d="M20.302 10.4768C20.004 9.77372 19.5086 9.1778 18.8845 8.75569C18.5725 8.54466 18.2278 8.37713 17.8597 8.26238C17.4916 8.14763 17.1 8.08589 16.6966 8.08594C16.1171 8.08542 15.5699 8.20842 15.0705 8.41331C14.6328 8.59252 14.2299 8.83238 13.8531 9.10697C13.1941 9.58828 12.6109 10.1754 12.054 10.776C12.0359 10.7955 12.0182 10.8152 12.0001 10.8348C11.9962 10.8306 11.9923 10.8263 11.9884 10.822C11.6762 10.4836 11.3553 10.1493 11.0183 9.83452C10.5125 9.36295 9.97 8.93297 9.35631 8.61206C9.04965 8.45194 8.72495 8.32003 8.38173 8.22839C8.0387 8.1367 7.67734 8.08589 7.30328 8.08599C6.76534 8.08589 6.24878 8.19581 5.78026 8.39447C5.07719 8.69255 4.48126 9.18792 4.05915 9.81197C3.84812 10.124 3.68059 10.4687 3.56584 10.8368C3.45109 11.2049 3.38936 11.5965 3.3894 11.9999C3.38931 12.5378 3.49923 13.0544 3.69789 13.5229C3.99597 14.2259 4.49139 14.8218 5.11539 15.2439C5.42744 15.455 5.77215 15.6225 6.14026 15.7373C6.50833 15.852 6.89992 15.9137 7.30333 15.9137C7.88279 15.9142 8.43001 15.7912 8.92942 15.5863C9.36714 15.4071 9.77008 15.1673 10.1468 14.8927C10.8058 14.4113 11.389 13.8242 11.946 13.2237C11.9641 13.2041 11.9818 13.1844 11.9998 13.1648C12.0037 13.1691 12.0076 13.1734 12.0115 13.1777C12.3237 13.5161 12.6446 13.8504 12.9817 14.1652C13.4875 14.6367 14.0299 15.0667 14.6436 15.3876C14.9503 15.5476 15.275 15.6796 15.6182 15.7713C15.9612 15.863 16.3226 15.9138 16.6967 15.9137C17.2346 15.9138 17.7512 15.8038 18.2197 15.6052C18.9227 15.3071 19.5187 14.8118 19.9408 14.1877C20.1518 13.8757 20.3193 13.5309 20.4341 13.1628C20.5488 12.7948 20.6106 12.4032 20.6105 11.9998C20.6106 11.4619 20.5007 10.9453 20.302 10.4768ZM10.8379 12.1162C10.54 12.4391 10.2447 12.7458 9.95003 13.0208C9.50819 13.4339 9.06798 13.7729 8.63204 13.9997C8.41389 14.1135 8.19704 14.2002 7.97795 14.2587C7.75867 14.3172 7.53704 14.348 7.30337 14.3481C6.97801 14.348 6.67155 14.2823 6.39109 14.1637C5.97072 13.9858 5.60992 13.6864 5.35614 13.3108C5.2292 13.1231 5.12903 12.9168 5.06054 12.697C4.99206 12.4772 4.95503 12.2439 4.95503 11.9999C4.95512 11.6745 5.02079 11.368 5.13944 11.0876C5.31733 10.6673 5.61676 10.3065 5.99237 10.0527C6.18006 9.92574 6.3864 9.82556 6.60625 9.75708C6.82609 9.6886 7.05934 9.65156 7.30342 9.65156C7.66473 9.65203 7.99905 9.72478 8.33673 9.86236C8.63144 9.98278 8.92698 10.155 9.22459 10.372C9.74565 10.7511 10.2687 11.268 10.7974 11.8397C10.8461 11.8923 10.8951 11.9465 10.944 12C10.9087 12.0385 10.8732 12.078 10.8379 12.1162ZM18.8606 12.9121C18.6827 13.3325 18.3833 13.6933 18.0077 13.9471C17.82 14.074 17.6137 14.1742 17.3938 14.2427C17.174 14.3112 16.9407 14.3482 16.6967 14.3482C16.3353 14.3477 16.001 14.275 15.6633 14.1374C15.3686 14.017 15.0731 13.8448 14.7755 13.6277C14.2544 13.2487 13.7313 12.7318 13.2027 12.16C13.154 12.1074 13.105 12.0532 13.0561 11.9998C13.0915 11.9611 13.1269 11.9217 13.1622 11.8835C13.4601 11.5606 13.7554 11.2538 14.05 10.9789C14.4919 10.5658 14.9321 10.2268 15.368 9.99994C15.5862 9.88613 15.803 9.79945 16.0221 9.74095C16.2414 9.6825 16.463 9.65166 16.6967 9.65156C17.0221 9.65166 17.3285 9.71733 17.609 9.83597C18.0294 10.0139 18.3902 10.3133 18.6439 10.6889C18.7709 10.8766 18.871 11.0829 18.9395 11.3027C19.008 11.5225 19.045 11.7558 19.045 11.9999C19.045 12.3252 18.9793 12.6316 18.8606 12.9121Z"${attr("fill", fill)}></path></g><defs><clipPath id="clip0_143_3542"><rect width="24" height="24"${attr("fill", fill)}></rect></clipPath></defs></svg>`;
+  bind_props($$props, { className, fill });
+}
+function Landing_page_display($$payload, $$props) {
+  let handleLoginClick = $$props["handleLoginClick"];
+  $$payload.out += `<div class="relative flex flex-col items-center justify-center w-full md:min-h-screen"><div class="items-center w-full max-w-sm mx-4"><div class="flex flex-col items-center justify-center mb-5">`;
+  Logo_icon($$payload, { className: "w-32 h-32 md:w-40 md:h-40" });
+  $$payload.out += `<!----> <p>Transfer Kings</p></div> <p class="mb-8 text-lg text-center text-BrandGrayShade3">Collect official ICFC trading cards today.</p> <div class="flex flex-row items-center justify-center mx-2 mb-4 space-x-2 md:space-x-4"><div class="w-full border border-l border-BrandGrayShade1"></div> <p class="text-center text-xxs whitespace-nowrap">Connect Instantly</p> <div class="w-full border border-r border-BrandGrayShade1"></div></div> <div class="mx-2 space-y-4"><button class="flex items-center justify-center w-full py-2 mr-8 rounded lg:mx-0 bg-BrandGrayShade1 hover:bg-BrandGrayShade2"><span class="mr-2">`;
+  Icp_icon($$payload, {});
+  $$payload.out += `<!----></span> Internet Identity</button> <div class="mt-6 text-xs text-center"><a href="/terms" target="_blank" class="underline hover:text-BrandGreen">Terms and Conditions</a></div></div></div></div>`;
+  bind_props($$props, { handleLoginClick });
+}
+function Juno_icon($$payload, $$props) {
+  let className = fallback($$props["className"], "");
+  $$payload.out += `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"${attr("class", clsx(className))} fill="currentColor" viewBox="0 0 130 130"><g id="Layer_1-2"><g><path d="M91.99,64.798c0,-20.748 -16.845,-37.593 -37.593,-37.593l-0.003,-0c-20.749,-0 -37.594,16.845 -37.594,37.593l0,0.004c0,20.748 16.845,37.593 37.594,37.593l0.003,0c20.748,0 37.593,-16.845 37.593,-37.593l0,-0.004Z"></path><circle cx="87.153" cy="50.452" r="23.247" style="fill:#7888ff;"></circle></g></g></svg>`;
+  bind_props($$props, { className });
+}
+function Landing_page_footer($$payload) {
+  $$payload.out += `<footer class="absolute bottom-0 flex flex-row w-full md:w-1/2"><div class="flex items-center justify-between w-full p-4"><div class="flex items-center space-x-2"><a href="https://oc.app/community/uf3iv-naaaa-aaaar-ar3ta-cai/?ref=zv6hh-xaaaa-aaaar-ac35q-cai" target="_blank" rel="noopener noreferrer"><img src="/openchat.png" class="w-auto h-4 mb-2 mr-2" alt="OpenChat"></a> <a href="https://x.com/OpenFPL_DAO" target="_blank" rel="noopener noreferrer"><img src="/twitter.png" class="w-auto h-4 mb-2 mr-2" alt="X"></a> <a href="https://github.com/jamesbeadle/OpenFPL" target="_blank" rel="noopener noreferrer"><img src="/github.png" class="w-auto h-4 mb-2" alt="GitHub"></a></div> <div class="flex-1 mx-4 text-center"></div> <div class="flex items-center space-x-2"><a href="https://juno.build" target="_blank" class="flex items-center hover:text-gray-300">Sponsored By juno.build `;
+  Juno_icon($$payload, { className: "h-8 w-auto ml-2" });
+  $$payload.out += `<!----></a></div></div></footer>`;
+}
+function Landing_page($$payload, $$props) {
+  push();
+  async function handleLoginClick() {
+    let params = { domain: void 0 };
+    await authStore.signIn(params);
+    goto("/", {});
+  }
+  $$payload.out += `<div class="flex flex-col w-full min-h-screen space-y-4 md:bg-BrandGrayBg md:p-3 md:flex-row"><div class="relative flex flex-col w-full min-h-screen bg-center bg-cover md:rounded-lg md:w-1/2" style="background-image: url('landing-background.jpg')"><div class="items-end h-full p-4 md:flex bg-gradient-to-t from-black/70 to-transparent md:rounded-lg"><h1 class="hidden w-full text-2xl font-bold text-center md:block md:mb-8 md:py-1">Collect official ICFC player cards with rarity linked to form.</h1> <div class="py-24 mx-4 rounded-lg bg-BrandGrayBg md:hidden">`;
+  Landing_page_display($$payload, { handleLoginClick });
+  $$payload.out += `<!----></div> <div class="pt-4 pb-6 md:hidden"><h2 class="mx-4 text-xl text-center xxs:pb-8 text-bold md:hidden">Collect official ICFC player cards with rarity linked to form.</h2> <div class="md:hidden">`;
+  Landing_page_footer($$payload);
+  $$payload.out += `<!----></div></div></div></div> <div class="items-center justify-center hidden w-1/2 h-full md:block md:px-auto">`;
+  Landing_page_display($$payload, { handleLoginClick });
+  $$payload.out += `<!----> `;
+  Landing_page_footer($$payload);
+  $$payload.out += `<!----></div></div>`;
+  pop();
+}
 function Layout($$payload, $$props) {
   push();
   var $$store_subs;
-  let showHeader = fallback($$props["showHeader"], true);
   const init2 = async () => {
     await Promise.all([syncAuthStore()]);
     worker = await initAuthWorker();
@@ -6584,17 +6416,10 @@ function Layout($$payload, $$props) {
       $$payload.out += `<!----></div>`;
     },
     (_) => {
-      $$payload.out += `<div${attr("class", `flex flex-col justify-between h-screen default-text $${stringify(showHeader ? "bg-background" : "")}`)}>`;
-      if (showHeader) {
-        $$payload.out += "<!--[-->";
-        $$payload.out += `<main class="page-wrapper"><!---->`;
-        slot($$payload, $$props, "default", {});
-        $$payload.out += `<!----></main>`;
-      } else {
+      $$payload.out += `<div class="flex flex-col justify-between h-screen default-text">`;
+      {
         $$payload.out += "<!--[!-->";
-        $$payload.out += `<main class="flex-1"><!---->`;
-        slot($$payload, $$props, "default", {});
-        $$payload.out += `<!----></main>`;
+        Landing_page($$payload);
       }
       $$payload.out += `<!--]--> `;
       Toasts($$payload);
@@ -6603,74 +6428,18 @@ function Layout($$payload, $$props) {
   );
   $$payload.out += `<!---->`;
   if ($$store_subs) unsubscribe_stores($$store_subs);
-  bind_props($$props, { showHeader });
   pop();
 }
 function _page$2($$payload, $$props) {
   push();
-  var $$store_subs;
-  Layout($$payload, {
-    children: ($$payload2) => {
-      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center"><p class="text-2xl">Welcome to Transfer Kings</p> `;
-      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-10 ml-4" });
-      $$payload2.out += `<!----></div> <p class="my-2">Collect your favourite players on Transfer Kings.</p> <a href="/rules"><button class="my-2 px-4 py-2 rounded-sm">Rules</button></a> `;
-      if (store_get($$store_subs ??= {}, "$authSignedInStore", authSignedInStore)) {
-        $$payload2.out += "<!--[-->";
-        $$payload2.out += `<a href="/contract-center"><button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play</button></a>`;
-      } else {
-        $$payload2.out += "<!--[!-->";
-        $$payload2.out += `<button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Connect</button>`;
-      }
-      $$payload2.out += `<!--]--></div>`;
-    },
-    $$slots: { default: true }
-  });
-  if ($$store_subs) unsubscribe_stores($$store_subs);
+  Layout($$payload);
   pop();
 }
 function _page$1($$payload) {
-  Layout($$payload, {
-    children: ($$payload2) => {
-      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center">`;
-      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-6 mr-2" });
-      $$payload2.out += `<!----> <p class="text-xl">Profile Coming Soon</p></div></div>`;
-    },
-    $$slots: { default: true }
-  });
+  Layout($$payload);
 }
 function _page($$payload) {
-  Layout($$payload, {
-    children: ($$payload2) => {
-      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center">`;
-      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-6 mr-2" });
-      $$payload2.out += `<!----> <p class="text-xl">Transfer Kings Gameplay Rules</p></div> <div class="w-full p-4 mt-4 rounded-lg border-solid border-2"><b class="text-lg"><u>How It Works</u></b> <p class="mt-2 mb-4">Transfer Kings is the 2nd installment in the OpenFPL ecosystem, building on the existing dataset being curated by the OpenFPL DAO. 
-                The OpenFPL dataset will be extended to manage every professional league in the world, allowing agents to find players at any stage of their career.</p> <p>Transfer Kings is a pay to play game, allowing users to purchase a football agency with $FPL. 
-                Users who purchase an agency can add up to 100 agents to their agency. 
-                Users are able to customise the entry requirements of the agency, inviting people directly or asking for an entry fee to be paid. 
-                Users can customise their agency's rewards, setting them up in any ICRC-1 token, for any period. 
-                Users are also able to request contribution to a reward pool for continuing to have access to an agency.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Contract Center</u></b> <b class="text-lg"></b> <p class="mt-2">You can fill contracts by accessing the 'Contract Center' through the side navigation panel.</p> <p class="my-2">When you setup your agency you receive a default set of contracts you can fill, selecting from any player around the world.
-                There are 5 Transfer Kings contract types, each is listed below with the number allocated with your starting team:</p> <ul class="my-2"><li>All Star <small>(5 Initially)</small></li> <li>Squad Player <small>(20 Initially)</small></li> <li>Prospect <small>(20 Initially)</small></li> <li>Academy <small>(25 Initially)</small></li> <li>Lower League <small>(30 Initially)</small></li></ul> <p class="mt-2 mb-4">After you have your contracts setup you can manage your clients through the 'Agent Hub'.</p> <p>An agency starts with a budget of €250m. 
-                The acquisition and sale price of a player is 10% of their value, the cost associated with the on going promotion of your clients.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Agent Hub</u></b> <p class="mt-2">The Agent Hub is where you manage your clients on a day to day basis. 
-                Here you select clients to be promoted, multiplying your rewards for real life football achievements.</p> <p class="mt-2">The Agent Hub contains 15 places, ranked from your favourite client down. 
-                The client in your first promotion position will earn you the biggest multiplier, reducing as you get to promotion position 15.
-                The multiplier percentages are listed below:</p> <div class="mt-2"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><ul><li>1st: 3X</li> <li>2nd: 2.8X</li> <li>3rd: 2.6X</li> <li>4th: 2.4X</li> <li>5th: 2.2X</li></ul></div> <div><ul><li>6th: 2X</li> <li>7th: 1.9X</li> <li>8th: 1.8X</li> <li>9th: 1.7X</li> <li>10th: 1.6X</li></ul></div> <div><ul><li>11th: 1.5X</li> <li>12th: 1.4X</li> <li>13th: 1.3X</li> <li>14th: 1.2X</li> <li>15th: 1.1X</li></ul></div></div></div> <p class="mt-2 mb-4">To prevent your players going stale they have to be rotated out of the Agent Hub every 4 weeks. A player is then restricted from being repromoted for a further 4 weeks. 
-                This ensures each of your clients receives the attention they deserve.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>How You Earn</u></b> <p class="mt-2">Gameplay: The players you promote in the Agent Hub will earn $FOOTBALL tokens each week based on their in game performances combined with the level of competition they are playing. 
-                This revenue can then be banked and viewed within the Contract Center earnings to date. Before depositing earnings into the Contract Center, you can swap earnings for additional contracts of any type.</p> <p class="mt-2 mb-4">Career Achievements: All players listed within your Contract Center will earn you $FOOTBALL tokens based on their career achievements. 
-                Each achievement is weighted based on how difficult it is to acheive. All achievement rewards are multiplied by the change in value of a player since you signed their contract.
-                This means that if you get a player at the beginning of their career and hold them until they win the World Cup, 
-                the $FOOTBALL earned would increase by the factor the player's value changed since you purchased them.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg">Growing Your Agency</b> <p class="mt-2">The players you have under contract are worth the same amount as their real world counter parts. 
-                As their value changes, you will be able to increase your budget through selling high performing players.
-                When a player's contract ends, the current value of that player is added back to your budget.
-                You can end a contract early, receiving 80% of a player's current value.
-                To grow your agency you will need to obtain more than the 100 contracts initially available for you to fill. 
-                This can be done when earnings are made through the players you promote in the Agent Hub.
-                To realise Agent Hub $FOOTBALL token earnings you deposit the tokens into your Contract center, increasing the contract earnings of the player. 
-                When transferring these earnings you are able to select the % of earnings to transfer, obtaining additional contracts for the reduced amount.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Private Agencies</u></b> <p class="mt-2 mb-4">Along with participating in the free global Transfer Kings game, you can setup a paid private agency to enhance your experience with your friends.
-                Within a Private Agency, you select from the same group of players, with no one allowed to select the same player. 
-                You can customise your league design, rewards and entry requirements to suit your needs.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Bot Prevention Controls</u></b> <p>Our built in controls will ensure rewards are based on genuine user participation, with rewards directly effected by how often you manage your global agency.</p></div></div>`;
-    },
-    $$slots: { default: true }
-  });
+  Layout($$payload);
 }
 function WorkerWrapper(options2) {
   return new Worker(
