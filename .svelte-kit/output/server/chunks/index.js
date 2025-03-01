@@ -1,5 +1,5 @@
-import "clsx";
-import { B as BROWSER } from "./vendor.js";
+import { clsx as clsx$1 } from "clsx";
+import { D as DEV } from "./vendor.js";
 import * as devalue from "devalue";
 import { Buffer } from "buffer";
 import { parse, serialize } from "cookie";
@@ -983,6 +983,15 @@ function run_all(arr) {
     arr[i]();
   }
 }
+function fallback(value, fallback2, lazy = false) {
+  return value === void 0 ? lazy ? (
+    /** @type {() => V} */
+    fallback2()
+  ) : (
+    /** @type {V} */
+    fallback2
+  ) : value;
+}
 function equals(value) {
   return value === this.v;
 }
@@ -1745,8 +1754,8 @@ function update_effect(effect2) {
     effect2.wv = write_version;
     var deps = effect2.deps;
     var dep;
-    if (BROWSER && tracing_mode_flag && (effect2.f & DIRTY) !== 0 && deps !== null) ;
-    if (BROWSER) ;
+    if (DEV && tracing_mode_flag && (effect2.f & DIRTY) !== 0 && deps !== null) ;
+    if (DEV) ;
   } catch (error) {
     handle_error(error, effect2, previous_effect, previous_component_context || effect2.ctx);
   } finally {
@@ -2205,6 +2214,13 @@ function attr(name, value, is_boolean = false) {
   const normalized = name in replacements$1 && replacements$1[name].get(value) || value;
   const assignment = is_boolean ? "" : `="${escape_html(normalized, true)}"`;
   return ` ${name}${assignment}`;
+}
+function clsx(value) {
+  if (typeof value === "object") {
+    return clsx$1(value);
+  } else {
+    return value ?? "";
+  }
 }
 function asClassComponent$1(component) {
   return class extends Svelte4Component {
@@ -3797,7 +3813,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
     state.prerender_default = should_prerender;
     const fetched = [];
     if (get_option(nodes, "ssr") === false && !(state.prerendering && should_prerender_data)) {
-      if (BROWSER && action_result && !event.request.headers.has("x-sveltekit-action")) ;
+      if (DEV && action_result && !event.request.headers.has("x-sveltekit-action")) ;
       return await render_response({
         branch: [],
         fetched,
@@ -4454,12 +4470,12 @@ async function respond(request, options2, manifest, state) {
         trailing_slash = "always";
       } else if (route.page) {
         const nodes = await load_page_nodes(route.page, manifest);
-        if (BROWSER) ;
+        if (DEV) ;
         trailing_slash = get_option(nodes, "trailingSlash");
       } else if (route.endpoint) {
         const node = await route.endpoint();
         trailing_slash = node.trailingSlash;
-        if (BROWSER) ;
+        if (DEV) ;
       }
       if (!is_data_request) {
         const normalized = normalize_path(url.pathname, trailing_slash ?? "never");
@@ -4787,6 +4803,9 @@ function render(component, options2 = {}) {
     body: payload.out
   };
 }
+function stringify(value) {
+  return typeof value === "string" ? value : value == null ? "" : value + "";
+}
 function store_get(store_values, store_name, store) {
   if (store_name in store_values && store_values[store_name][0] === store) {
     return store_values[store_name][2];
@@ -4804,6 +4823,15 @@ function store_get(store_values, store_name, store) {
 function unsubscribe_stores(store_values) {
   for (const store_name in store_values) {
     store_values[store_name][1]();
+  }
+}
+function slot(payload, $$props, name, slot_props, fallback_fn) {
+  var slot_fn = $$props.$$slots?.[name];
+  if (slot_fn === true) {
+    slot_fn = $$props["children"];
+  }
+  if (slot_fn !== void 0) {
+    slot_fn(payload, slot_props);
   }
 }
 function bind_props(props_parent, props_now) {
@@ -4984,7 +5012,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "vfkn6m"
+  version_hash: "1acpugk"
 };
 async function get_hooks() {
   let handle;
@@ -5229,10 +5257,16 @@ const initAuthStore = () => {
 };
 const authStore = initAuthStore();
 const authRemainingTimeStore = writable(void 0);
-derived(
+const authSignedInStore = derived(
   authStore,
   ({ identity }) => identity !== null && identity !== void 0
 );
+function Logo_icon($$payload, $$props) {
+  let className = fallback($$props["className"], "");
+  let fill = fallback($$props["fill"], "");
+  $$payload.out += `<svg xmlns="http://www.w3.org/2000/svg"${attr("class", clsx(className))} viewBox="0 0 119 118" fill="none"><path d="M46.6292 95.4787C42.6798 96.3015 39.6731 96.7241 37.73 96.9196C36.5527 97.038 35.6089 98.0884 35.6364 99.2713C35.6872 101.455 35.661 104.079 35.8442 104.995C37.1747 111.647 40.2975 113.94 41.0643 114.412C41.177 114.482 41.2938 114.526 41.422 114.559C42.8638 114.924 52.5373 117.274 64.1689 117.658C64.7159 117.676 65.2461 117.464 65.6331 117.077L74.9523 107.758C75.8724 106.838 75.684 105.298 74.5723 104.622C72.2459 103.207 69.2335 101.349 67.5647 100.237C65.6133 98.9359 61.9793 95.2268 59.7095 92.7894C59.0976 92.1323 58.1266 91.9495 57.2969 92.2924C55.1665 93.1727 51.3886 94.4872 46.6292 95.4787Z"${attr("fill", fill)}></path><path d="M117.683 76.7635C119.161 72.6979 119.159 67.6006 118.804 63.9461C118.657 62.4284 116.898 61.8085 115.742 62.8035L107.915 69.5441C107.3 70.0736 106.998 70.941 107.024 71.7521C107.056 72.7482 107.04 74.3482 106.898 76.7635C106.676 80.5448 103.837 88.1768 101.929 92.7808C101.522 93.7635 101.933 94.9015 102.896 95.3536C104.832 96.2625 107.151 97.2554 107.532 97.0646C108.167 96.7474 115.145 83.742 117.683 76.7635Z"${attr("fill", fill)}></path><path d="M0.482453 49.1884L9.96382 37.1445C10.8242 36.0516 12.5097 36.1488 13.2386 37.3334L21.4796 50.725C21.7417 51.1509 21.8347 51.6597 21.7403 52.1509L17.4628 74.3938C17.2722 75.385 16.3729 76.0788 15.3658 76.0117L4.11115 75.2614C3.34335 75.2102 2.66998 74.7238 2.43392 73.9914C2.24231 73.3969 2.03932 72.686 1.90323 72.0056C1.65867 70.7828 0.608827 57.6772 0.0597851 50.5764C0.0211178 50.0763 0.172196 49.5825 0.482453 49.1884Z"${attr("fill", fill)}></path><path d="M43.1398 1.58602C37.697 2.53261 29.6243 7.23081 25.5588 9.91831C25.0437 10.2588 24.7419 10.8368 24.7419 11.4542C24.7419 12.7933 26.1094 13.7081 27.3592 13.2274C29.8488 12.2698 33.3065 11.0317 36.4785 10.1506C40.5949 9.00711 45.1922 8.46477 47.5309 8.29137C47.9748 8.25846 48.3977 8.08906 48.7341 7.79757L52.808 4.26679C52.9178 4.17166 53.0376 4.08876 53.1653 4.01958L56.8741 2.01066C57.8012 1.50847 57.4236 0.137308 56.3711 0.200833C52.4309 0.438651 47.2056 0.878937 43.1398 1.58602Z"${attr("fill", fill)}></path><path d="M102.14 18.3978C97.9668 13.8453 93.2974 10.3089 90.1455 8.2392C89.6724 7.92853 89.2364 8.47056 89.6238 8.88321C90.9694 10.3167 92.4651 11.895 93.2583 12.6881C94.406 13.8359 96.3324 18.0117 97.394 20.52C97.5927 20.9897 97.9572 21.3691 98.4192 21.585C99.7758 22.2188 101.935 23.2651 103.409 24.1075C104.693 24.8414 107.934 28.3829 110.59 31.4475C110.976 31.8936 111.59 31.4806 111.292 30.9711C109.25 27.482 106.047 22.6603 102.14 18.3978Z"${attr("fill", fill)}></path><path transform="translate(40, 25)" d="M44.6021 24.8356L16.4245 36.8429C15.8284 37.0969 15.5485 37.7924 15.8025 38.3885L16.7262 40.556C16.9802 41.152 17.6757 41.4319 18.2718 41.1779L46.4494 29.1706C47.0455 28.9166 47.3253 28.2211 47.0713 27.625L46.1477 25.4575C45.8937 24.8614 45.1982 24.5816 44.6021 24.8356ZM39.7008 1.31318C37.9058 2.07807 37.0701 4.15493 37.8349 5.9499C38.0399 6.43082 38.3388 6.83169 38.7045 7.16405L35.0532 12.1935C34.2756 13.2611 32.7776 13.4833 31.7245 12.6835L22.0881 5.37695C22.5589 4.47204 22.652 3.3759 22.2191 2.35988C21.4542 0.564907 19.3773 -0.27082 17.5823 0.49407C15.7874 1.25896 14.9516 3.33583 15.7165 5.1308C16.1495 6.14682 17.0046 6.83887 17.9834 7.12609L16.579 19.1375C16.4264 20.451 15.2218 21.3805 13.9199 21.199L7.77002 20.3461C7.77973 19.8618 7.70149 19.3589 7.49655 18.878C6.73167 17.083 4.6548 16.2473 2.85983 17.0122C1.06486 17.7771 0.222357 19.8568 0.987246 21.6518C1.75214 23.4468 3.829 24.2825 5.62397 23.5176C5.80008 23.4425 5.96465 23.3404 6.12244 23.2412L16.5846 34.2136L42.5947 23.1299L41.927 7.98378C42.1079 7.93871 42.2956 7.89076 42.4717 7.81571C44.2666 7.05082 45.1024 4.97396 44.3375 3.17898C43.5726 1.38401 41.4957 0.548287 39.7008 1.31318Z"${attr("fill", fill)}></path></svg>`;
+  bind_props($$props, { className, fill });
+}
 const idlFactory$1 = ({ IDL }) => {
   const AppStatusDTO = IDL.Record({
     version: IDL.Text,
@@ -5872,8 +5906,8 @@ const idlFactory = ({ IDL }) => {
     validateUpdatePlayer: IDL.Func([UpdatePlayerDTO], [RustResult], [])
   });
 };
-var define_process_env_default$1 = {};
-const canisterId = define_process_env_default$1.CANISTER_ID_DATA_CANISTER;
+var define_process_env_default$4 = {};
+const canisterId = define_process_env_default$4.CANISTER_ID_DATA_CANISTER;
 const createActor = (canisterId2, options2 = {}) => {
   const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });
   if (options2.agent && options2.agentOptions) {
@@ -5956,7 +5990,7 @@ class ActorFactory {
 function isError(response) {
   return response && response.err !== void 0;
 }
-var define_process_env_default = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
+var define_process_env_default$3 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
 function createUserStore() {
   const { subscribe, set: set2 } = writable(null);
   async function sync() {
@@ -5977,7 +6011,7 @@ function createUserStore() {
     try {
       const identityActor = await ActorFactory.createBackendIdentityActor(
         authStore,
-        define_process_env_default.BACKEND_CANISTER_ID ?? ""
+        define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
       );
       const result = await identityActor.updateDisplayName(username);
       if (isError(result)) {
@@ -6004,11 +6038,11 @@ function createUserStore() {
       const agent = await createAgent({
         identity,
         host: void 0,
-        fetchRootKey: define_process_env_default.DFX_NETWORK === "local"
+        fetchRootKey: define_process_env_default$3.DFX_NETWORK === "local"
       });
       const { transfer } = IcrcLedgerCanister.create({
         agent,
-        canisterId: define_process_env_default.DFX_NETWORK === "ic" ? Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai") : Principal.fromText("avqkn-guaaa-aaaaa-qaaea-cai")
+        canisterId: define_process_env_default$3.DFX_NETWORK === "ic" ? Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai") : Principal.fromText("avqkn-guaaa-aaaaa-qaaea-cai")
       });
       if (principalId) {
         try {
@@ -6036,7 +6070,7 @@ function createUserStore() {
     try {
       const identityActor = await ActorFactory.createBackendIdentityActor(
         authStore,
-        define_process_env_default.BACKEND_CANISTER_ID ?? ""
+        define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
       );
       const result = await identityActor.agreeTerms();
       if (isError(result)) {
@@ -6065,7 +6099,7 @@ function createUserStore() {
         try {
           const identityActor = await ActorFactory.createBackendIdentityActor(
             authStore,
-            define_process_env_default.BACKEND_CANISTER_ID ?? ""
+            define_process_env_default$3.BACKEND_CANISTER_ID ?? ""
           );
           const result = await identityActor.updateProfilePicture(
             uint8Array,
@@ -6094,14 +6128,14 @@ function createUserStore() {
   async function isUsernameAvailable(username) {
     const identityActor = await ActorFactory.createBackendIdentityActor(
       authStore,
-      define_process_env_default.BACKEND_CANISTER_ID
+      define_process_env_default$3.BACKEND_CANISTER_ID
     );
     return await identityActor.isUsernameValid(username);
   }
   async function cacheProfile() {
     const identityActor = await ActorFactory.createBackendIdentityActor(
       authStore,
-      define_process_env_default.BACKEND_CANISTER_ID
+      define_process_env_default$3.BACKEND_CANISTER_ID
     );
     let getProfileResponse = await identityActor.getProfile();
     let error = isError(getProfileResponse);
@@ -6124,7 +6158,7 @@ function createUserStore() {
     const agent = await createAgent({
       identity,
       host: void 0,
-      fetchRootKey: define_process_env_default.DFX_NETWORK === "local"
+      fetchRootKey: define_process_env_default$3.DFX_NETWORK === "local"
     });
     const { balance } = IcrcLedgerCanister.create({
       agent,
@@ -6189,18 +6223,45 @@ const initAuthWorker = async () => {
     }
   };
 };
-function Full_screen_spinner($$payload) {
-  $$payload.out += `<div class="local-spinner svelte-pvdm52"></div>`;
+function createCountryStore() {
+  const { subscribe, set: set2 } = writable([]);
+  return {
+    subscribe,
+    setCountries: (countries) => set2(countries)
+  };
 }
-function Dashboard($$payload, $$props) {
-  push();
-  {
-    $$payload.out += "<!--[-->";
-    Full_screen_spinner($$payload);
+createCountryStore();
+function createSeasonStore() {
+  const { subscribe, set: set2 } = writable([]);
+  async function getSeasonName(seasonId) {
+    let seasons = [];
+    await subscribe((value) => {
+      seasons = value;
+    })();
+    if (seasons.length == 0) {
+      return;
+    }
+    let season = seasons.find((x) => x.id == seasonId);
+    if (season == null) {
+      return;
+    }
+    return season.name;
   }
-  $$payload.out += `<!--]-->`;
-  pop();
+  return {
+    subscribe,
+    setSeasons: (seasons) => set2(seasons),
+    getSeasonName
+  };
 }
+createSeasonStore();
+function createClubStore() {
+  const { subscribe, set: set2 } = writable([]);
+  return {
+    subscribe,
+    setClubs: (clubs) => set2(clubs.sort((a, b) => a.friendlyName.localeCompare(b.friendlyName)))
+  };
+}
+createClubStore();
 function createToastsStore() {
   const { subscribe, update } = writable([]);
   let idCounter = 0;
@@ -6218,6 +6279,257 @@ function createToastsStore() {
 }
 const toasts = createToastsStore();
 const { addToast } = toasts;
+function createPlayerStore() {
+  const { subscribe, set: set2 } = writable([]);
+  return {
+    subscribe,
+    setPlayers: (players) => set2(players)
+  };
+}
+createPlayerStore();
+var define_process_env_default$2 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
+class PlayerEventsService {
+  actor;
+  constructor() {
+  }
+  async getPlayerPoints(seasonId, gameweek) {
+    let dto = {
+      seasonId,
+      gameweek
+    };
+    const result = await this.actor.getPlayerPoints(dto);
+    if (isError(result))
+      throw new Error(
+        "Failed to fetch player details for gameweek in player events service"
+      );
+    return result.ok;
+  }
+  async getPlayerDetails(playerId, seasonId) {
+    try {
+      let dto = {
+        playerId,
+        seasonId
+      };
+      const identityActor = await ActorFactory.createDataCanisterIdentityActor(
+        authStore,
+        define_process_env_default$2.CANISTER_ID_DATA ?? ""
+      );
+      const leagueId = 1;
+      let result = await identityActor.getPlayerDetails(leagueId, dto);
+      if (isError(result)) {
+        console.error("Error fetching player details");
+      }
+      return result.ok;
+    } catch (error) {
+      console.error("Error fetching player data:", error);
+      throw error;
+    }
+  }
+  async getPlayerEvents(seasonId, gameweek) {
+    try {
+      let dto = {
+        seasonId,
+        gameweek
+      };
+      const identityActor = await ActorFactory.createDataCanisterIdentityActor(
+        authStore,
+        define_process_env_default$2.CANISTER_ID_DATA ?? ""
+      );
+      const leagueId = 1;
+      let result = await identityActor.getPlayerDetailsForGameweek(
+        leagueId,
+        dto
+      );
+      if (isError(result)) {
+        console.error("Error fetching player details for gameweek");
+      }
+      return result.ok;
+    } catch (error) {
+      console.error("Error fetching player events: ", error);
+      toasts.addToast({
+        type: "error",
+        message: "Error fetching player events."
+      });
+    }
+  }
+}
+function createPlayerEventsStore() {
+  const { subscribe, set: set2 } = writable([]);
+  async function getPlayerDetails(playerId, seasonId) {
+    return new PlayerEventsService().getPlayerDetails(playerId, seasonId);
+  }
+  async function getPlayerEventsFromBackend(seasonId, gameweek) {
+    return new PlayerEventsService().getPlayerEvents(seasonId, gameweek);
+  }
+  return {
+    subscribe,
+    setPlayerEvents: (players) => set2(players),
+    getPlayerDetails,
+    getPlayerEventsFromBackend
+  };
+}
+createPlayerEventsStore();
+function createLeagueStore() {
+  const { subscribe, set: set2 } = writable(null);
+  async function getActiveOrUnplayedGameweek() {
+    let leagueStatus = null;
+    subscribe((result) => {
+      if (result == null) {
+        throw new Error("Failed to subscribe to league store");
+      }
+      leagueStatus = result;
+      if (!leagueStatus) {
+        return;
+      }
+      if (leagueStatus.activeGameweek == 0) {
+        return leagueStatus.unplayedGameweek;
+      }
+      return leagueStatus.activeGameweek;
+    });
+    return 0;
+  }
+  return {
+    subscribe,
+    getActiveOrUnplayedGameweek,
+    setLeagueStatus: (leagueStatus) => set2(leagueStatus)
+  };
+}
+createLeagueStore();
+var define_process_env_default$1 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai" };
+class AppService {
+  constructor() {
+  }
+  async getAppStatus() {
+    const identityActor = await ActorFactory.createActor(
+      idlFactory$1,
+      define_process_env_default$1.BACKEND_CANISTER_ID
+    );
+    const result = await identityActor.getAppStatus();
+    if (isError(result)) throw new Error("Failed to get app status");
+    return result.ok;
+  }
+}
+function createAppStore() {
+  const { subscribe, set: set2 } = writable(null);
+  async function getAppStatus() {
+    return await new AppService().getAppStatus();
+  }
+  async function copyTextAndShowToast(text2) {
+    try {
+      await navigator.clipboard.writeText(text2);
+      toasts.addToast({
+        type: "success",
+        message: "Copied to clipboard.",
+        duration: 2e3
+      });
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  }
+  async function checkServerVersion() {
+    const res = await new AppService().getAppStatus();
+    if (isError(res)) {
+      throw new Error("Error fetching app status");
+    }
+    let status = res;
+    let localVersion = localStorage.getItem("version");
+    if (!localVersion) {
+      localStorage.setItem("version", status.version);
+      return;
+    }
+    if (status.version !== localStorage.getItem("version")) {
+      toasts.addToast({
+        message: `ICFC V${status.version} is now available. Click here to reload:`,
+        type: "frontend-update"
+      });
+    }
+  }
+  async function updateFrontend() {
+    const res = await new AppService().getAppStatus();
+    if (isError(res)) {
+      throw new Error("Error fetching app status");
+    }
+    let status = res;
+    localStorage.setItem("version", status.version);
+    window.location.replace(`${window.location.pathname}?v=${status.version}`);
+  }
+  return {
+    subscribe,
+    getAppStatus,
+    setAppStatus: (appStatus) => set2(appStatus),
+    copyTextAndShowToast,
+    checkServerVersion,
+    updateFrontend
+  };
+}
+createAppStore();
+var define_process_env_default = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
+class FixtureService {
+  actor;
+  constructor() {
+  }
+  async getFixtures() {
+    try {
+      const identityActor = await ActorFactory.createDataCanisterIdentityActor(
+        authStore,
+        define_process_env_default.CANISTER_ID_DATA ?? ""
+      );
+      const leagueId = 1;
+      const seasonId = 1;
+      const result = await identityActor.getFixtures(leagueId, seasonId);
+      if (isError(result)) throw new Error("Failed to fetch fixtures");
+      return result.ok;
+    } catch (error) {
+      console.error("Error fetching fixtures: ", error);
+      toasts.addToast({ type: "error", message: "Error fetching fixtures." });
+    }
+  }
+  async getPostponedFixtures() {
+    try {
+      const identityActor = await ActorFactory.createDataCanisterIdentityActor(
+        authStore,
+        define_process_env_default.CANISTER_ID_DATA ?? ""
+      );
+      const leagueId = 1;
+      const result = await identityActor.getPostponedFixtures(leagueId);
+      if (isError(result))
+        throw new Error("Failed to fetch postponed fixtures");
+      return result.ok;
+    } catch (error) {
+      console.error("Error fetching fixtures: ", error);
+      toasts.addToast({ type: "error", message: "Error fetching fixtures." });
+    }
+  }
+}
+function createFixtureStore() {
+  const { subscribe, set: set2 } = writable([]);
+  async function getPostponedFixtures() {
+    return new FixtureService().getPostponedFixtures();
+  }
+  async function getNextFixture() {
+    let fixtures = [];
+    await subscribe((value) => {
+      fixtures = value;
+    })();
+    if (fixtures.length == 0) {
+      return;
+    }
+    fixtures.sort((a, b) => {
+      return new Date(Number(a.kickOff) / 1e6).getTime() - new Date(Number(b.kickOff) / 1e6).getTime();
+    });
+    const now = /* @__PURE__ */ new Date();
+    return fixtures.find(
+      (fixture) => new Date(Number(fixture.kickOff) / 1e6) > now
+    );
+  }
+  return {
+    subscribe,
+    setFixtures: (fixtures) => set2(fixtures),
+    getNextFixture,
+    getPostponedFixtures
+  };
+}
+createFixtureStore();
 function Toast_item($$payload, $$props) {
   push();
   let toast = $$props["toast"];
@@ -6245,17 +6557,23 @@ function Toasts($$payload) {
   $$payload.out += `<!--]-->`;
   if ($$store_subs) unsubscribe_stores($$store_subs);
 }
+function Full_screen_spinner($$payload) {
+  $$payload.out += `<div class="local-spinner svelte-pvdm52"></div>`;
+}
 function Layout($$payload, $$props) {
   push();
   var $$store_subs;
-  let worker;
-  async function syncAuthStore() {
-    return;
-  }
+  let showHeader = fallback($$props["showHeader"], true);
   const init2 = async () => {
     await Promise.all([syncAuthStore()]);
     worker = await initAuthWorker();
   };
+  const syncAuthStore = async () => {
+    {
+      return;
+    }
+  };
+  let worker;
   store_get($$store_subs ??= {}, "$authStore", authStore), (() => worker?.syncAuthIdle(store_get($$store_subs ??= {}, "$authStore", authStore)))();
   $$payload.out += `<!---->`;
   await_block(
@@ -6266,26 +6584,93 @@ function Layout($$payload, $$props) {
       $$payload.out += `<!----></div>`;
     },
     (_) => {
-      Dashboard($$payload);
-      $$payload.out += `<!----> `;
+      $$payload.out += `<div${attr("class", `flex flex-col justify-between h-screen default-text $${stringify(showHeader ? "bg-background" : "")}`)}>`;
+      if (showHeader) {
+        $$payload.out += "<!--[-->";
+        $$payload.out += `<main class="page-wrapper"><!---->`;
+        slot($$payload, $$props, "default", {});
+        $$payload.out += `<!----></main>`;
+      } else {
+        $$payload.out += "<!--[!-->";
+        $$payload.out += `<main class="flex-1"><!---->`;
+        slot($$payload, $$props, "default", {});
+        $$payload.out += `<!----></main>`;
+      }
+      $$payload.out += `<!--]--> `;
       Toasts($$payload);
-      $$payload.out += `<!---->`;
+      $$payload.out += `<!----></div>`;
     }
   );
   $$payload.out += `<!---->`;
   if ($$store_subs) unsubscribe_stores($$store_subs);
+  bind_props($$props, { showHeader });
   pop();
 }
 function _page$2($$payload, $$props) {
   push();
-  Layout($$payload);
+  var $$store_subs;
+  Layout($$payload, {
+    children: ($$payload2) => {
+      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center"><p class="text-2xl">Welcome to Transfer Kings</p> `;
+      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-10 ml-4" });
+      $$payload2.out += `<!----></div> <p class="my-2">Collect your favourite players on Transfer Kings.</p> <a href="/rules"><button class="my-2 px-4 py-2 rounded-sm">Rules</button></a> `;
+      if (store_get($$store_subs ??= {}, "$authSignedInStore", authSignedInStore)) {
+        $$payload2.out += "<!--[-->";
+        $$payload2.out += `<a href="/contract-center"><button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play</button></a>`;
+      } else {
+        $$payload2.out += "<!--[!-->";
+        $$payload2.out += `<button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Connect</button>`;
+      }
+      $$payload2.out += `<!--]--></div>`;
+    },
+    $$slots: { default: true }
+  });
+  if ($$store_subs) unsubscribe_stores($$store_subs);
   pop();
 }
 function _page$1($$payload) {
-  Layout($$payload);
+  Layout($$payload, {
+    children: ($$payload2) => {
+      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center">`;
+      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-6 mr-2" });
+      $$payload2.out += `<!----> <p class="text-xl">Profile Coming Soon</p></div></div>`;
+    },
+    $$slots: { default: true }
+  });
 }
 function _page($$payload) {
-  Layout($$payload);
+  Layout($$payload, {
+    children: ($$payload2) => {
+      $$payload2.out += `<div class="p-4"><div class="flex flex-row items-center">`;
+      Logo_icon($$payload2, { fill: "#FFFFFF", className: "w-6 mr-2" });
+      $$payload2.out += `<!----> <p class="text-xl">Transfer Kings Gameplay Rules</p></div> <div class="w-full p-4 mt-4 rounded-lg border-solid border-2"><b class="text-lg"><u>How It Works</u></b> <p class="mt-2 mb-4">Transfer Kings is the 2nd installment in the OpenFPL ecosystem, building on the existing dataset being curated by the OpenFPL DAO. 
+                The OpenFPL dataset will be extended to manage every professional league in the world, allowing agents to find players at any stage of their career.</p> <p>Transfer Kings is a pay to play game, allowing users to purchase a football agency with $FPL. 
+                Users who purchase an agency can add up to 100 agents to their agency. 
+                Users are able to customise the entry requirements of the agency, inviting people directly or asking for an entry fee to be paid. 
+                Users can customise their agency's rewards, setting them up in any ICRC-1 token, for any period. 
+                Users are also able to request contribution to a reward pool for continuing to have access to an agency.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Contract Center</u></b> <b class="text-lg"></b> <p class="mt-2">You can fill contracts by accessing the 'Contract Center' through the side navigation panel.</p> <p class="my-2">When you setup your agency you receive a default set of contracts you can fill, selecting from any player around the world.
+                There are 5 Transfer Kings contract types, each is listed below with the number allocated with your starting team:</p> <ul class="my-2"><li>All Star <small>(5 Initially)</small></li> <li>Squad Player <small>(20 Initially)</small></li> <li>Prospect <small>(20 Initially)</small></li> <li>Academy <small>(25 Initially)</small></li> <li>Lower League <small>(30 Initially)</small></li></ul> <p class="mt-2 mb-4">After you have your contracts setup you can manage your clients through the 'Agent Hub'.</p> <p>An agency starts with a budget of €250m. 
+                The acquisition and sale price of a player is 10% of their value, the cost associated with the on going promotion of your clients.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Agent Hub</u></b> <p class="mt-2">The Agent Hub is where you manage your clients on a day to day basis. 
+                Here you select clients to be promoted, multiplying your rewards for real life football achievements.</p> <p class="mt-2">The Agent Hub contains 15 places, ranked from your favourite client down. 
+                The client in your first promotion position will earn you the biggest multiplier, reducing as you get to promotion position 15.
+                The multiplier percentages are listed below:</p> <div class="mt-2"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><ul><li>1st: 3X</li> <li>2nd: 2.8X</li> <li>3rd: 2.6X</li> <li>4th: 2.4X</li> <li>5th: 2.2X</li></ul></div> <div><ul><li>6th: 2X</li> <li>7th: 1.9X</li> <li>8th: 1.8X</li> <li>9th: 1.7X</li> <li>10th: 1.6X</li></ul></div> <div><ul><li>11th: 1.5X</li> <li>12th: 1.4X</li> <li>13th: 1.3X</li> <li>14th: 1.2X</li> <li>15th: 1.1X</li></ul></div></div></div> <p class="mt-2 mb-4">To prevent your players going stale they have to be rotated out of the Agent Hub every 4 weeks. A player is then restricted from being repromoted for a further 4 weeks. 
+                This ensures each of your clients receives the attention they deserve.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>How You Earn</u></b> <p class="mt-2">Gameplay: The players you promote in the Agent Hub will earn $FOOTBALL tokens each week based on their in game performances combined with the level of competition they are playing. 
+                This revenue can then be banked and viewed within the Contract Center earnings to date. Before depositing earnings into the Contract Center, you can swap earnings for additional contracts of any type.</p> <p class="mt-2 mb-4">Career Achievements: All players listed within your Contract Center will earn you $FOOTBALL tokens based on their career achievements. 
+                Each achievement is weighted based on how difficult it is to acheive. All achievement rewards are multiplied by the change in value of a player since you signed their contract.
+                This means that if you get a player at the beginning of their career and hold them until they win the World Cup, 
+                the $FOOTBALL earned would increase by the factor the player's value changed since you purchased them.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg">Growing Your Agency</b> <p class="mt-2">The players you have under contract are worth the same amount as their real world counter parts. 
+                As their value changes, you will be able to increase your budget through selling high performing players.
+                When a player's contract ends, the current value of that player is added back to your budget.
+                You can end a contract early, receiving 80% of a player's current value.
+                To grow your agency you will need to obtain more than the 100 contracts initially available for you to fill. 
+                This can be done when earnings are made through the players you promote in the Agent Hub.
+                To realise Agent Hub $FOOTBALL token earnings you deposit the tokens into your Contract center, increasing the contract earnings of the player. 
+                When transferring these earnings you are able to select the % of earnings to transfer, obtaining additional contracts for the reduced amount.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Private Agencies</u></b> <p class="mt-2 mb-4">Along with participating in the free global Transfer Kings game, you can setup a paid private agency to enhance your experience with your friends.
+                Within a Private Agency, you select from the same group of players, with no one allowed to select the same player. 
+                You can customise your league design, rewards and entry requirements to suit your needs.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Bot Prevention Controls</u></b> <p>Our built in controls will ensure rewards are based on genuine user participation, with rewards directly effected by how often you manage your global agency.</p></div></div>`;
+    },
+    $$slots: { default: true }
+  });
 }
 function WorkerWrapper(options2) {
   return new Worker(

@@ -18,7 +18,7 @@ import Layout from "./Layout.svelte";
             <p class="text-2xl">Welcome to Transfer Kings</p>
             <LogoIcon fill='#FFFFFF' className="w-10 ml-4" />
         </div>
-        <p class="my-2">Become your own football agent.</p>
+        <p class="my-2">Collect your favourite players on Transfer Kings.</p>
         <a href="/rules">
             <button class="my-2 px-4 py-2 rounded-sm">Rules</button>
         </a>
