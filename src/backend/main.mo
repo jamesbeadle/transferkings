@@ -1,81 +1,44 @@
 import Principal "mo:base/Principal";
+import Base "mo:waterway-mops/BaseTypes";
 import Result "mo:base/Result";
-import Text "mo:base/Text";
+import Array "mo:base/Array";
 import T "data-types/types";
-import DTOs "dtos/DTOs";
-import AgentManager "managers/agent-manager";
-
+import BaseCommands "commands/commands"
 
 actor Self {
+
+  private stable var profiles: [T.Profile] = [];
   
-  private let agentManager = AgentManager.AgentManager();
-  
-  public shared query ({ caller }) func getAgent() : async Result.Result<DTOs.AgentDTO, T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.getAgent(principalId);
-  };
-    
-  public shared ({ caller }) func createAgent(dto: DTOs.CreateAgentDTO) : async Result.Result<(), T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.createAgent(principalId, dto);
-  };
+  private var appStatus: Base.AppStatus = { 
+    onHold = false;
+    version = "0.0.1";
+  };  
 
-  public shared ({ caller }) func updateAgent(dto: DTOs.UpdateAgentDTO) : async Result.Result<DTOs.UpdateAgentDTO, T.Error> {
+  public shared query ({ caller }) func getProfile() : async Result.Result<T.Profile, T.Error> {
     assert not Principal.isAnonymous(caller);
     let principalId = Principal.toText(caller);
-    return agentManager.updateAgent(principalId, dto);
-  };
-
-  public shared query ({ caller }) func getContracts(dto: DTOs.GetContractsDTO) : async Result.Result<[DTOs.ContractDTO], T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.getContracts(principalId, dto);
-  };
-
-  public shared ({ caller }) func addContract(dto: DTOs.AddContractDTO) : async Result.Result<DTOs.AddContractDTO, T.Error>{
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.updateAgent(principalId, dto);
-  };
-
-  public shared ({ caller }) func endContract(dto: DTOs.EndContractDTO) : async Result.Result<(), T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.endContract(principalId, dto);
+   
+    let foundProfile = Array.find(profiles, func(profile: T.Profile) : Bool {
+      profile.principalId == principalId
+    });
+    switch(foundProfile){
+      case (?profile){
+        return #ok(profile);
+      };
+      case (null){
+        return #err(#NotFound);
+      }
+    }
   };
   
-  public shared ({ caller }) func swapClientFocus(dto: DTOs.SwapClientFocusDTO) : async Result.Result<(), T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.swapClientFocus(principalId, dto);
-
+  public shared query func getAppStatus() : async Result.Result<BaseCommands.AppStatusDTO, T.Error> {
+    return #ok(appStatus);
   };
 
-  public shared ({ caller }) func promoteClient(dto: DTOs.PromoteClientDTO) : async Result.Result<(), T.Error> {
-    assert not Principal.isAnonymous(caller);
-    let principalId = Principal.toText(caller);
-    return agentManager.promoteClient(principalId, dto);
-  };
-
-  public shared query ({ caller }) func isAgentNameTaken(agentName : Text) : async Result.Result<Bool, T.Error> {
-    assert not Principal.isAnonymous(caller);
-    return #ok(agentManager.isAgentNameTaken(agentName));
-  };
-  
-  //stable storage
-  private stable var stable_agents: [T.Agent] = [];
-  private stable var stable_unique_agent_names: [Text] = [];
-  
   system func preupgrade() {
-    stable_agents := agentManager.getStableAgents();
-    stable_unique_agent_names := agentManager.getStableUniqueAgentNames();
   };
 
   system func postupgrade() {
-    agentManager.setStableAgents(stable_agents);
-    agentManager.setStableUniqueAgentNames(stable_unique_agent_names);
   };
 
 };

@@ -7,21 +7,27 @@
     <title>Transfer Kings</title>
     <link href="https://transferkings.xyz" rel="canonical" />
     <meta
-      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."
+      content="Collect your favourite players on Transfer Kings."
       name="description"
     />
-    <meta content="Transfer Kings" property="og:title" />
     <meta
-      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."
+      content="Collect your favourite players on Transfer Kings"
+      property="og:title"
+    />
+    <meta
+      content="Collect your favourite players on Transfer Kings."
       property="og:description"
     />
     <meta content="website" property="og:type" />
     <meta content="https://transferkings.xyz" property="og:url" />
-    <meta content="https://transferkings.xyz/meta-share.jpg" property="og:image" />
+    <meta
+      content="https://transferkings.xyz/meta-share.jpg"
+      property="og:image"
+    />
     <meta content="summary_large_image" name="twitter:card" />
     <meta content="Transfer Kings" name="twitter:title" />
     <meta
-      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."
+      content="Collect your favourite players on Transfer Kings."
       name="twitter:description"
     />
     <meta
@@ -32,7 +38,6 @@
 
     <link crossorigin="anonymous" href="/manifest.webmanifest" rel="manifest" />
 
-    <!-- Favicon -->
     <link
       rel="icon"
       type="image/png"
@@ -47,9 +52,8 @@
     />
     <link rel="shortcut icon" href="%sveltekit.assets%/favicons/favicon.ico" />
 
-    <!-- iOS meta tags & icons -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="#2CE3A6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="#D7FE49" />
     <meta name="apple-mobile-web-app-title" content="Transfer Kings" />
     <link
       rel="apple-touch-icon"
@@ -58,17 +62,16 @@
     <link
       rel="mask-icon"
       href="%sveltekit.assets%/favicons/safari-pinned-tab.svg"
-      color="#2CE3A6"
+      color="#D7FE49"
     />
 
-    <!-- MS -->
-    <meta name="msapplication-TileColor" content="#101111" />
+    <meta name="msapplication-TileColor" content="#D7FE49" />
     <meta
       name="msapplication-config"
       content="%sveltekit.assets%/favicons/browserconfig.xml"
     />
 
-    <meta content="#2CE3A6" name="theme-color" />
+    <meta content="#D7FE49" name="theme-color" />
     %sveltekit.head%
 
     <style>
@@ -80,21 +83,17 @@
 
       @font-face {
         font-display: swap;
-        font-family: "Rubik";
+        font-family: "Tanker";
         font-style: normal;
         font-weight: 400;
-        src: url("%sveltekit.assets%/Rubik-Regular.woff2") format("woff2");
+        src: url("%sveltekit.assets%/Tanker-Regular.woff2") format("woff2");
       }
       body {
-        font-family: "Rubik", sans-serif !important;
+        font-family: "Tanker", sans-serif !important;
         color: white !important;
+        background-color: #0d0d0d;
         height: 100vh;
         margin: 0;
-        background-image: url("/background.jpg");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
       }
 
       #app-spinner {

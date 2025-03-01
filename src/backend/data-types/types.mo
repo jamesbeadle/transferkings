@@ -1,6 +1,16 @@
 import Countries "countries";
+import Base "mo:waterway-mops/BaseTypes";
 
 module Types {
+
+  public type Profile = {
+    principalId: Base.PrincipalId;
+    username: Text;
+    createdOn: Int;
+    profilePicture: Blob;
+    profilePictureExtension: Text;
+    termsAgreed: Bool;
+  };
 
   public type CardType = {
     #Shirt;

@@ -1,14 +1,18 @@
-import { D as DEV } from "./vendor.js";
+import "clsx";
+import { B as BROWSER } from "./vendor.js";
 import * as devalue from "devalue";
 import { Buffer } from "buffer";
 import { parse, serialize } from "cookie";
 import * as set_cookie_parser from "set-cookie-parser";
-import { nonNullish } from "@dfinity/utils";
-import "dompurify";
-import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
+import { AuthClient } from "@dfinity/auth-client";
+import { createAgent } from "@dfinity/utils";
+import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
+import { Principal } from "@dfinity/principal";
+import { Text as Text$1 } from "@dfinity/candid/lib/cjs/idl.js";
 let base = "";
 let assets = base;
+const app_dir = "_app";
 const initial = { base, assets };
 function override(paths) {
   base = paths.base;
@@ -27,7 +31,7 @@ const PAGE_METHODS = ["GET", "POST", "HEAD"];
 function negotiate(accept, types) {
   const parts = [];
   accept.split(",").forEach((str, i) => {
-    const match = /([^/]+)\/([^;]+)(?:;q=([0-9.]+))?/.exec(str);
+    const match = /([^/ \t]+)\/([^; \t]+)[ \t]*(?:;[ \t]*q=([0-9.]+))?/.exec(str);
     if (match) {
       const [, type, subtype, q = "1"] = match;
       parts.push({ type, subtype, q: +q, i });
@@ -182,6 +186,39 @@ function set_public_env(environment) {
 function set_safe_public_env(environment) {
   safe_public_env = environment;
 }
+const escape_html_attr_dict = {
+  "&": "&amp;",
+  '"': "&quot;"
+  // Svelte also escapes < because the escape function could be called inside a `noscript` there
+  // https://github.com/sveltejs/svelte/security/advisories/GHSA-8266-84wp-wv5c
+  // However, that doesn't apply in SvelteKit
+};
+const escape_html_dict = {
+  "&": "&amp;",
+  "<": "&lt;"
+};
+const surrogates = (
+  // high surrogate without paired low surrogate
+  "[\\ud800-\\udbff](?![\\udc00-\\udfff])|[\\ud800-\\udbff][\\udc00-\\udfff]|[\\udc00-\\udfff]"
+);
+const escape_html_attr_regex = new RegExp(
+  `[${Object.keys(escape_html_attr_dict).join("")}]|` + surrogates,
+  "g"
+);
+const escape_html_regex = new RegExp(
+  `[${Object.keys(escape_html_dict).join("")}]|` + surrogates,
+  "g"
+);
+function escape_html$1(str, is_attr) {
+  const dict = is_attr ? escape_html_attr_dict : escape_html_dict;
+  const escaped_str = str.replace(is_attr ? escape_html_attr_regex : escape_html_regex, (match) => {
+    if (match.length === 2) {
+      return match;
+    }
+    return dict[match] ?? `&#${match.charCodeAt(0)};`;
+  });
+  return escaped_str;
+}
 function method_not_allowed(mod, method) {
   return text(`${method} method not allowed`, {
     status: 405,
@@ -198,7 +235,7 @@ function allowed_methods(mod) {
   return allowed;
 }
 function static_error_page(options2, status, message) {
-  let page2 = options2.templates.error({ status, message });
+  let page2 = options2.templates.error({ status, message: escape_html$1(message) });
   return text(page2, {
     headers: { "content-type": "text/html; charset=utf-8" },
     status
@@ -326,107 +363,6 @@ function compact(arr) {
     (val) => val != null
   );
 }
-const internal = new URL("sveltekit-internal://");
-function resolve(base2, path) {
-  if (path[0] === "/" && path[1] === "/") return path;
-  let url = new URL(base2, internal);
-  url = new URL(path, url);
-  return url.protocol === internal.protocol ? url.pathname + url.search + url.hash : url.href;
-}
-function normalize_path(path, trailing_slash) {
-  if (path === "/" || trailing_slash === "ignore") return path;
-  if (trailing_slash === "never") {
-    return path.endsWith("/") ? path.slice(0, -1) : path;
-  } else if (trailing_slash === "always" && !path.endsWith("/")) {
-    return path + "/";
-  }
-  return path;
-}
-function decode_pathname(pathname) {
-  return pathname.split("%25").map(decodeURI).join("%25");
-}
-function decode_params(params) {
-  for (const key2 in params) {
-    params[key2] = decodeURIComponent(params[key2]);
-  }
-  return params;
-}
-const tracked_url_properties = (
-  /** @type {const} */
-  [
-    "href",
-    "pathname",
-    "search",
-    "toString",
-    "toJSON"
-  ]
-);
-function make_trackable(url, callback, search_params_callback) {
-  const tracked = new URL(url);
-  Object.defineProperty(tracked, "searchParams", {
-    value: new Proxy(tracked.searchParams, {
-      get(obj, key2) {
-        if (key2 === "get" || key2 === "getAll" || key2 === "has") {
-          return (param) => {
-            search_params_callback(param);
-            return obj[key2](param);
-          };
-        }
-        callback();
-        const value = Reflect.get(obj, key2);
-        return typeof value === "function" ? value.bind(obj) : value;
-      }
-    }),
-    enumerable: true,
-    configurable: true
-  });
-  for (const property of tracked_url_properties) {
-    Object.defineProperty(tracked, property, {
-      get() {
-        callback();
-        return url[property];
-      },
-      enumerable: true,
-      configurable: true
-    });
-  }
-  {
-    tracked[Symbol.for("nodejs.util.inspect.custom")] = (depth, opts, inspect) => {
-      return inspect(url, opts);
-    };
-  }
-  {
-    disable_hash(tracked);
-  }
-  return tracked;
-}
-function disable_hash(url) {
-  allow_nodejs_console_log(url);
-  Object.defineProperty(url, "hash", {
-    get() {
-      throw new Error(
-        "Cannot access event.url.hash. Consider using `$page.url.hash` inside a component instead"
-      );
-    }
-  });
-}
-function disable_search(url) {
-  allow_nodejs_console_log(url);
-  for (const property of ["search", "searchParams"]) {
-    Object.defineProperty(url, property, {
-      get() {
-        throw new Error(`Cannot access url.${property} on a page with prerendering enabled`);
-      }
-    });
-  }
-}
-function allow_nodejs_console_log(url) {
-  {
-    url[Symbol.for("nodejs.util.inspect.custom")] = (depth, opts, inspect) => {
-      return inspect(new URL(url), opts);
-    };
-  }
-}
 const DATA_SUFFIX = "/__data.json";
 const HTML_DATA_SUFFIX = ".html__data.json";
 function has_data_suffix(pathname) {
@@ -442,6 +378,16 @@ function strip_data_suffix(pathname) {
   }
   return pathname.slice(0, -DATA_SUFFIX.length);
 }
+const ROUTE_SUFFIX = "/__route.js";
+function has_resolution_suffix(pathname) {
+  return pathname.endsWith(ROUTE_SUFFIX);
+}
+function add_resolution_suffix(pathname) {
+  return pathname.replace(/\/$/, "") + ROUTE_SUFFIX;
+}
+function strip_resolution_suffix(pathname) {
+  return pathname.slice(0, -ROUTE_SUFFIX.length);
+}
 function is_action_json_request(event) {
   const accept = negotiate(event.request.headers.get("accept") ?? "*/*", [
     "application/json",
@@ -455,7 +401,7 @@ async function handle_action_json_request(event, options2, server) {
     const no_actions_error = new SvelteKitError(
       405,
       "Method Not Allowed",
-      "POST method not allowed. No actions exist for this page"
+      `POST method not allowed. No form actions exist for ${"this page"}`
     );
     return action_json(
       {
@@ -486,7 +432,8 @@ async function handle_action_json_request(event, options2, server) {
         data: stringify_action_response(
           data.data,
           /** @type {string} */
-          event.route.id
+          event.route.id,
+          options2.hooks.transport
         )
       });
     } else {
@@ -497,7 +444,8 @@ async function handle_action_json_request(event, options2, server) {
         data: stringify_action_response(
           data,
           /** @type {string} */
-          event.route.id
+          event.route.id,
+          options2.hooks.transport
         )
       });
     }
@@ -546,7 +494,7 @@ async function handle_action_request(event, server) {
       error: new SvelteKitError(
         405,
         "Method Not Allowed",
-        "POST method not allowed. No actions exist for this page"
+        `POST method not allowed. No form actions exist for ${"this page"}`
       )
     };
   }
@@ -586,7 +534,7 @@ async function handle_action_request(event, server) {
 function check_named_default_separate(actions) {
   if (actions.default && Object.keys(actions).length > 1) {
     throw new Error(
-      "When using named actions, the default action cannot be used. See the docs for more info: https://kit.svelte.dev/docs/form-actions#named-actions"
+      "When using named actions, the default action cannot be used. See the docs for more info: https://svelte.dev/docs/kit/form-actions#named-actions"
     );
   }
 }
@@ -625,13 +573,24 @@ function validate_action_return(data) {
     throw new Error("Cannot `return error(...)` — use `error(...)` or `return fail(...)` instead");
   }
 }
-function uneval_action_response(data, route_id) {
-  return try_deserialize(data, devalue.uneval, route_id);
+function uneval_action_response(data, route_id, transport) {
+  const replacer = (thing) => {
+    for (const key2 in transport) {
+      const encoded = transport[key2].encode(thing);
+      if (encoded) {
+        return `app.decode('${key2}', ${devalue.uneval(encoded, replacer)})`;
+      }
+    }
+  };
+  return try_serialize(data, (value) => devalue.uneval(value, replacer), route_id);
 }
-function stringify_action_response(data, route_id) {
-  return try_deserialize(data, devalue.stringify, route_id);
+function stringify_action_response(data, route_id, transport) {
+  const encoders = Object.fromEntries(
+    Object.entries(transport).map(([key2, value]) => [key2, value.encode])
+  );
+  return try_serialize(data, (value) => devalue.stringify(value, encoders), route_id);
 }
-function try_deserialize(data, fn, route_id) {
+function try_serialize(data, fn, route_id) {
   try {
     return fn(data);
   } catch (e) {
@@ -639,12 +598,113 @@ function try_deserialize(data, fn, route_id) {
       /** @type {any} */
       e
     );
+    if (data instanceof Response) {
+      throw new Error(
+        `Data returned from action inside ${route_id} is not serializable. Form actions need to return plain objects or fail(). E.g. return { success: true } or return fail(400, { message: "invalid" });`
+      );
+    }
     if ("path" in error) {
       let message = `Data returned from action inside ${route_id} is not serializable: ${error.message}`;
       if (error.path !== "") message += ` (data.${error.path})`;
       throw new Error(message);
     }
     throw error;
+  }
+}
+const internal = new URL("sveltekit-internal://");
+function resolve(base2, path) {
+  if (path[0] === "/" && path[1] === "/") return path;
+  let url = new URL(base2, internal);
+  url = new URL(path, url);
+  return url.protocol === internal.protocol ? url.pathname + url.search + url.hash : url.href;
+}
+function normalize_path(path, trailing_slash) {
+  if (path === "/" || trailing_slash === "ignore") return path;
+  if (trailing_slash === "never") {
+    return path.endsWith("/") ? path.slice(0, -1) : path;
+  } else if (trailing_slash === "always" && !path.endsWith("/")) {
+    return path + "/";
+  }
+  return path;
+}
+function decode_pathname(pathname) {
+  return pathname.split("%25").map(decodeURI).join("%25");
+}
+function decode_params(params) {
+  for (const key2 in params) {
+    params[key2] = decodeURIComponent(params[key2]);
+  }
+  return params;
+}
+function make_trackable(url, callback, search_params_callback, allow_hash = false) {
+  const tracked = new URL(url);
+  Object.defineProperty(tracked, "searchParams", {
+    value: new Proxy(tracked.searchParams, {
+      get(obj, key2) {
+        if (key2 === "get" || key2 === "getAll" || key2 === "has") {
+          return (param) => {
+            search_params_callback(param);
+            return obj[key2](param);
+          };
+        }
+        callback();
+        const value = Reflect.get(obj, key2);
+        return typeof value === "function" ? value.bind(obj) : value;
+      }
+    }),
+    enumerable: true,
+    configurable: true
+  });
+  const tracked_url_properties = ["href", "pathname", "search", "toString", "toJSON"];
+  if (allow_hash) tracked_url_properties.push("hash");
+  for (const property of tracked_url_properties) {
+    Object.defineProperty(tracked, property, {
+      get() {
+        callback();
+        return url[property];
+      },
+      enumerable: true,
+      configurable: true
+    });
+  }
+  {
+    tracked[Symbol.for("nodejs.util.inspect.custom")] = (depth, opts, inspect) => {
+      return inspect(url, opts);
+    };
+    tracked.searchParams[Symbol.for("nodejs.util.inspect.custom")] = (depth, opts, inspect) => {
+      return inspect(url.searchParams, opts);
+    };
+  }
+  if (!allow_hash) {
+    disable_hash(tracked);
+  }
+  return tracked;
+}
+function disable_hash(url) {
+  allow_nodejs_console_log(url);
+  Object.defineProperty(url, "hash", {
+    get() {
+      throw new Error(
+        "Cannot access event.url.hash. Consider using `page.url.hash` inside a component instead"
+      );
+    }
+  });
+}
+function disable_search(url) {
+  allow_nodejs_console_log(url);
+  for (const property of ["search", "searchParams"]) {
+    Object.defineProperty(url, property, {
+      get() {
+        throw new Error(`Cannot access url.${property} on a page with prerendering enabled`);
+      }
+    });
+  }
+}
+function allow_nodejs_console_log(url) {
+  {
+    url[Symbol.for("nodejs.util.inspect.custom")] = (depth, opts, inspect) => {
+      return inspect(new URL(url), opts);
+    };
   }
 }
 const INVALIDATED_PARAM = "x-sveltekit-invalidated";
@@ -659,6 +719,18 @@ function b64_encode(buffer) {
       new Uint16Array(new Uint8Array(buffer))
     )
   );
+}
+function get_relative_path(from, to) {
+  const from_parts = from.split(/[/\\]/);
+  const to_parts = to.split(/[/\\]/);
+  from_parts.pop();
+  while (from_parts[0] === to_parts[0]) {
+    from_parts.shift();
+    to_parts.shift();
+  }
+  let i = from_parts.length;
+  while (i--) from_parts[i] = "..";
+  return from_parts.concat(to_parts).join("/");
 }
 async function load_server_data({ event, state, node, parent }) {
   if (!node?.server) return null;
@@ -786,7 +858,7 @@ function create_universal_fetch(event, state, fetched, csr, resolve_opts) {
         dependency = { response, body: null };
         state.prerendering.dependencies.set(url.pathname, dependency);
       }
-    } else {
+    } else if (url.protocol === "https:" || url.protocol === "http:") {
       const mode = input instanceof Request ? input.mode : init2?.mode ?? "cors";
       if (mode === "no-cors") {
         response = new Response("", {
@@ -867,7 +939,7 @@ function create_universal_fetch(event, state, fetched, csr, resolve_opts) {
           const included = resolve_opts.filterSerializedResponseHeaders(lower, value);
           if (!included) {
             throw new Error(
-              `Failed to get response header "${lower}" — it must be included by the \`filterSerializedResponseHeaders\` option: https://kit.svelte.dev/docs/hooks#server-hooks-handle (at ${event.route.id})`
+              `Failed to get response header "${lower}" — it must be included by the \`filterSerializedResponseHeaders\` option: https://svelte.dev/docs/kit/hooks#Server-hooks-handle (at ${event.route.id})`
             );
           }
         }
@@ -896,65 +968,1220 @@ async function stream_to_string(stream) {
   }
   return result;
 }
-function noop() {
-}
+var is_array = Array.isArray;
+var index_of = Array.prototype.indexOf;
+var array_from = Array.from;
+var define_property = Object.defineProperty;
+var get_descriptor = Object.getOwnPropertyDescriptor;
+const noop = () => {
+};
 function is_promise(value) {
-  return !!value && (typeof value === "object" || typeof value === "function") && typeof /** @type {any} */
-  value.then === "function";
+  return typeof value?.then === "function";
 }
-function run(fn) {
-  return fn();
+function run_all(arr) {
+  for (var i = 0; i < arr.length; i++) {
+    arr[i]();
+  }
 }
-function blank_object() {
-  return /* @__PURE__ */ Object.create(null);
-}
-function run_all(fns) {
-  fns.forEach(run);
-}
-function is_function(thing) {
-  return typeof thing === "function";
+function equals(value) {
+  return value === this.v;
 }
 function safe_not_equal(a, b) {
-  return a != a ? b == b : a !== b || a && typeof a === "object" || typeof a === "function";
+  return a != a ? b == b : a !== b || a !== null && typeof a === "object" || typeof a === "function";
 }
-function subscribe(store, ...callbacks) {
-  if (store == null) {
-    for (const callback of callbacks) {
-      callback(void 0);
-    }
-    return noop;
+function safe_equals(value) {
+  return !safe_not_equal(value, this.v);
+}
+const DERIVED = 1 << 1;
+const EFFECT = 1 << 2;
+const RENDER_EFFECT = 1 << 3;
+const BLOCK_EFFECT = 1 << 4;
+const BRANCH_EFFECT = 1 << 5;
+const ROOT_EFFECT = 1 << 6;
+const BOUNDARY_EFFECT = 1 << 7;
+const UNOWNED = 1 << 8;
+const DISCONNECTED = 1 << 9;
+const CLEAN = 1 << 10;
+const DIRTY = 1 << 11;
+const MAYBE_DIRTY = 1 << 12;
+const INERT = 1 << 13;
+const DESTROYED = 1 << 14;
+const EFFECT_RAN = 1 << 15;
+const EFFECT_TRANSPARENT = 1 << 16;
+const HEAD_EFFECT = 1 << 19;
+const EFFECT_HAS_DERIVED = 1 << 20;
+const LEGACY_PROPS = Symbol("legacy props");
+function effect_update_depth_exceeded() {
+  {
+    throw new Error(`https://svelte.dev/e/effect_update_depth_exceeded`);
   }
-  const unsub = store.subscribe(...callbacks);
-  return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
 }
-function null_to_empty(value) {
-  return value == null ? "" : value;
+function hydration_failed() {
+  {
+    throw new Error(`https://svelte.dev/e/hydration_failed`);
+  }
 }
-let current_component;
-function set_current_component(component) {
-  current_component = component;
+function state_unsafe_local_read() {
+  {
+    throw new Error(`https://svelte.dev/e/state_unsafe_local_read`);
+  }
 }
-function get_current_component() {
-  if (!current_component) throw new Error("Function called outside component initialization");
-  return current_component;
+function state_unsafe_mutation() {
+  {
+    throw new Error(`https://svelte.dev/e/state_unsafe_mutation`);
+  }
 }
-function onDestroy(fn) {
-  get_current_component().$$.on_destroy.push(fn);
+let tracing_mode_flag = false;
+const HYDRATION_START = "[";
+const HYDRATION_END = "]";
+const HYDRATION_ERROR = {};
+function hydration_mismatch(location) {
+  {
+    console.warn(`https://svelte.dev/e/hydration_mismatch`);
+  }
 }
-function setContext(key2, context) {
-  get_current_component().$$.context.set(key2, context);
-  return context;
+function lifecycle_outside_component(name) {
+  {
+    throw new Error(`https://svelte.dev/e/lifecycle_outside_component`);
+  }
 }
-function getContext(key2) {
-  return get_current_component().$$.context.get(key2);
+let component_context = null;
+function set_component_context(context2) {
+  component_context = context2;
 }
-function ensure_array_like(array_like_or_iterator) {
-  return array_like_or_iterator?.length !== void 0 ? array_like_or_iterator : Array.from(array_like_or_iterator);
+function push$1(props, runes = false, fn) {
+  component_context = {
+    p: component_context,
+    c: null,
+    e: null,
+    m: false,
+    s: props,
+    x: null,
+    l: null
+  };
 }
-const ATTR_REGEX = /[&"]/g;
+function pop$1(component) {
+  const context_stack_item = component_context;
+  if (context_stack_item !== null) {
+    const component_effects = context_stack_item.e;
+    if (component_effects !== null) {
+      var previous_effect = active_effect;
+      var previous_reaction = active_reaction;
+      context_stack_item.e = null;
+      try {
+        for (var i = 0; i < component_effects.length; i++) {
+          var component_effect = component_effects[i];
+          set_active_effect(component_effect.effect);
+          set_active_reaction(component_effect.reaction);
+          effect(component_effect.fn);
+        }
+      } finally {
+        set_active_effect(previous_effect);
+        set_active_reaction(previous_reaction);
+      }
+    }
+    component_context = context_stack_item.p;
+    context_stack_item.m = true;
+  }
+  return (
+    /** @type {T} */
+    {}
+  );
+}
+function is_runes() {
+  return true;
+}
+function source(v, stack) {
+  var signal = {
+    f: 0,
+    // TODO ideally we could skip this altogether, but it causes type errors
+    v,
+    reactions: null,
+    equals,
+    rv: 0,
+    wv: 0
+  };
+  return signal;
+}
+// @__NO_SIDE_EFFECTS__
+function mutable_source(initial_value, immutable = false) {
+  const s2 = source(initial_value);
+  if (!immutable) {
+    s2.equals = safe_equals;
+  }
+  return s2;
+}
+function set(source2, value) {
+  if (active_reaction !== null && !untracking && is_runes() && (active_reaction.f & (DERIVED | BLOCK_EFFECT)) !== 0 && // If the source was created locally within the current derived, then
+  // we allow the mutation.
+  (derived_sources === null || !derived_sources.includes(source2))) {
+    state_unsafe_mutation();
+  }
+  return internal_set(source2, value);
+}
+function internal_set(source2, value) {
+  if (!source2.equals(value)) {
+    source2.v;
+    source2.v = value;
+    source2.wv = increment_write_version();
+    mark_reactions(source2, DIRTY);
+    if (active_effect !== null && (active_effect.f & CLEAN) !== 0 && (active_effect.f & (BRANCH_EFFECT | ROOT_EFFECT)) === 0) {
+      if (untracked_writes === null) {
+        set_untracked_writes([source2]);
+      } else {
+        untracked_writes.push(source2);
+      }
+    }
+  }
+  return value;
+}
+function mark_reactions(signal, status) {
+  var reactions = signal.reactions;
+  if (reactions === null) return;
+  var length = reactions.length;
+  for (var i = 0; i < length; i++) {
+    var reaction = reactions[i];
+    var flags = reaction.f;
+    if ((flags & DIRTY) !== 0) continue;
+    set_signal_status(reaction, status);
+    if ((flags & (CLEAN | UNOWNED)) !== 0) {
+      if ((flags & DERIVED) !== 0) {
+        mark_reactions(
+          /** @type {Derived} */
+          reaction,
+          MAYBE_DIRTY
+        );
+      } else {
+        schedule_effect(
+          /** @type {Effect} */
+          reaction
+        );
+      }
+    }
+  }
+}
+let hydrating = false;
+function set_hydrating(value) {
+  hydrating = value;
+}
+let hydrate_node;
+function set_hydrate_node(node) {
+  if (node === null) {
+    hydration_mismatch();
+    throw HYDRATION_ERROR;
+  }
+  return hydrate_node = node;
+}
+function hydrate_next() {
+  return set_hydrate_node(
+    /** @type {TemplateNode} */
+    /* @__PURE__ */ get_next_sibling(hydrate_node)
+  );
+}
+var $window;
+var first_child_getter;
+var next_sibling_getter;
+function init_operations() {
+  if ($window !== void 0) {
+    return;
+  }
+  $window = window;
+  var element_prototype = Element.prototype;
+  var node_prototype = Node.prototype;
+  first_child_getter = get_descriptor(node_prototype, "firstChild").get;
+  next_sibling_getter = get_descriptor(node_prototype, "nextSibling").get;
+  element_prototype.__click = void 0;
+  element_prototype.__className = void 0;
+  element_prototype.__attributes = null;
+  element_prototype.__styles = null;
+  element_prototype.__e = void 0;
+  Text.prototype.__t = void 0;
+}
+function create_text(value = "") {
+  return document.createTextNode(value);
+}
+// @__NO_SIDE_EFFECTS__
+function get_first_child(node) {
+  return first_child_getter.call(node);
+}
+// @__NO_SIDE_EFFECTS__
+function get_next_sibling(node) {
+  return next_sibling_getter.call(node);
+}
+function clear_text_content(node) {
+  node.textContent = "";
+}
+function destroy_derived_effects(derived2) {
+  var effects = derived2.effects;
+  if (effects !== null) {
+    derived2.effects = null;
+    for (var i = 0; i < effects.length; i += 1) {
+      destroy_effect(
+        /** @type {Effect} */
+        effects[i]
+      );
+    }
+  }
+}
+function get_derived_parent_effect(derived2) {
+  var parent = derived2.parent;
+  while (parent !== null) {
+    if ((parent.f & DERIVED) === 0) {
+      return (
+        /** @type {Effect} */
+        parent
+      );
+    }
+    parent = parent.parent;
+  }
+  return null;
+}
+function execute_derived(derived2) {
+  var value;
+  var prev_active_effect = active_effect;
+  set_active_effect(get_derived_parent_effect(derived2));
+  {
+    try {
+      destroy_derived_effects(derived2);
+      value = update_reaction(derived2);
+    } finally {
+      set_active_effect(prev_active_effect);
+    }
+  }
+  return value;
+}
+function update_derived(derived2) {
+  var value = execute_derived(derived2);
+  var status = (skip_reaction || (derived2.f & UNOWNED) !== 0) && derived2.deps !== null ? MAYBE_DIRTY : CLEAN;
+  set_signal_status(derived2, status);
+  if (!derived2.equals(value)) {
+    derived2.v = value;
+    derived2.wv = increment_write_version();
+  }
+}
+function push_effect(effect2, parent_effect) {
+  var parent_last = parent_effect.last;
+  if (parent_last === null) {
+    parent_effect.last = parent_effect.first = effect2;
+  } else {
+    parent_last.next = effect2;
+    effect2.prev = parent_last;
+    parent_effect.last = effect2;
+  }
+}
+function create_effect(type, fn, sync, push2 = true) {
+  var is_root = (type & ROOT_EFFECT) !== 0;
+  var parent_effect = active_effect;
+  var effect2 = {
+    ctx: component_context,
+    deps: null,
+    nodes_start: null,
+    nodes_end: null,
+    f: type | DIRTY,
+    first: null,
+    fn,
+    last: null,
+    next: null,
+    parent: is_root ? null : parent_effect,
+    prev: null,
+    teardown: null,
+    transitions: null,
+    wv: 0
+  };
+  if (sync) {
+    try {
+      update_effect(effect2);
+      effect2.f |= EFFECT_RAN;
+    } catch (e) {
+      destroy_effect(effect2);
+      throw e;
+    }
+  } else if (fn !== null) {
+    schedule_effect(effect2);
+  }
+  var inert = sync && effect2.deps === null && effect2.first === null && effect2.nodes_start === null && effect2.teardown === null && (effect2.f & (EFFECT_HAS_DERIVED | BOUNDARY_EFFECT)) === 0;
+  if (!inert && !is_root && push2) {
+    if (parent_effect !== null) {
+      push_effect(effect2, parent_effect);
+    }
+    if (active_reaction !== null && (active_reaction.f & DERIVED) !== 0) {
+      var derived2 = (
+        /** @type {Derived} */
+        active_reaction
+      );
+      (derived2.effects ??= []).push(effect2);
+    }
+  }
+  return effect2;
+}
+function component_root(fn) {
+  const effect2 = create_effect(ROOT_EFFECT, fn, true);
+  return (options2 = {}) => {
+    return new Promise((fulfil) => {
+      if (options2.outro) {
+        pause_effect(effect2, () => {
+          destroy_effect(effect2);
+          fulfil(void 0);
+        });
+      } else {
+        destroy_effect(effect2);
+        fulfil(void 0);
+      }
+    });
+  };
+}
+function effect(fn) {
+  return create_effect(EFFECT, fn, false);
+}
+function branch(fn, push2 = true) {
+  return create_effect(RENDER_EFFECT | BRANCH_EFFECT, fn, true, push2);
+}
+function execute_effect_teardown(effect2) {
+  var teardown = effect2.teardown;
+  if (teardown !== null) {
+    const previous_reaction = active_reaction;
+    set_active_reaction(null);
+    try {
+      teardown.call(null);
+    } finally {
+      set_active_reaction(previous_reaction);
+    }
+  }
+}
+function destroy_effect_children(signal, remove_dom = false) {
+  var effect2 = signal.first;
+  signal.first = signal.last = null;
+  while (effect2 !== null) {
+    var next = effect2.next;
+    destroy_effect(effect2, remove_dom);
+    effect2 = next;
+  }
+}
+function destroy_block_effect_children(signal) {
+  var effect2 = signal.first;
+  while (effect2 !== null) {
+    var next = effect2.next;
+    if ((effect2.f & BRANCH_EFFECT) === 0) {
+      destroy_effect(effect2);
+    }
+    effect2 = next;
+  }
+}
+function destroy_effect(effect2, remove_dom = true) {
+  var removed = false;
+  if ((remove_dom || (effect2.f & HEAD_EFFECT) !== 0) && effect2.nodes_start !== null) {
+    var node = effect2.nodes_start;
+    var end = effect2.nodes_end;
+    while (node !== null) {
+      var next = node === end ? null : (
+        /** @type {TemplateNode} */
+        /* @__PURE__ */ get_next_sibling(node)
+      );
+      node.remove();
+      node = next;
+    }
+    removed = true;
+  }
+  destroy_effect_children(effect2, remove_dom && !removed);
+  remove_reactions(effect2, 0);
+  set_signal_status(effect2, DESTROYED);
+  var transitions = effect2.transitions;
+  if (transitions !== null) {
+    for (const transition of transitions) {
+      transition.stop();
+    }
+  }
+  execute_effect_teardown(effect2);
+  var parent = effect2.parent;
+  if (parent !== null && parent.first !== null) {
+    unlink_effect(effect2);
+  }
+  effect2.next = effect2.prev = effect2.teardown = effect2.ctx = effect2.deps = effect2.fn = effect2.nodes_start = effect2.nodes_end = null;
+}
+function unlink_effect(effect2) {
+  var parent = effect2.parent;
+  var prev = effect2.prev;
+  var next = effect2.next;
+  if (prev !== null) prev.next = next;
+  if (next !== null) next.prev = prev;
+  if (parent !== null) {
+    if (parent.first === effect2) parent.first = next;
+    if (parent.last === effect2) parent.last = prev;
+  }
+}
+function pause_effect(effect2, callback) {
+  var transitions = [];
+  pause_children(effect2, transitions, true);
+  run_out_transitions(transitions, () => {
+    destroy_effect(effect2);
+    if (callback) callback();
+  });
+}
+function run_out_transitions(transitions, fn) {
+  var remaining = transitions.length;
+  if (remaining > 0) {
+    var check = () => --remaining || fn();
+    for (var transition of transitions) {
+      transition.out(check);
+    }
+  } else {
+    fn();
+  }
+}
+function pause_children(effect2, transitions, local) {
+  if ((effect2.f & INERT) !== 0) return;
+  effect2.f ^= INERT;
+  if (effect2.transitions !== null) {
+    for (const transition of effect2.transitions) {
+      if (transition.is_global || local) {
+        transitions.push(transition);
+      }
+    }
+  }
+  var child = effect2.first;
+  while (child !== null) {
+    var sibling = child.next;
+    var transparent = (child.f & EFFECT_TRANSPARENT) !== 0 || (child.f & BRANCH_EFFECT) !== 0;
+    pause_children(child, transitions, transparent ? local : false);
+    child = sibling;
+  }
+}
+let micro_tasks = [];
+let idle_tasks = [];
+function run_micro_tasks() {
+  var tasks = micro_tasks;
+  micro_tasks = [];
+  run_all(tasks);
+}
+function run_idle_tasks() {
+  var tasks = idle_tasks;
+  idle_tasks = [];
+  run_all(tasks);
+}
+function flush_tasks() {
+  if (micro_tasks.length > 0) {
+    run_micro_tasks();
+  }
+  if (idle_tasks.length > 0) {
+    run_idle_tasks();
+  }
+}
+let is_throwing_error = false;
+let is_flushing = false;
+let last_scheduled_effect = null;
+let is_updating_effect = false;
+let queued_root_effects = [];
+let dev_effect_stack = [];
+let active_reaction = null;
+let untracking = false;
+function set_active_reaction(reaction) {
+  active_reaction = reaction;
+}
+let active_effect = null;
+function set_active_effect(effect2) {
+  active_effect = effect2;
+}
+let derived_sources = null;
+let new_deps = null;
+let skipped_deps = 0;
+let untracked_writes = null;
+function set_untracked_writes(value) {
+  untracked_writes = value;
+}
+let write_version = 1;
+let read_version = 0;
+let skip_reaction = false;
+function increment_write_version() {
+  return ++write_version;
+}
+function check_dirtiness(reaction) {
+  var flags = reaction.f;
+  if ((flags & DIRTY) !== 0) {
+    return true;
+  }
+  if ((flags & MAYBE_DIRTY) !== 0) {
+    var dependencies = reaction.deps;
+    var is_unowned = (flags & UNOWNED) !== 0;
+    if (dependencies !== null) {
+      var i;
+      var dependency;
+      var is_disconnected = (flags & DISCONNECTED) !== 0;
+      var is_unowned_connected = is_unowned && active_effect !== null && !skip_reaction;
+      var length = dependencies.length;
+      if (is_disconnected || is_unowned_connected) {
+        var derived2 = (
+          /** @type {Derived} */
+          reaction
+        );
+        var parent = derived2.parent;
+        for (i = 0; i < length; i++) {
+          dependency = dependencies[i];
+          if (is_disconnected || !dependency?.reactions?.includes(derived2)) {
+            (dependency.reactions ??= []).push(derived2);
+          }
+        }
+        if (is_disconnected) {
+          derived2.f ^= DISCONNECTED;
+        }
+        if (is_unowned_connected && parent !== null && (parent.f & UNOWNED) === 0) {
+          derived2.f ^= UNOWNED;
+        }
+      }
+      for (i = 0; i < length; i++) {
+        dependency = dependencies[i];
+        if (check_dirtiness(
+          /** @type {Derived} */
+          dependency
+        )) {
+          update_derived(
+            /** @type {Derived} */
+            dependency
+          );
+        }
+        if (dependency.wv > reaction.wv) {
+          return true;
+        }
+      }
+    }
+    if (!is_unowned || active_effect !== null && !skip_reaction) {
+      set_signal_status(reaction, CLEAN);
+    }
+  }
+  return false;
+}
+function propagate_error(error, effect2) {
+  var current = effect2;
+  while (current !== null) {
+    if ((current.f & BOUNDARY_EFFECT) !== 0) {
+      try {
+        current.fn(error);
+        return;
+      } catch {
+        current.f ^= BOUNDARY_EFFECT;
+      }
+    }
+    current = current.parent;
+  }
+  is_throwing_error = false;
+  throw error;
+}
+function should_rethrow_error(effect2) {
+  return (effect2.f & DESTROYED) === 0 && (effect2.parent === null || (effect2.parent.f & BOUNDARY_EFFECT) === 0);
+}
+function handle_error(error, effect2, previous_effect, component_context2) {
+  if (is_throwing_error) {
+    if (previous_effect === null) {
+      is_throwing_error = false;
+    }
+    if (should_rethrow_error(effect2)) {
+      throw error;
+    }
+    return;
+  }
+  if (previous_effect !== null) {
+    is_throwing_error = true;
+  }
+  {
+    propagate_error(error, effect2);
+    return;
+  }
+}
+function schedule_possible_effect_self_invalidation(signal, effect2, root2 = true) {
+  var reactions = signal.reactions;
+  if (reactions === null) return;
+  for (var i = 0; i < reactions.length; i++) {
+    var reaction = reactions[i];
+    if ((reaction.f & DERIVED) !== 0) {
+      schedule_possible_effect_self_invalidation(
+        /** @type {Derived} */
+        reaction,
+        effect2,
+        false
+      );
+    } else if (effect2 === reaction) {
+      if (root2) {
+        set_signal_status(reaction, DIRTY);
+      } else if ((reaction.f & CLEAN) !== 0) {
+        set_signal_status(reaction, MAYBE_DIRTY);
+      }
+      schedule_effect(
+        /** @type {Effect} */
+        reaction
+      );
+    }
+  }
+}
+function update_reaction(reaction) {
+  var previous_deps = new_deps;
+  var previous_skipped_deps = skipped_deps;
+  var previous_untracked_writes = untracked_writes;
+  var previous_reaction = active_reaction;
+  var previous_skip_reaction = skip_reaction;
+  var prev_derived_sources = derived_sources;
+  var previous_component_context = component_context;
+  var previous_untracking = untracking;
+  var flags = reaction.f;
+  new_deps = /** @type {null | Value[]} */
+  null;
+  skipped_deps = 0;
+  untracked_writes = null;
+  skip_reaction = (flags & UNOWNED) !== 0 && (untracking || !is_updating_effect || active_reaction === null);
+  active_reaction = (flags & (BRANCH_EFFECT | ROOT_EFFECT)) === 0 ? reaction : null;
+  derived_sources = null;
+  set_component_context(reaction.ctx);
+  untracking = false;
+  read_version++;
+  try {
+    var result = (
+      /** @type {Function} */
+      (0, reaction.fn)()
+    );
+    var deps = reaction.deps;
+    if (new_deps !== null) {
+      var i;
+      remove_reactions(reaction, skipped_deps);
+      if (deps !== null && skipped_deps > 0) {
+        deps.length = skipped_deps + new_deps.length;
+        for (i = 0; i < new_deps.length; i++) {
+          deps[skipped_deps + i] = new_deps[i];
+        }
+      } else {
+        reaction.deps = deps = new_deps;
+      }
+      if (!skip_reaction) {
+        for (i = skipped_deps; i < deps.length; i++) {
+          (deps[i].reactions ??= []).push(reaction);
+        }
+      }
+    } else if (deps !== null && skipped_deps < deps.length) {
+      remove_reactions(reaction, skipped_deps);
+      deps.length = skipped_deps;
+    }
+    if (is_runes() && untracked_writes !== null && !untracking && deps !== null && (reaction.f & (DERIVED | MAYBE_DIRTY | DIRTY)) === 0) {
+      for (i = 0; i < /** @type {Source[]} */
+      untracked_writes.length; i++) {
+        schedule_possible_effect_self_invalidation(
+          untracked_writes[i],
+          /** @type {Effect} */
+          reaction
+        );
+      }
+    }
+    if (previous_reaction !== null) {
+      read_version++;
+    }
+    return result;
+  } finally {
+    new_deps = previous_deps;
+    skipped_deps = previous_skipped_deps;
+    untracked_writes = previous_untracked_writes;
+    active_reaction = previous_reaction;
+    skip_reaction = previous_skip_reaction;
+    derived_sources = prev_derived_sources;
+    set_component_context(previous_component_context);
+    untracking = previous_untracking;
+  }
+}
+function remove_reaction(signal, dependency) {
+  let reactions = dependency.reactions;
+  if (reactions !== null) {
+    var index = index_of.call(reactions, signal);
+    if (index !== -1) {
+      var new_length = reactions.length - 1;
+      if (new_length === 0) {
+        reactions = dependency.reactions = null;
+      } else {
+        reactions[index] = reactions[new_length];
+        reactions.pop();
+      }
+    }
+  }
+  if (reactions === null && (dependency.f & DERIVED) !== 0 && // Destroying a child effect while updating a parent effect can cause a dependency to appear
+  // to be unused, when in fact it is used by the currently-updating parent. Checking `new_deps`
+  // allows us to skip the expensive work of disconnecting and immediately reconnecting it
+  (new_deps === null || !new_deps.includes(dependency))) {
+    set_signal_status(dependency, MAYBE_DIRTY);
+    if ((dependency.f & (UNOWNED | DISCONNECTED)) === 0) {
+      dependency.f ^= DISCONNECTED;
+    }
+    destroy_derived_effects(
+      /** @type {Derived} **/
+      dependency
+    );
+    remove_reactions(
+      /** @type {Derived} **/
+      dependency,
+      0
+    );
+  }
+}
+function remove_reactions(signal, start_index) {
+  var dependencies = signal.deps;
+  if (dependencies === null) return;
+  for (var i = start_index; i < dependencies.length; i++) {
+    remove_reaction(signal, dependencies[i]);
+  }
+}
+function update_effect(effect2) {
+  var flags = effect2.f;
+  if ((flags & DESTROYED) !== 0) {
+    return;
+  }
+  set_signal_status(effect2, CLEAN);
+  var previous_effect = active_effect;
+  var previous_component_context = component_context;
+  var was_updating_effect = is_updating_effect;
+  active_effect = effect2;
+  is_updating_effect = true;
+  try {
+    if ((flags & BLOCK_EFFECT) !== 0) {
+      destroy_block_effect_children(effect2);
+    } else {
+      destroy_effect_children(effect2);
+    }
+    execute_effect_teardown(effect2);
+    var teardown = update_reaction(effect2);
+    effect2.teardown = typeof teardown === "function" ? teardown : null;
+    effect2.wv = write_version;
+    var deps = effect2.deps;
+    var dep;
+    if (BROWSER && tracing_mode_flag && (effect2.f & DIRTY) !== 0 && deps !== null) ;
+    if (BROWSER) ;
+  } catch (error) {
+    handle_error(error, effect2, previous_effect, previous_component_context || effect2.ctx);
+  } finally {
+    is_updating_effect = was_updating_effect;
+    active_effect = previous_effect;
+  }
+}
+function infinite_loop_guard() {
+  try {
+    effect_update_depth_exceeded();
+  } catch (error) {
+    if (last_scheduled_effect !== null) {
+      {
+        handle_error(error, last_scheduled_effect, null);
+      }
+    } else {
+      throw error;
+    }
+  }
+}
+function flush_queued_root_effects() {
+  try {
+    var flush_count = 0;
+    while (queued_root_effects.length > 0) {
+      if (flush_count++ > 1e3) {
+        infinite_loop_guard();
+      }
+      var root_effects = queued_root_effects;
+      var length = root_effects.length;
+      queued_root_effects = [];
+      for (var i = 0; i < length; i++) {
+        var root2 = root_effects[i];
+        if ((root2.f & CLEAN) === 0) {
+          root2.f ^= CLEAN;
+        }
+        var collected_effects = process_effects(root2);
+        flush_queued_effects(collected_effects);
+      }
+    }
+  } finally {
+    is_flushing = false;
+    last_scheduled_effect = null;
+  }
+}
+function flush_queued_effects(effects) {
+  var length = effects.length;
+  if (length === 0) return;
+  for (var i = 0; i < length; i++) {
+    var effect2 = effects[i];
+    if ((effect2.f & (DESTROYED | INERT)) === 0) {
+      try {
+        if (check_dirtiness(effect2)) {
+          update_effect(effect2);
+          if (effect2.deps === null && effect2.first === null && effect2.nodes_start === null) {
+            if (effect2.teardown === null) {
+              unlink_effect(effect2);
+            } else {
+              effect2.fn = null;
+            }
+          }
+        }
+      } catch (error) {
+        handle_error(error, effect2, null, effect2.ctx);
+      }
+    }
+  }
+}
+function schedule_effect(signal) {
+  if (!is_flushing) {
+    is_flushing = true;
+    queueMicrotask(flush_queued_root_effects);
+  }
+  var effect2 = last_scheduled_effect = signal;
+  while (effect2.parent !== null) {
+    effect2 = effect2.parent;
+    var flags = effect2.f;
+    if ((flags & (ROOT_EFFECT | BRANCH_EFFECT)) !== 0) {
+      if ((flags & CLEAN) === 0) return;
+      effect2.f ^= CLEAN;
+    }
+  }
+  queued_root_effects.push(effect2);
+}
+function process_effects(root2) {
+  var effects = [];
+  var effect2 = root2.first;
+  while (effect2 !== null) {
+    var flags = effect2.f;
+    var is_branch = (flags & BRANCH_EFFECT) !== 0;
+    var is_skippable_branch = is_branch && (flags & CLEAN) !== 0;
+    if (!is_skippable_branch && (flags & INERT) === 0) {
+      if ((flags & EFFECT) !== 0) {
+        effects.push(effect2);
+      } else if (is_branch) {
+        effect2.f ^= CLEAN;
+      } else {
+        var previous_active_reaction = active_reaction;
+        try {
+          active_reaction = effect2;
+          if (check_dirtiness(effect2)) {
+            update_effect(effect2);
+          }
+        } catch (error) {
+          handle_error(error, effect2, null, effect2.ctx);
+        } finally {
+          active_reaction = previous_active_reaction;
+        }
+      }
+      var child = effect2.first;
+      if (child !== null) {
+        effect2 = child;
+        continue;
+      }
+    }
+    var parent = effect2.parent;
+    effect2 = effect2.next;
+    while (effect2 === null && parent !== null) {
+      effect2 = parent.next;
+      parent = parent.parent;
+    }
+  }
+  return effects;
+}
+function flushSync(fn) {
+  var result;
+  flush_tasks();
+  while (queued_root_effects.length > 0) {
+    is_flushing = true;
+    flush_queued_root_effects();
+    flush_tasks();
+  }
+  return (
+    /** @type {T} */
+    result
+  );
+}
+function get$1(signal) {
+  var flags = signal.f;
+  var is_derived = (flags & DERIVED) !== 0;
+  if (active_reaction !== null && !untracking) {
+    if (derived_sources !== null && derived_sources.includes(signal)) {
+      state_unsafe_local_read();
+    }
+    var deps = active_reaction.deps;
+    if (signal.rv < read_version) {
+      signal.rv = read_version;
+      if (new_deps === null && deps !== null && deps[skipped_deps] === signal) {
+        skipped_deps++;
+      } else if (new_deps === null) {
+        new_deps = [signal];
+      } else if (!skip_reaction || !new_deps.includes(signal)) {
+        new_deps.push(signal);
+      }
+    }
+  } else if (is_derived && /** @type {Derived} */
+  signal.deps === null && /** @type {Derived} */
+  signal.effects === null) {
+    var derived2 = (
+      /** @type {Derived} */
+      signal
+    );
+    var parent = derived2.parent;
+    if (parent !== null && (parent.f & UNOWNED) === 0) {
+      derived2.f ^= UNOWNED;
+    }
+  }
+  if (is_derived) {
+    derived2 = /** @type {Derived} */
+    signal;
+    if (check_dirtiness(derived2)) {
+      update_derived(derived2);
+    }
+  }
+  return signal.v;
+}
+function untrack(fn) {
+  var previous_untracking = untracking;
+  try {
+    untracking = true;
+    return fn();
+  } finally {
+    untracking = previous_untracking;
+  }
+}
+const STATUS_MASK = -7169;
+function set_signal_status(signal, status) {
+  signal.f = signal.f & STATUS_MASK | status;
+}
+const PASSIVE_EVENTS = ["touchstart", "touchmove"];
+function is_passive_event(name) {
+  return PASSIVE_EVENTS.includes(name);
+}
+const all_registered_events = /* @__PURE__ */ new Set();
+const root_event_handles = /* @__PURE__ */ new Set();
+function handle_event_propagation(event) {
+  var handler_element = this;
+  var owner_document = (
+    /** @type {Node} */
+    handler_element.ownerDocument
+  );
+  var event_name = event.type;
+  var path = event.composedPath?.() || [];
+  var current_target = (
+    /** @type {null | Element} */
+    path[0] || event.target
+  );
+  var path_idx = 0;
+  var handled_at = event.__root;
+  if (handled_at) {
+    var at_idx = path.indexOf(handled_at);
+    if (at_idx !== -1 && (handler_element === document || handler_element === /** @type {any} */
+    window)) {
+      event.__root = handler_element;
+      return;
+    }
+    var handler_idx = path.indexOf(handler_element);
+    if (handler_idx === -1) {
+      return;
+    }
+    if (at_idx <= handler_idx) {
+      path_idx = at_idx;
+    }
+  }
+  current_target = /** @type {Element} */
+  path[path_idx] || event.target;
+  if (current_target === handler_element) return;
+  define_property(event, "currentTarget", {
+    configurable: true,
+    get() {
+      return current_target || owner_document;
+    }
+  });
+  var previous_reaction = active_reaction;
+  var previous_effect = active_effect;
+  set_active_reaction(null);
+  set_active_effect(null);
+  try {
+    var throw_error;
+    var other_errors = [];
+    while (current_target !== null) {
+      var parent_element = current_target.assignedSlot || current_target.parentNode || /** @type {any} */
+      current_target.host || null;
+      try {
+        var delegated = current_target["__" + event_name];
+        if (delegated !== void 0 && (!/** @type {any} */
+        current_target.disabled || // DOM could've been updated already by the time this is reached, so we check this as well
+        // -> the target could not have been disabled because it emits the event in the first place
+        event.target === current_target)) {
+          if (is_array(delegated)) {
+            var [fn, ...data] = delegated;
+            fn.apply(current_target, [event, ...data]);
+          } else {
+            delegated.call(current_target, event);
+          }
+        }
+      } catch (error) {
+        if (throw_error) {
+          other_errors.push(error);
+        } else {
+          throw_error = error;
+        }
+      }
+      if (event.cancelBubble || parent_element === handler_element || parent_element === null) {
+        break;
+      }
+      current_target = parent_element;
+    }
+    if (throw_error) {
+      for (let error of other_errors) {
+        queueMicrotask(() => {
+          throw error;
+        });
+      }
+      throw throw_error;
+    }
+  } finally {
+    event.__root = handler_element;
+    delete event.currentTarget;
+    set_active_reaction(previous_reaction);
+    set_active_effect(previous_effect);
+  }
+}
+function assign_nodes(start, end) {
+  var effect2 = (
+    /** @type {Effect} */
+    active_effect
+  );
+  if (effect2.nodes_start === null) {
+    effect2.nodes_start = start;
+    effect2.nodes_end = end;
+  }
+}
+function mount(component, options2) {
+  return _mount(component, options2);
+}
+function hydrate(component, options2) {
+  init_operations();
+  options2.intro = options2.intro ?? false;
+  const target = options2.target;
+  const was_hydrating = hydrating;
+  const previous_hydrate_node = hydrate_node;
+  try {
+    var anchor = (
+      /** @type {TemplateNode} */
+      /* @__PURE__ */ get_first_child(target)
+    );
+    while (anchor && (anchor.nodeType !== 8 || /** @type {Comment} */
+    anchor.data !== HYDRATION_START)) {
+      anchor = /** @type {TemplateNode} */
+      /* @__PURE__ */ get_next_sibling(anchor);
+    }
+    if (!anchor) {
+      throw HYDRATION_ERROR;
+    }
+    set_hydrating(true);
+    set_hydrate_node(
+      /** @type {Comment} */
+      anchor
+    );
+    hydrate_next();
+    const instance = _mount(component, { ...options2, anchor });
+    if (hydrate_node === null || hydrate_node.nodeType !== 8 || /** @type {Comment} */
+    hydrate_node.data !== HYDRATION_END) {
+      hydration_mismatch();
+      throw HYDRATION_ERROR;
+    }
+    set_hydrating(false);
+    return (
+      /**  @type {Exports} */
+      instance
+    );
+  } catch (error) {
+    if (error === HYDRATION_ERROR) {
+      if (options2.recover === false) {
+        hydration_failed();
+      }
+      init_operations();
+      clear_text_content(target);
+      set_hydrating(false);
+      return mount(component, options2);
+    }
+    throw error;
+  } finally {
+    set_hydrating(was_hydrating);
+    set_hydrate_node(previous_hydrate_node);
+  }
+}
+const document_listeners = /* @__PURE__ */ new Map();
+function _mount(Component, { target, anchor, props = {}, events, context: context2, intro = true }) {
+  init_operations();
+  var registered_events = /* @__PURE__ */ new Set();
+  var event_handle = (events2) => {
+    for (var i = 0; i < events2.length; i++) {
+      var event_name = events2[i];
+      if (registered_events.has(event_name)) continue;
+      registered_events.add(event_name);
+      var passive = is_passive_event(event_name);
+      target.addEventListener(event_name, handle_event_propagation, { passive });
+      var n = document_listeners.get(event_name);
+      if (n === void 0) {
+        document.addEventListener(event_name, handle_event_propagation, { passive });
+        document_listeners.set(event_name, 1);
+      } else {
+        document_listeners.set(event_name, n + 1);
+      }
+    }
+  };
+  event_handle(array_from(all_registered_events));
+  root_event_handles.add(event_handle);
+  var component = void 0;
+  var unmount2 = component_root(() => {
+    var anchor_node = anchor ?? target.appendChild(create_text());
+    branch(() => {
+      if (context2) {
+        push$1({});
+        var ctx = (
+          /** @type {ComponentContext} */
+          component_context
+        );
+        ctx.c = context2;
+      }
+      if (events) {
+        props.$$events = events;
+      }
+      if (hydrating) {
+        assign_nodes(
+          /** @type {TemplateNode} */
+          anchor_node,
+          null
+        );
+      }
+      component = Component(anchor_node, props) || {};
+      if (hydrating) {
+        active_effect.nodes_end = hydrate_node;
+      }
+      if (context2) {
+        pop$1();
+      }
+    });
+    return () => {
+      for (var event_name of registered_events) {
+        target.removeEventListener(event_name, handle_event_propagation);
+        var n = (
+          /** @type {number} */
+          document_listeners.get(event_name)
+        );
+        if (--n === 0) {
+          document.removeEventListener(event_name, handle_event_propagation);
+          document_listeners.delete(event_name);
+        } else {
+          document_listeners.set(event_name, n);
+        }
+      }
+      root_event_handles.delete(event_handle);
+      if (anchor_node !== anchor) {
+        anchor_node.parentNode?.removeChild(anchor_node);
+      }
+    };
+  });
+  mounted_components.set(component, unmount2);
+  return component;
+}
+let mounted_components = /* @__PURE__ */ new WeakMap();
+function unmount(component, options2) {
+  const fn = mounted_components.get(component);
+  if (fn) {
+    mounted_components.delete(component);
+    return fn(options2);
+  }
+  return Promise.resolve();
+}
+const ATTR_REGEX = /[&"<]/g;
 const CONTENT_REGEX = /[&<]/g;
-function escape(value, is_attr = false) {
-  const str = String(value);
+function escape_html(value, is_attr) {
+  const str = String(value ?? "");
   const pattern2 = is_attr ? ATTR_REGEX : CONTENT_REGEX;
   pattern2.lastIndex = 0;
   let escaped = "";
@@ -967,67 +2194,134 @@ function escape(value, is_attr = false) {
   }
   return escaped + str.substring(last);
 }
-function each(items, fn) {
-  items = ensure_array_like(items);
-  let str = "";
-  for (let i = 0; i < items.length; i += 1) {
-    str += fn(items[i], i);
-  }
-  return str;
-}
-const missing_component = {
-  $$render: () => ""
+const replacements$1 = {
+  translate: /* @__PURE__ */ new Map([
+    [true, "yes"],
+    [false, "no"]
+  ])
 };
-function validate_component(component, name) {
-  if (!component || !component.$$render) {
-    if (name === "svelte:component") name += " this={...}";
-    throw new Error(
-      `<${name}> is not a valid SSR component. You may need to review your build config to ensure that dependencies are compiled, rather than imported as pre-compiled modules. Otherwise you may need to fix a <${name}>.`
-    );
-  }
-  return component;
+function attr(name, value, is_boolean = false) {
+  if (value == null || !value && is_boolean || value === "" && name === "class") return "";
+  const normalized = name in replacements$1 && replacements$1[name].get(value) || value;
+  const assignment = is_boolean ? "" : `="${escape_html(normalized, true)}"`;
+  return ` ${name}${assignment}`;
 }
-let on_destroy;
-function create_ssr_component(fn) {
-  function $$render(result, props, bindings, slots, context) {
-    const parent_component = current_component;
-    const $$ = {
-      on_destroy,
-      context: new Map(context || (parent_component ? parent_component.$$.context : [])),
-      // these will be immediately discarded
-      on_mount: [],
-      before_update: [],
-      after_update: [],
-      callbacks: blank_object()
-    };
-    set_current_component({ $$ });
-    const html = fn(result, props, bindings, slots);
-    set_current_component(parent_component);
-    return html;
-  }
-  return {
-    render: (props = {}, { $$slots = {}, context = /* @__PURE__ */ new Map() } = {}) => {
-      on_destroy = [];
-      const result = { title: "", head: "", css: /* @__PURE__ */ new Set() };
-      const html = $$render(result, props, {}, $$slots, context);
-      run_all(on_destroy);
-      return {
-        html,
-        css: {
-          code: Array.from(result.css).map((css2) => css2.code).join("\n"),
-          map: null
-          // TODO
-        },
-        head: result.title + result.head
-      };
-    },
-    $$render
+function asClassComponent$1(component) {
+  return class extends Svelte4Component {
+    /** @param {any} options */
+    constructor(options2) {
+      super({
+        component,
+        ...options2
+      });
+    }
   };
 }
-function add_attribute(name, value, boolean) {
-  if (value == null || boolean) return "";
-  const assignment = `="${escape(value, true)}"`;
-  return ` ${name}${assignment}`;
+class Svelte4Component {
+  /** @type {any} */
+  #events;
+  /** @type {Record<string, any>} */
+  #instance;
+  /**
+   * @param {ComponentConstructorOptions & {
+   *  component: any;
+   * }} options
+   */
+  constructor(options2) {
+    var sources = /* @__PURE__ */ new Map();
+    var add_source = (key2, value) => {
+      var s2 = /* @__PURE__ */ mutable_source(value);
+      sources.set(key2, s2);
+      return s2;
+    };
+    const props = new Proxy(
+      { ...options2.props || {}, $$events: {} },
+      {
+        get(target, prop) {
+          return get$1(sources.get(prop) ?? add_source(prop, Reflect.get(target, prop)));
+        },
+        has(target, prop) {
+          if (prop === LEGACY_PROPS) return true;
+          get$1(sources.get(prop) ?? add_source(prop, Reflect.get(target, prop)));
+          return Reflect.has(target, prop);
+        },
+        set(target, prop, value) {
+          set(sources.get(prop) ?? add_source(prop, value), value);
+          return Reflect.set(target, prop, value);
+        }
+      }
+    );
+    this.#instance = (options2.hydrate ? hydrate : mount)(options2.component, {
+      target: options2.target,
+      anchor: options2.anchor,
+      props,
+      context: options2.context,
+      intro: options2.intro ?? false,
+      recover: options2.recover
+    });
+    if (!options2?.props?.$$host || options2.sync === false) {
+      flushSync();
+    }
+    this.#events = props.$$events;
+    for (const key2 of Object.keys(this.#instance)) {
+      if (key2 === "$set" || key2 === "$destroy" || key2 === "$on") continue;
+      define_property(this, key2, {
+        get() {
+          return this.#instance[key2];
+        },
+        /** @param {any} value */
+        set(value) {
+          this.#instance[key2] = value;
+        },
+        enumerable: true
+      });
+    }
+    this.#instance.$set = /** @param {Record<string, any>} next */
+    (next) => {
+      Object.assign(props, next);
+    };
+    this.#instance.$destroy = () => {
+      unmount(this.#instance);
+    };
+  }
+  /** @param {Record<string, any>} props */
+  $set(props) {
+    this.#instance.$set(props);
+  }
+  /**
+   * @param {string} event
+   * @param {(...args: any[]) => any} callback
+   * @returns {any}
+   */
+  $on(event, callback) {
+    this.#events[event] = this.#events[event] || [];
+    const cb = (...args) => callback.call(this, ...args);
+    this.#events[event].push(cb);
+    return () => {
+      this.#events[event] = this.#events[event].filter(
+        /** @param {any} fn */
+        (fn) => fn !== cb
+      );
+    };
+  }
+  $destroy() {
+    this.#instance.$destroy();
+  }
+}
+function subscribe_to_store(store, run, invalidate) {
+  if (store == null) {
+    run(void 0);
+    if (invalidate) invalidate(void 0);
+    return noop;
+  }
+  const unsub = untrack(
+    () => store.subscribe(
+      run,
+      // @ts-expect-error
+      invalidate
+    )
+  );
+  return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
 }
 const subscriber_queue = [];
 function readable(value, start) {
@@ -1036,9 +2330,9 @@ function readable(value, start) {
   };
 }
 function writable(value, start = noop) {
-  let stop;
+  let stop = null;
   const subscribers = /* @__PURE__ */ new Set();
-  function set(new_value) {
+  function set2(new_value) {
     if (safe_not_equal(value, new_value)) {
       value = new_value;
       if (stop) {
@@ -1057,15 +2351,21 @@ function writable(value, start = noop) {
     }
   }
   function update(fn) {
-    set(fn(value));
+    set2(fn(
+      /** @type {T} */
+      value
+    ));
   }
-  function subscribe2(run2, invalidate = noop) {
-    const subscriber = [run2, invalidate];
+  function subscribe(run, invalidate = noop) {
+    const subscriber = [run, invalidate];
     subscribers.add(subscriber);
     if (subscribers.size === 1) {
-      stop = start(set, update) || noop;
+      stop = start(set2, update) || noop;
     }
-    run2(value);
+    run(
+      /** @type {T} */
+      value
+    );
     return () => {
       subscribers.delete(subscriber);
       if (subscribers.size === 0 && stop) {
@@ -1074,16 +2374,16 @@ function writable(value, start = noop) {
       }
     };
   }
-  return { set, update, subscribe: subscribe2 };
+  return { set: set2, update, subscribe };
 }
-function derived(stores, fn, initial_value) {
-  const single = !Array.isArray(stores);
-  const stores_array = single ? [stores] : stores;
+function derived(stores2, fn, initial_value) {
+  const single = !Array.isArray(stores2);
+  const stores_array = single ? [stores2] : stores2;
   if (!stores_array.every(Boolean)) {
     throw new Error("derived() expects stores as input, got a falsy value");
   }
   const auto = fn.length < 2;
-  return readable(initial_value, (set, update) => {
+  return readable(initial_value, (set2, update) => {
     let started = false;
     const values = [];
     let pending = 0;
@@ -1093,15 +2393,15 @@ function derived(stores, fn, initial_value) {
         return;
       }
       cleanup();
-      const result = fn(single ? values[0] : values, set, update);
+      const result = fn(single ? values[0] : values, set2, update);
       if (auto) {
-        set(result);
+        set2(result);
       } else {
-        cleanup = is_function(result) ? result : noop;
+        cleanup = typeof result === "function" ? result : noop;
       }
     };
     const unsubscribers = stores_array.map(
-      (store, i) => subscribe(
+      (store, i) => subscribe_to_store(
         store,
         (value) => {
           values[i] = value;
@@ -1140,24 +2440,6 @@ function hash(...values) {
   }
   return (hash2 >>> 0).toString(36);
 }
-const escape_html_attr_dict = {
-  "&": "&amp;",
-  '"': "&quot;"
-};
-const escape_html_attr_regex = new RegExp(
-  // special characters
-  `[${Object.keys(escape_html_attr_dict).join("")}]|[\\ud800-\\udbff](?![\\udc00-\\udfff])|[\\ud800-\\udbff][\\udc00-\\udfff]|[\\udc00-\\udfff]`,
-  "g"
-);
-function escape_html_attr(str) {
-  const escaped_str = str.replace(escape_html_attr_regex, (match) => {
-    if (match.length === 2) {
-      return match;
-    }
-    return escape_html_attr_dict[match] ?? `&#${match.charCodeAt(0)};`;
-  });
-  return `"${escaped_str}"`;
-}
 const replacements = {
   "<": "\\u003C",
   "\u2028": "\\u2028",
@@ -1187,7 +2469,7 @@ function serialize_data(fetched, filter, prerendering2 = false) {
   const attrs = [
     'type="application/json"',
     "data-sveltekit-fetched",
-    `data-url=${escape_html_attr(fetched.url)}`
+    `data-url="${escape_html$1(fetched.url, true)}"`
   ];
   if (fetched.is_b64) {
     attrs.push("data-b64");
@@ -1357,7 +2639,17 @@ class BaseProvider {
   /** @type {boolean} */
   #script_needs_csp;
   /** @type {boolean} */
+  #script_src_needs_csp;
+  /** @type {boolean} */
+  #script_src_elem_needs_csp;
+  /** @type {boolean} */
   #style_needs_csp;
+  /** @type {boolean} */
+  #style_src_needs_csp;
+  /** @type {boolean} */
+  #style_src_attr_needs_csp;
+  /** @type {boolean} */
+  #style_src_elem_needs_csp;
   /** @type {import('types').CspDirectives} */
   #directives;
   /** @type {import('types').Csp.Source[]} */
@@ -1391,62 +2683,47 @@ class BaseProvider {
     const effective_style_src = d["style-src"] || d["default-src"];
     const style_src_attr = d["style-src-attr"];
     const style_src_elem = d["style-src-elem"];
-    this.#script_needs_csp = !!effective_script_src && effective_script_src.filter((value) => value !== "unsafe-inline").length > 0 || !!script_src_elem && script_src_elem.filter((value) => value !== "unsafe-inline").length > 0;
-    this.#style_needs_csp = !!effective_style_src && effective_style_src.filter((value) => value !== "unsafe-inline").length > 0 || !!style_src_attr && style_src_attr.filter((value) => value !== "unsafe-inline").length > 0 || !!style_src_elem && style_src_elem.filter((value) => value !== "unsafe-inline").length > 0;
+    const needs_csp = (directive) => !!directive && !directive.some((value) => value === "unsafe-inline");
+    this.#script_src_needs_csp = needs_csp(effective_script_src);
+    this.#script_src_elem_needs_csp = needs_csp(script_src_elem);
+    this.#style_src_needs_csp = needs_csp(effective_style_src);
+    this.#style_src_attr_needs_csp = needs_csp(style_src_attr);
+    this.#style_src_elem_needs_csp = needs_csp(style_src_elem);
+    this.#script_needs_csp = this.#script_src_needs_csp || this.#script_src_elem_needs_csp;
+    this.#style_needs_csp = this.#style_src_needs_csp || this.#style_src_attr_needs_csp || this.#style_src_elem_needs_csp;
     this.script_needs_nonce = this.#script_needs_csp && !this.#use_hashes;
     this.style_needs_nonce = this.#style_needs_csp && !this.#use_hashes;
     this.#nonce = nonce;
   }
   /** @param {string} content */
   add_script(content) {
-    if (this.#script_needs_csp) {
-      const d = this.#directives;
-      if (this.#use_hashes) {
-        const hash2 = sha256(content);
-        this.#script_src.push(`sha256-${hash2}`);
-        if (d["script-src-elem"]?.length) {
-          this.#script_src_elem.push(`sha256-${hash2}`);
-        }
-      } else {
-        if (this.#script_src.length === 0) {
-          this.#script_src.push(`nonce-${this.#nonce}`);
-        }
-        if (d["script-src-elem"]?.length) {
-          this.#script_src_elem.push(`nonce-${this.#nonce}`);
-        }
-      }
+    if (!this.#script_needs_csp) return;
+    const source2 = this.#use_hashes ? `sha256-${sha256(content)}` : `nonce-${this.#nonce}`;
+    if (this.#script_src_needs_csp) {
+      this.#script_src.push(source2);
+    }
+    if (this.#script_src_elem_needs_csp) {
+      this.#script_src_elem.push(source2);
     }
   }
   /** @param {string} content */
   add_style(content) {
-    if (this.#style_needs_csp) {
-      const empty_comment_hash = "9OlNO0DNEeaVzHL4RZwCLsBHA8WBQ8toBp/4F5XV2nc=";
+    if (!this.#style_needs_csp) return;
+    const source2 = this.#use_hashes ? `sha256-${sha256(content)}` : `nonce-${this.#nonce}`;
+    if (this.#style_src_needs_csp) {
+      this.#style_src.push(source2);
+    }
+    if (this.#style_src_attr_needs_csp) {
+      this.#style_src_attr.push(source2);
+    }
+    if (this.#style_src_elem_needs_csp) {
+      const sha256_empty_comment_hash = "sha256-9OlNO0DNEeaVzHL4RZwCLsBHA8WBQ8toBp/4F5XV2nc=";
       const d = this.#directives;
-      if (this.#use_hashes) {
-        const hash2 = sha256(content);
-        this.#style_src.push(`sha256-${hash2}`);
-        if (d["style-src-attr"]?.length) {
-          this.#style_src_attr.push(`sha256-${hash2}`);
-        }
-        if (d["style-src-elem"]?.length) {
-          if (hash2 !== empty_comment_hash && !d["style-src-elem"].includes(`sha256-${empty_comment_hash}`)) {
-            this.#style_src_elem.push(`sha256-${empty_comment_hash}`);
-          }
-          this.#style_src_elem.push(`sha256-${hash2}`);
-        }
-      } else {
-        if (this.#style_src.length === 0 && !d["style-src"]?.includes("unsafe-inline")) {
-          this.#style_src.push(`nonce-${this.#nonce}`);
-        }
-        if (d["style-src-attr"]?.length) {
-          this.#style_src_attr.push(`nonce-${this.#nonce}`);
-        }
-        if (d["style-src-elem"]?.length) {
-          if (!d["style-src-elem"].includes(`sha256-${empty_comment_hash}`)) {
-            this.#style_src_elem.push(`sha256-${empty_comment_hash}`);
-          }
-          this.#style_src_elem.push(`nonce-${this.#nonce}`);
-        }
+      if (d["style-src-elem"] && !d["style-src-elem"].includes(sha256_empty_comment_hash) && !this.#style_src_elem.includes(sha256_empty_comment_hash)) {
+        this.#style_src_elem.push(sha256_empty_comment_hash);
+      }
+      if (source2 !== sha256_empty_comment_hash) {
+        this.#style_src_elem.push(source2);
       }
     }
   }
@@ -1516,7 +2793,7 @@ class CspProvider extends BaseProvider {
     if (!content) {
       return;
     }
-    return `<meta http-equiv="content-security-policy" content=${escape_html_attr(content)}>`;
+    return `<meta http-equiv="content-security-policy" content="${escape_html$1(content, true)}">`;
   }
 }
 class CspReportOnlyProvider extends BaseProvider {
@@ -1606,13 +2883,126 @@ function create_async_iterator() {
     }
   };
 }
+function exec(match, params, matchers) {
+  const result = {};
+  const values = match.slice(1);
+  const values_needing_match = values.filter((value) => value !== void 0);
+  let buffered = 0;
+  for (let i = 0; i < params.length; i += 1) {
+    const param = params[i];
+    let value = values[i - buffered];
+    if (param.chained && param.rest && buffered) {
+      value = values.slice(i - buffered, i + 1).filter((s2) => s2).join("/");
+      buffered = 0;
+    }
+    if (value === void 0) {
+      if (param.rest) result[param.name] = "";
+      continue;
+    }
+    if (!param.matcher || matchers[param.matcher](value)) {
+      result[param.name] = value;
+      const next_param = params[i + 1];
+      const next_value = values[i + 1];
+      if (next_param && !next_param.rest && next_param.optional && next_value && param.chained) {
+        buffered = 0;
+      }
+      if (!next_param && !next_value && Object.keys(result).length === values_needing_match.length) {
+        buffered = 0;
+      }
+      continue;
+    }
+    if (param.optional && param.chained) {
+      buffered++;
+      continue;
+    }
+    return;
+  }
+  if (buffered) return;
+  return result;
+}
+function generate_route_object(route, url, manifest) {
+  const { errors, layouts, leaf } = route;
+  const nodes = [...errors, ...layouts.map((l) => l?.[1]), leaf[1]].filter((n) => typeof n === "number").map((n) => `'${n}': () => ${create_client_import(manifest._.client.nodes?.[n], url)}`).join(",\n		");
+  return [
+    `{
+	id: ${s(route.id)}`,
+    `errors: ${s(route.errors)}`,
+    `layouts: ${s(route.layouts)}`,
+    `leaf: ${s(route.leaf)}`,
+    `nodes: {
+		${nodes}
+	}
+}`
+  ].join(",\n	");
+}
+function create_client_import(import_path, url) {
+  if (!import_path) return "Promise.resolve({})";
+  if (import_path[0] === "/") {
+    return `import('${import_path}')`;
+  }
+  if (assets !== "") {
+    return `import('${assets}/${import_path}')`;
+  }
+  let path = get_relative_path(url.pathname, `${base}/${import_path}`);
+  if (path[0] !== ".") path = `./${path}`;
+  return `import('${path}')`;
+}
+async function resolve_route(resolved_path, url, manifest) {
+  if (!manifest._.client.routes) {
+    return text("Server-side route resolution disabled", { status: 400 });
+  }
+  let route = null;
+  let params = {};
+  const matchers = await manifest._.matchers();
+  for (const candidate of manifest._.client.routes) {
+    const match = candidate.pattern.exec(resolved_path);
+    if (!match) continue;
+    const matched = exec(match, candidate.params, matchers);
+    if (matched) {
+      route = candidate;
+      params = decode_params(matched);
+      break;
+    }
+  }
+  return create_server_routing_response(route, params, url, manifest).response;
+}
+function create_server_routing_response(route, params, url, manifest) {
+  const headers2 = new Headers({
+    "content-type": "application/javascript; charset=utf-8"
+  });
+  if (route) {
+    const csr_route = generate_route_object(route, url, manifest);
+    const body2 = `${create_css_import(route, url, manifest)}
+export const route = ${csr_route}; export const params = ${JSON.stringify(params)};`;
+    return { response: text(body2, { headers: headers2 }), body: body2 };
+  } else {
+    return { response: text("", { headers: headers2 }), body: "" };
+  }
+}
+function create_css_import(route, url, manifest) {
+  const { errors, layouts, leaf } = route;
+  let css = "";
+  for (const node of [...errors, ...layouts.map((l) => l?.[1]), leaf[1]]) {
+    if (typeof node !== "number") continue;
+    const node_css = manifest._.client.css?.[node];
+    for (const css_path of node_css ?? []) {
+      css += `'${assets || base}/${css_path}',`;
+    }
+  }
+  if (!css) return "";
+  return `${create_client_import(
+    /** @type {string} */
+    manifest._.client.start,
+    url
+  )}.then(x => x.load_css([${css}]));`;
+}
 const updated = {
   ...readable(false),
   check: () => false
 };
 const encoder$1 = new TextEncoder();
 async function render_response({
-  branch,
+  branch: branch2,
   fetched,
   options: options2,
   manifest,
@@ -1643,12 +3033,16 @@ async function render_response({
   let base$1 = base;
   let assets$1 = assets;
   let base_expression = s(base);
-  if (!state.prerendering?.fallback) {
-    const segments = event.url.pathname.slice(base.length).split("/").slice(2);
-    base$1 = segments.map(() => "..").join("/") || ".";
-    base_expression = `new URL(${s(base$1)}, location).pathname.slice(0, -1)`;
-    if (!assets || assets[0] === "/" && assets !== SVELTE_KIT_ASSETS) {
-      assets$1 = base$1;
+  {
+    if (!state.prerendering?.fallback) {
+      const segments = event.url.pathname.slice(base.length).split("/").slice(2);
+      base$1 = segments.map(() => "..").join("/") || ".";
+      base_expression = `new URL(${s(base$1)}, location).pathname.slice(0, -1)`;
+      if (!assets || assets[0] === "/" && assets !== SVELTE_KIT_ASSETS) {
+        assets$1 = base$1;
+      }
+    } else if (options2.hash_routing) {
+      base_expression = "new URL('.', location).pathname.slice(0, -1)";
     }
   }
   if (page_config.ssr) {
@@ -1658,12 +3052,12 @@ async function render_response({
         navigating: writable(null),
         updated
       },
-      constructors: await Promise.all(branch.map(({ node }) => node.component())),
+      constructors: await Promise.all(branch2.map(({ node }) => node.component())),
       form: form_value
     };
     let data2 = {};
-    for (let i = 0; i < branch.length; i += 1) {
-      data2 = { ...data2, ...branch[i].data };
+    for (let i = 0; i < branch2.length; i += 1) {
+      data2 = { ...data2, ...branch2[i].data };
       props[`data_${i}`] = data2;
     }
     props.page = {
@@ -1680,18 +3074,28 @@ async function render_response({
       state: {}
     };
     override({ base: base$1, assets: assets$1 });
+    const render_opts = {
+      context: /* @__PURE__ */ new Map([
+        [
+          "__request__",
+          {
+            page: props.page
+          }
+        ]
+      ])
+    };
     {
       try {
-        rendered = options2.root.render(props);
+        rendered = options2.root.render(props, render_opts);
       } finally {
         reset();
       }
     }
-    for (const { node } of branch) {
+    for (const { node } of branch2) {
       for (const url of node.imports) modulepreloads.add(url);
       for (const url of node.stylesheets) stylesheets.add(url);
       for (const url of node.fonts) fonts.add(url);
-      if (node.inline_styles) {
+      if (node.inline_styles && !client.inline) {
         Object.entries(await node.inline_styles()).forEach(([k, v]) => inline_styles.set(k, v));
       }
     }
@@ -1709,13 +3113,13 @@ async function render_response({
     }
     return `${assets$1}/${path}`;
   };
-  if (inline_styles.size > 0) {
-    const content = Array.from(inline_styles.values()).join("\n");
+  const style = client.inline ? client.inline?.style : Array.from(inline_styles.values()).join("\n");
+  if (style) {
     const attributes = [];
     if (csp.style_needs_nonce) attributes.push(` nonce="${csp.nonce}"`);
-    csp.add_style(content);
+    csp.add_style(style);
     head += `
-	<style${attributes.join("")}>${content}</style>`;
+	<style${attributes.join("")}>${style}</style>`;
   }
   for (const dep of stylesheets) {
     const path = prefixed(dep);
@@ -1750,7 +3154,8 @@ async function render_response({
   const { data, chunks } = get_data(
     event,
     options2,
-    branch.map((b) => b.server_data),
+    branch2.map((b) => b.server_data),
+    csp,
     global
   );
   if (page_config.ssr && page_config.csr) {
@@ -1760,21 +3165,31 @@ async function render_response({
     ).join("\n			")}`;
   }
   if (page_config.csr) {
+    const route = manifest._.client.routes?.find((r) => r.id === event.route.id) ?? null;
     if (client.uses_env_dynamic_public && state.prerendering) {
-      modulepreloads.add(`${options2.app_dir}/env.js`);
+      modulepreloads.add(`${app_dir}/env.js`);
     }
-    const included_modulepreloads = Array.from(modulepreloads, (dep) => prefixed(dep)).filter(
-      (path) => resolve_opts.preload({ type: "js", path })
-    );
-    for (const path of included_modulepreloads) {
-      link_header_preloads.add(`<${encodeURI(path)}>; rel="modulepreload"; nopush`);
-      if (options2.preload_strategy !== "modulepreload") {
-        head += `
+    if (!client.inline) {
+      const included_modulepreloads = Array.from(modulepreloads, (dep) => prefixed(dep)).filter(
+        (path) => resolve_opts.preload({ type: "js", path })
+      );
+      for (const path of included_modulepreloads) {
+        link_header_preloads.add(`<${encodeURI(path)}>; rel="modulepreload"; nopush`);
+        if (options2.preload_strategy !== "modulepreload") {
+          head += `
 		<link rel="preload" as="script" crossorigin="anonymous" href="${path}">`;
-      } else if (state.prerendering) {
-        head += `
+        } else if (state.prerendering) {
+          head += `
 		<link rel="modulepreload" href="${path}">`;
+        }
       }
+    }
+    if (manifest._.client.routes && state.prerendering && !state.prerendering.fallback) {
+      const pathname = add_resolution_suffix(event.url.pathname);
+      state.prerendering.dependencies.set(
+        pathname,
+        create_server_routing_response(route, event.params, new URL(pathname, event.url), manifest)
+      );
     }
     const blocks = [];
     const load_env_eagerly = client.uses_env_dynamic_public && state.prerendering;
@@ -1791,67 +3206,81 @@ async function render_response({
 							deferred.set(id, { fulfil, reject });
 						})`);
       properties.push(`resolve: ({ id, data, error }) => {
-							const { fulfil, reject } = deferred.get(id);
-							deferred.delete(id);
-
-							if (error) reject(error);
-							else fulfil(data);
+							const try_to_resolve = () => {
+								if (!deferred.has(id)) {
+									setTimeout(try_to_resolve, 0);
+									return;
+								}
+								const { fulfil, reject } = deferred.get(id);
+								deferred.delete(id);
+								if (error) reject(error);
+								else fulfil(data);
+							}
+							try_to_resolve();
 						}`);
     }
     blocks.push(`${global} = {
 						${properties.join(",\n						")}
 					};`);
-    const args = ["app", "element"];
+    const args = ["element"];
     blocks.push("const element = document.currentScript.parentElement;");
     if (page_config.ssr) {
       const serialized = { form: "null", error: "null" };
-      blocks.push(`const data = ${data};`);
       if (form_value) {
         serialized.form = uneval_action_response(
           form_value,
           /** @type {string} */
-          event.route.id
+          event.route.id,
+          options2.hooks.transport
         );
       }
       if (error) {
         serialized.error = devalue.uneval(error);
       }
-      const hydrate = [
-        `node_ids: [${branch.map(({ node }) => node.index).join(", ")}]`,
-        "data",
+      const hydrate2 = [
+        `node_ids: [${branch2.map(({ node }) => node.index).join(", ")}]`,
+        `data: ${data}`,
         `form: ${serialized.form}`,
         `error: ${serialized.error}`
       ];
       if (status !== 200) {
-        hydrate.push(`status: ${status}`);
+        hydrate2.push(`status: ${status}`);
       }
-      if (options2.embedded) {
-        hydrate.push(`params: ${devalue.uneval(event.params)}`, `route: ${s(event.route)}`);
+      if (manifest._.client.routes) {
+        if (route) {
+          const stringified = generate_route_object(route, event.url, manifest).replaceAll(
+            "\n",
+            "\n							"
+          );
+          hydrate2.push(`params: ${devalue.uneval(event.params)}`, `server_route: ${stringified}`);
+        }
+      } else if (options2.embedded) {
+        hydrate2.push(`params: ${devalue.uneval(event.params)}`, `route: ${s(event.route)}`);
       }
       const indent = "	".repeat(load_env_eagerly ? 7 : 6);
       args.push(`{
-${indent}	${hydrate.join(`,
+${indent}	${hydrate2.join(`,
 ${indent}	`)}
 ${indent}}`);
     }
-    if (load_env_eagerly) {
-      blocks.push(`import(${s(`${base$1}/${options2.app_dir}/env.js`)}).then(({ env }) => {
-						${global}.env = env;
+    const boot = client.inline ? `${client.inline.script}
 
-						Promise.all([
-							import(${s(prefixed(client.start))}),
-							import(${s(prefixed(client.app))})
-						]).then(([kit, app]) => {
-							kit.start(${args.join(", ")});
-						});
-					});`);
-    } else {
-      blocks.push(`Promise.all([
+					__sveltekit_${options2.version_hash}.app.start(${args.join(", ")});` : client.app ? `Promise.all([
 						import(${s(prefixed(client.start))}),
 						import(${s(prefixed(client.app))})
 					]).then(([kit, app]) => {
-						kit.start(${args.join(", ")});
+						kit.start(app, ${args.join(", ")});
+					});` : `import(${s(prefixed(client.start))}).then((app) => {
+						app.start(${args.join(", ")})
+					});`;
+    if (load_env_eagerly) {
+      blocks.push(`import(${s(`${base$1}/${app_dir}/env.js`)}).then(({ env }) => {
+						${global}.env = env;
+
+						${boot.replace(/\n/g, "\n	")}
 					});`);
+    } else {
+      blocks.push(boot);
     }
     if (options2.service_worker) {
       const opts = "";
@@ -1933,16 +3362,14 @@ ${indent}}`);
       type: "bytes"
     }),
     {
-      headers: {
-        "content-type": "text/html"
-      }
+      headers: headers2
     }
   );
 }
-function get_data(event, options2, nodes, global) {
+function get_data(event, options2, nodes, csp, global) {
   let promise_id = 1;
   let count = 0;
-  const { iterator, push, done } = create_async_iterator();
+  const { iterator, push: push2, done } = create_async_iterator();
   function replacer(thing) {
     if (typeof thing?.then === "function") {
       const id = promise_id++;
@@ -1964,7 +3391,7 @@ function get_data(event, options2, nodes, global) {
           let str;
           try {
             str = devalue.uneval({ id, data, error }, replacer);
-          } catch (e) {
+          } catch {
             error = await handle_error_and_jsonify(
               event,
               options2,
@@ -1973,12 +3400,20 @@ function get_data(event, options2, nodes, global) {
             data = void 0;
             str = devalue.uneval({ id, data, error }, replacer);
           }
-          push(`<script>${global}.resolve(${str})<\/script>
+          const nonce = csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : "";
+          push2(`<script${nonce}>${global}.resolve(${str})<\/script>
 `);
           if (count === 0) done();
         }
       );
       return `${global}.defer(${id})`;
+    } else {
+      for (const key2 in options2.hooks.transport) {
+        const encoded = options2.hooks.transport[key2].encode(thing);
+        if (encoded) {
+          return `app.decode('${key2}', ${devalue.uneval(encoded, replacer)})`;
+        }
+      }
     }
   }
   try {
@@ -2029,7 +3464,7 @@ async function respond_with_error({
   }
   const fetched = [];
   try {
-    const branch = [];
+    const branch2 = [];
     const default_layout = await manifest._.nodes[0]();
     const ssr = get_option([default_layout], "ssr") ?? true;
     const csr = get_option([default_layout], "csr") ?? true;
@@ -2039,6 +3474,7 @@ async function respond_with_error({
         event,
         state,
         node: default_layout,
+        // eslint-disable-next-line @typescript-eslint/require-await
         parent: async () => ({})
       });
       const server_data = await server_data_promise;
@@ -2046,13 +3482,14 @@ async function respond_with_error({
         event,
         fetched,
         node: default_layout,
+        // eslint-disable-next-line @typescript-eslint/require-await
         parent: async () => ({}),
         resolve_opts,
         server_data_promise,
         state,
         csr
       });
-      branch.push(
+      branch2.push(
         {
           node: default_layout,
           server_data,
@@ -2076,7 +3513,7 @@ async function respond_with_error({
       },
       status,
       error: await handle_error_and_jsonify(event, options2, error),
-      branch,
+      branch: branch2,
       fetched,
       event,
       resolve_opts
@@ -2232,8 +3669,11 @@ function redirect_json_response(redirect) {
 function get_data_json(event, options2, nodes) {
   let promise_id = 1;
   let count = 0;
-  const { iterator, push, done } = create_async_iterator();
+  const { iterator, push: push2, done } = create_async_iterator();
   const reducers = {
+    ...Object.fromEntries(
+      Object.entries(options2.hooks.transport).map(([key2, value]) => [key2, value.encode])
+    ),
     /** @param {any} thing */
     Promise: (thing) => {
       if (typeof thing?.then === "function") {
@@ -2257,7 +3697,7 @@ function get_data_json(event, options2, nodes) {
             let str;
             try {
               str = devalue.stringify(value, reducers);
-            } catch (e) {
+            } catch {
               const error = await handle_error_and_jsonify(
                 event,
                 options2,
@@ -2267,7 +3707,7 @@ function get_data_json(event, options2, nodes) {
               str = devalue.stringify(error, reducers);
             }
             count -= 1;
-            push(`{"type":"chunk","id":${id},"${key2}":${str}}
+            push2(`{"type":"chunk","id":${id},"${key2}":${str}}
 `);
             if (count === 0) done();
           }
@@ -2338,7 +3778,10 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
         status = action_result.status;
       }
     }
-    const should_prerender_data = nodes.some((node) => node?.server?.load);
+    const should_prerender_data = nodes.some(
+      // prerender in case of trailingSlash because the client retrieves that value from the server
+      (node) => node?.server?.load || node?.server?.trailingSlash !== void 0
+    );
     const data_pathname = add_data_suffix(event.url.pathname);
     const should_prerender = get_option(nodes, "prerender") ?? false;
     if (should_prerender) {
@@ -2354,6 +3797,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
     state.prerender_default = should_prerender;
     const fetched = [];
     if (get_option(nodes, "ssr") === false && !(state.prerendering && should_prerender_data)) {
+      if (BROWSER && action_result && !event.request.headers.has("x-sveltekit-action")) ;
       return await render_response({
         branch: [],
         fetched,
@@ -2370,7 +3814,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
         resolve_opts
       });
     }
-    const branch = [];
+    const branch2 = [];
     let load_error = null;
     const server_promises = nodes.map((node, i) => {
       if (load_error) {
@@ -2389,7 +3833,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
               const data = {};
               for (let j = 0; j < i; j += 1) {
                 const parent = await server_promises[j];
-                if (parent) Object.assign(data, await parent.data);
+                if (parent) Object.assign(data, parent.data);
               }
               return data;
             }
@@ -2439,7 +3883,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
         try {
           const server_data = await server_promises[i];
           const data = await load_promises[i];
-          branch.push({ node, server_data, data });
+          branch2.push({ node, server_data, data });
         } catch (e) {
           const err = normalize_error(e);
           if (err instanceof Redirect) {
@@ -2465,7 +3909,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
               );
               const node2 = await manifest._.nodes[index]();
               let j = i;
-              while (!branch[j]) j -= 1;
+              while (!branch2[j]) j -= 1;
               return await render_response({
                 event,
                 options: options2,
@@ -2475,7 +3919,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
                 page_config: { ssr: true, csr: true },
                 status: status2,
                 error,
-                branch: compact(branch.slice(0, j + 1)).concat({
+                branch: compact(branch2.slice(0, j + 1)).concat({
                   node: node2,
                   data: null,
                   server_data: null
@@ -2487,14 +3931,14 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
           return static_error_page(options2, status2, error.message);
         }
       } else {
-        branch.push(null);
+        branch2.push(null);
       }
     }
     if (state.prerendering && should_prerender_data) {
       let { data, chunks } = get_data_json(
         event,
         options2,
-        branch.map((node) => node?.server_data)
+        branch2.map((node) => node?.server_data)
       );
       if (chunks) {
         for await (const chunk of chunks) {
@@ -2519,7 +3963,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
       },
       status,
       error: null,
-      branch: ssr === false ? [] : compact(branch),
+      branch: ssr === false ? [] : compact(branch2),
       action_result,
       fetched
     });
@@ -2535,43 +3979,7 @@ async function render_page(event, page2, options2, manifest, state, resolve_opts
     });
   }
 }
-function exec(match, params, matchers) {
-  const result = {};
-  const values = match.slice(1);
-  const values_needing_match = values.filter((value) => value !== void 0);
-  let buffered = 0;
-  for (let i = 0; i < params.length; i += 1) {
-    const param = params[i];
-    let value = values[i - buffered];
-    if (param.chained && param.rest && buffered) {
-      value = values.slice(i - buffered, i + 1).filter((s2) => s2).join("/");
-      buffered = 0;
-    }
-    if (value === void 0) {
-      if (param.rest) result[param.name] = "";
-      continue;
-    }
-    if (!param.matcher || matchers[param.matcher](value)) {
-      result[param.name] = value;
-      const next_param = params[i + 1];
-      const next_value = values[i + 1];
-      if (next_param && !next_param.rest && next_param.optional && next_value && param.chained) {
-        buffered = 0;
-      }
-      if (!next_param && !next_value && Object.keys(result).length === values_needing_match.length) {
-        buffered = 0;
-      }
-      continue;
-    }
-    if (param.optional && param.chained) {
-      buffered++;
-      continue;
-    }
-    return;
-  }
-  if (buffered) return;
-  return result;
-}
+const INVALID_COOKIE_CHARACTER_REGEX = /[\x00-\x1F\x7F()<>@,;:"/[\]?={} \t]/;
 function validate_options(options2) {
   if (options2?.path === void 0) {
     throw new Error("You must specify a `path` when setting, deleting or serializing cookies");
@@ -2594,24 +4002,22 @@ function get_cookies(request, url, trailing_slash) {
     // sufficient to do so.
     /**
      * @param {string} name
-     * @param {import('cookie').CookieParseOptions} opts
+     * @param {import('cookie').CookieParseOptions} [opts]
      */
     get(name, opts) {
       const c = new_cookies[name];
       if (c && domain_matches(url.hostname, c.options.domain) && path_matches(url.pathname, c.options.path)) {
         return c.value;
       }
-      const decoder = opts?.decode || decodeURIComponent;
-      const req_cookies = parse(header, { decode: decoder });
+      const req_cookies = parse(header, { decode: opts?.decode });
       const cookie = req_cookies[name];
       return cookie;
     },
     /**
-     * @param {import('cookie').CookieParseOptions} opts
+     * @param {import('cookie').CookieParseOptions} [opts]
      */
     getAll(opts) {
-      const decoder = opts?.decode || decodeURIComponent;
-      const cookies2 = parse(header, { decode: decoder });
+      const cookies2 = parse(header, { decode: opts?.decode });
       for (const c of Object.values(new_cookies)) {
         if (domain_matches(url.hostname, c.options.domain) && path_matches(url.pathname, c.options.path)) {
           cookies2[c.name] = c.value;
@@ -2625,6 +4031,14 @@ function get_cookies(request, url, trailing_slash) {
      * @param {import('./page/types.js').Cookie['options']} options
      */
     set(name, value, options2) {
+      const illegal_characters = name.match(INVALID_COOKIE_CHARACTER_REGEX);
+      if (illegal_characters) {
+        console.warn(
+          `The cookie name "${name}" will be invalid in SvelteKit 3.0 as it contains ${illegal_characters.join(
+            " and "
+          )}. See RFC 2616 for more details https://datatracker.ietf.org/doc/html/rfc2616#section-2.2`
+        );
+      }
       validate_options(options2);
       set_internal(name, value, { ...defaults, ...options2 });
     },
@@ -2701,6 +4115,12 @@ function add_cookies_to_headers(headers2, cookies) {
     }
   }
 }
+let read_implementation = null;
+function set_read_implementation(fn) {
+  read_implementation = fn;
+}
+function set_manifest(_) {
+}
 function create_fetch({ event, options: options2, manifest, state, get_cookie_header, set_internal }) {
   const server_fetch = async (info, init2) => {
     const original_request = normalize_fetch_input(info, init2, event.url);
@@ -2733,8 +4153,8 @@ function create_fetch({ event, options: options2, manifest, state, get_cookie_he
         const decoded = decodeURIComponent(url.pathname);
         const filename = (decoded.startsWith(prefix) ? decoded.slice(prefix.length) : decoded).slice(1);
         const filename_html = `${filename}/index.html`;
-        const is_asset = manifest.assets.has(filename);
-        const is_asset_html = manifest.assets.has(filename_html);
+        const is_asset = manifest.assets.has(filename) || filename in manifest._.server_assets;
+        const is_asset_html = manifest.assets.has(filename_html) || filename_html in manifest._.server_assets;
         if (is_asset || is_asset_html) {
           const file = is_asset ? filename : filename_html;
           if (state.read) {
@@ -2742,7 +4162,19 @@ function create_fetch({ event, options: options2, manifest, state, get_cookie_he
             return new Response(state.read(file), {
               headers: type ? { "content-type": type } : {}
             });
+          } else if (read_implementation && file in manifest._.server_assets) {
+            const length = manifest._.server_assets[file];
+            const type = manifest.mimeTypes[file.slice(file.lastIndexOf("."))];
+            return new Response(read_implementation(file), {
+              headers: {
+                "Content-Length": "" + length,
+                "Content-Type": type
+              }
+            });
           }
+          return await fetch(request);
+        }
+        if (manifest._.prerendered_routes.has(decoded) || decoded.at(-1) === "/" && manifest._.prerendered_routes.has(decoded.slice(0, -1))) {
           return await fetch(request);
         }
         if (credentials !== "omit") {
@@ -2911,47 +4343,56 @@ async function respond(request, options2, manifest, state) {
       return text(csrf_error.body.message, { status: csrf_error.status });
     }
   }
-  let rerouted_path;
+  if (options2.hash_routing && url.pathname !== base + "/" && url.pathname !== "/[fallback]") {
+    return text("Not found", { status: 404 });
+  }
+  let invalidated_data_nodes;
+  const is_route_resolution_request = has_resolution_suffix(url.pathname);
+  const is_data_request = has_data_suffix(url.pathname);
+  if (is_route_resolution_request) {
+    url.pathname = strip_resolution_suffix(url.pathname);
+  } else if (is_data_request) {
+    url.pathname = strip_data_suffix(url.pathname) + (url.searchParams.get(TRAILING_SLASH_PARAM) === "1" ? "/" : "") || "/";
+    url.searchParams.delete(TRAILING_SLASH_PARAM);
+    invalidated_data_nodes = url.searchParams.get(INVALIDATED_PARAM)?.split("").map((node) => node === "1");
+    url.searchParams.delete(INVALIDATED_PARAM);
+  }
+  let resolved_path;
   try {
-    rerouted_path = options2.hooks.reroute({ url: new URL(url) }) ?? url.pathname;
-  } catch (e) {
+    resolved_path = options2.hooks.reroute({ url: new URL(url) }) ?? url.pathname;
+  } catch {
     return text("Internal Server Error", {
       status: 500
     });
   }
-  let decoded;
   try {
-    decoded = decode_pathname(rerouted_path);
+    resolved_path = decode_pathname(resolved_path);
   } catch {
     return text("Malformed URI", { status: 400 });
   }
   let route = null;
   let params = {};
   if (base && !state.prerendering?.fallback) {
-    if (!decoded.startsWith(base)) {
+    if (!resolved_path.startsWith(base)) {
       return text("Not found", { status: 404 });
     }
-    decoded = decoded.slice(base.length) || "/";
+    resolved_path = resolved_path.slice(base.length) || "/";
   }
-  if (decoded === `/${options2.app_dir}/env.js`) {
+  if (is_route_resolution_request) {
+    return resolve_route(resolved_path, new URL(request.url), manifest);
+  }
+  if (resolved_path === `/${app_dir}/env.js`) {
     return get_public_env(request);
   }
-  if (decoded.startsWith(`/${options2.app_dir}`)) {
-    return text("Not found", { status: 404 });
-  }
-  const is_data_request = has_data_suffix(decoded);
-  let invalidated_data_nodes;
-  if (is_data_request) {
-    decoded = strip_data_suffix(decoded) || "/";
-    url.pathname = strip_data_suffix(url.pathname) + (url.searchParams.get(TRAILING_SLASH_PARAM) === "1" ? "/" : "") || "/";
-    url.searchParams.delete(TRAILING_SLASH_PARAM);
-    invalidated_data_nodes = url.searchParams.get(INVALIDATED_PARAM)?.split("").map((node) => node === "1");
-    url.searchParams.delete(INVALIDATED_PARAM);
+  if (resolved_path.startsWith(`/${app_dir}`)) {
+    const headers22 = new Headers();
+    headers22.set("cache-control", "public, max-age=0, must-revalidate");
+    return text("Not found", { status: 404, headers: headers22 });
   }
   if (!state.prerendering?.fallback) {
     const matchers = await manifest._.matchers();
     for (const candidate of manifest._.routes) {
-      const match = candidate.pattern.exec(decoded);
+      const match = candidate.pattern.exec(resolved_path);
       if (!match) continue;
       const matched = exec(match, candidate.params, matchers);
       if (matched) {
@@ -3013,12 +4454,12 @@ async function respond(request, options2, manifest, state) {
         trailing_slash = "always";
       } else if (route.page) {
         const nodes = await load_page_nodes(route.page, manifest);
-        if (DEV) ;
+        if (BROWSER) ;
         trailing_slash = get_option(nodes, "trailingSlash");
       } else if (route.endpoint) {
         const node = await route.endpoint();
         trailing_slash = node.trailingSlash;
-        if (DEV) ;
+        if (BROWSER) ;
       }
       if (!is_data_request) {
         const normalized = normalize_path(url.pathname, trailing_slash ?? "never");
@@ -3054,6 +4495,11 @@ async function respond(request, options2, manifest, state) {
           event.platform = await state.emulator.platform({ config, prerender });
         }
       }
+    } else if (state.emulator?.platform) {
+      event.platform = await state.emulator.platform({
+        config: {},
+        prerender: !!state.prerendering?.fallback
+      });
     }
     const { cookies, new_cookies, get_cookie_header, set_internal } = get_cookies(
       request,
@@ -3145,7 +4591,7 @@ async function respond(request, options2, manifest, state) {
           preload: opts.preload || default_preload
         };
       }
-      if (state.prerendering?.fallback) {
+      if (options2.hash_routing || state.prerendering?.fallback) {
         return await render_response({
           event: event2,
           options: options2,
@@ -3222,11 +4668,9 @@ async function respond(request, options2, manifest, state) {
         return response;
       }
       if (state.error && event2.isSubRequest) {
-        return await fetch(request, {
-          headers: {
-            "x-sveltekit-error": "true"
-          }
-        });
+        const headers22 = new Headers(request.headers);
+        headers22.set("x-sveltekit-error", "true");
+        return await fetch(request, { headers: headers22 });
       }
       if (state.error) {
         return text("Internal Server Error", {
@@ -3260,7 +4704,145 @@ async function respond(request, options2, manifest, state) {
     }
   }
 }
-function afterUpdate() {
+var current_component = null;
+function getContext(key2) {
+  const context_map = get_or_init_context_map();
+  const result = (
+    /** @type {T} */
+    context_map.get(key2)
+  );
+  return result;
+}
+function setContext(key2, context2) {
+  get_or_init_context_map().set(key2, context2);
+  return context2;
+}
+function get_or_init_context_map(name) {
+  if (current_component === null) {
+    lifecycle_outside_component();
+  }
+  return current_component.c ??= new Map(get_parent_context(current_component) || void 0);
+}
+function push(fn) {
+  current_component = { p: current_component, c: null, d: null };
+}
+function pop() {
+  var component = (
+    /** @type {Component} */
+    current_component
+  );
+  var ondestroy = component.d;
+  if (ondestroy) {
+    on_destroy.push(...ondestroy);
+  }
+  current_component = component.p;
+}
+function get_parent_context(component_context2) {
+  let parent = component_context2.p;
+  while (parent !== null) {
+    const context_map = parent.c;
+    if (context_map !== null) {
+      return context_map;
+    }
+    parent = parent.p;
+  }
+  return null;
+}
+const BLOCK_OPEN = `<!--${HYDRATION_START}-->`;
+const BLOCK_CLOSE = `<!--${HYDRATION_END}-->`;
+let on_destroy = [];
+function props_id_generator() {
+  let uid = 1;
+  return () => "s" + uid++;
+}
+function render(component, options2 = {}) {
+  const uid = props_id_generator();
+  const payload = {
+    out: "",
+    css: /* @__PURE__ */ new Set(),
+    head: { title: "", out: "", css: /* @__PURE__ */ new Set(), uid },
+    uid
+  };
+  const prev_on_destroy = on_destroy;
+  on_destroy = [];
+  payload.out += BLOCK_OPEN;
+  if (options2.context) {
+    push();
+    current_component.c = options2.context;
+  }
+  component(payload, options2.props ?? {}, {}, {});
+  if (options2.context) {
+    pop();
+  }
+  payload.out += BLOCK_CLOSE;
+  for (const cleanup of on_destroy) cleanup();
+  on_destroy = prev_on_destroy;
+  let head = payload.head.out + payload.head.title;
+  for (const { hash: hash2, code } of payload.css) {
+    head += `<style id="${hash2}">${code}</style>`;
+  }
+  return {
+    head,
+    html: payload.out,
+    body: payload.out
+  };
+}
+function store_get(store_values, store_name, store) {
+  if (store_name in store_values && store_values[store_name][0] === store) {
+    return store_values[store_name][2];
+  }
+  store_values[store_name]?.[1]();
+  store_values[store_name] = [store, null, void 0];
+  const unsub = subscribe_to_store(
+    store,
+    /** @param {any} v */
+    (v) => store_values[store_name][2] = v
+  );
+  store_values[store_name][1] = unsub;
+  return store_values[store_name][2];
+}
+function unsubscribe_stores(store_values) {
+  for (const store_name in store_values) {
+    store_values[store_name][1]();
+  }
+}
+function bind_props(props_parent, props_now) {
+  for (const key2 in props_now) {
+    const initial_value = props_parent[key2];
+    const value = props_now[key2];
+    if (initial_value === void 0 && value !== void 0 && Object.getOwnPropertyDescriptor(props_parent, key2)?.set) {
+      props_parent[key2] = value;
+    }
+  }
+}
+function await_block(promise, pending_fn, then_fn) {
+  if (is_promise(promise)) {
+    promise.then(null, noop);
+    if (pending_fn !== null) {
+      pending_fn();
+    }
+  } else if (then_fn !== null) {
+    then_fn(promise);
+  }
+}
+function ensure_array_like(array_like_or_iterator) {
+  if (array_like_or_iterator) {
+    return array_like_or_iterator.length !== void 0 ? array_like_or_iterator : Array.from(array_like_or_iterator);
+  }
+  return [];
+}
+function asClassComponent(component) {
+  const component_constructor = asClassComponent$1(component);
+  const _render = (props, { context: context2 } = {}) => {
+    const result = render(component, { props, context: context2 });
+    return {
+      css: { code: "", map: null },
+      head: result.head,
+      html: result.body
+    };
+  };
+  component_constructor.render = _render;
+  return component_constructor;
 }
 let prerendering = false;
 function set_building() {
@@ -3268,91 +4850,69 @@ function set_building() {
 function set_prerendering() {
   prerendering = true;
 }
-const Root = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { stores } = $$props;
-  let { page: page2 } = $$props;
-  let { constructors } = $$props;
-  let { components = [] } = $$props;
-  let { form } = $$props;
-  let { data_0 = null } = $$props;
-  let { data_1 = null } = $$props;
+function Root($$payload, $$props) {
+  push();
+  let {
+    stores: stores2,
+    page: page2,
+    constructors,
+    components = [],
+    form,
+    data_0 = null,
+    data_1 = null
+  } = $$props;
   {
-    setContext("__svelte__", stores);
+    setContext("__svelte__", stores2);
   }
-  afterUpdate(stores.page.notify);
-  if ($$props.stores === void 0 && $$bindings.stores && stores !== void 0) $$bindings.stores(stores);
-  if ($$props.page === void 0 && $$bindings.page && page2 !== void 0) $$bindings.page(page2);
-  if ($$props.constructors === void 0 && $$bindings.constructors && constructors !== void 0) $$bindings.constructors(constructors);
-  if ($$props.components === void 0 && $$bindings.components && components !== void 0) $$bindings.components(components);
-  if ($$props.form === void 0 && $$bindings.form && form !== void 0) $$bindings.form(form);
-  if ($$props.data_0 === void 0 && $$bindings.data_0 && data_0 !== void 0) $$bindings.data_0(data_0);
-  if ($$props.data_1 === void 0 && $$bindings.data_1 && data_1 !== void 0) $$bindings.data_1(data_1);
-  let $$settled;
-  let $$rendered;
-  let previous_head = $$result.head;
-  do {
-    $$settled = true;
-    $$result.head = previous_head;
-    {
-      stores.page.set(page2);
-    }
-    $$rendered = `  ${constructors[1] ? `${validate_component(constructors[0] || missing_component, "svelte:component").$$render(
-      $$result,
-      { data: data_0, this: components[0] },
-      {
-        this: ($$value) => {
-          components[0] = $$value;
-          $$settled = false;
-        }
+  {
+    stores2.page.set(page2);
+  }
+  const Pyramid_1 = constructors[1];
+  if (constructors[1]) {
+    $$payload.out += "<!--[-->";
+    const Pyramid_0 = constructors[0];
+    $$payload.out += `<!---->`;
+    Pyramid_0($$payload, {
+      data: data_0,
+      form,
+      children: ($$payload2) => {
+        $$payload2.out += `<!---->`;
+        Pyramid_1($$payload2, { data: data_1, form });
+        $$payload2.out += `<!---->`;
       },
-      {
-        default: () => {
-          return `${validate_component(constructors[1] || missing_component, "svelte:component").$$render(
-            $$result,
-            { data: data_1, form, this: components[1] },
-            {
-              this: ($$value) => {
-                components[1] = $$value;
-                $$settled = false;
-              }
-            },
-            {}
-          )}`;
-        }
-      }
-    )}` : `${validate_component(constructors[0] || missing_component, "svelte:component").$$render(
-      $$result,
-      { data: data_0, form, this: components[0] },
-      {
-        this: ($$value) => {
-          components[0] = $$value;
-          $$settled = false;
-        }
-      },
-      {}
-    )}`} ${``}`;
-  } while (!$$settled);
-  return $$rendered;
-});
-function set_read_implementation(fn) {
+      $$slots: { default: true }
+    });
+    $$payload.out += `<!---->`;
+  } else {
+    $$payload.out += "<!--[!-->";
+    const Pyramid_0 = constructors[0];
+    $$payload.out += `<!---->`;
+    Pyramid_0($$payload, { data: data_0, form });
+    $$payload.out += `<!---->`;
+  }
+  $$payload.out += `<!--]--> `;
+  {
+    $$payload.out += "<!--[!-->";
+  }
+  $$payload.out += `<!--]-->`;
+  pop();
 }
-function set_manifest(_) {
-}
+const root = asClassComponent(Root);
 const options = {
-  app_dir: "_app",
   app_template_contains_nonce: false,
   csp: { "mode": "auto", "directives": { "upgrade-insecure-requests": false, "block-all-mixed-content": false }, "reportOnly": { "upgrade-insecure-requests": false, "block-all-mixed-content": false } },
   csrf_check_origin: true,
   embedded: false,
   env_public_prefix: "PUBLIC_",
   env_private_prefix: "",
+  hash_routing: false,
   hooks: null,
   // added lazily, via `get_hooks`
   preload_strategy: "modulepreload",
-  root: Root,
+  root,
   service_worker: false,
   templates: {
-    app: ({ head, body: body2, assets: assets2, nonce, env }) => '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta content="width=device-width, initial-scale=1" name="viewport" />\n\n    <title>Transfer Kings</title>\n    <link href="https://transferkings.xyz" rel="canonical" />\n    <meta\n      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."\n      name="description"\n    />\n    <meta content="Transfer Kings" property="og:title" />\n    <meta\n      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."\n      property="og:description"\n    />\n    <meta content="website" property="og:type" />\n    <meta content="https://transferkings.xyz" property="og:url" />\n    <meta content="https://transfer-kings/meta-share.jpg" property="og:image" />\n    <meta content="summary_large_image" name="twitter:card" />\n    <meta content="Transfer Kings" name="twitter:title" />\n    <meta\n      content="Play Transfer Kings on the Internet Computer blockchain and become football agent today."\n      name="twitter:description"\n    />\n    <meta\n      content="https://transferkings.xyz/meta-share.jpg"\n      name="twitter:image"\n    />\n    <meta content="@beadle1989" name="twitter:creator" />\n\n    <link crossorigin="anonymous" href="/manifest.webmanifest" rel="manifest" />\n\n    <!-- Favicon -->\n    <link\n      rel="icon"\n      type="image/png"\n      sizes="32x32"\n      href="' + assets2 + '/favicons/favicon-32x32.png"\n    />\n    <link\n      rel="icon"\n      type="image/png"\n      sizes="16x16"\n      href="' + assets2 + '/favicons/favicon-16x16.png"\n    />\n    <link rel="shortcut icon" href="' + assets2 + '/favicons/favicon.ico" />\n\n    <!-- iOS meta tags & icons -->\n    <meta name="apple-mobile-web-app-capable" content="yes" />\n    <meta name="apple-mobile-web-app-status-bar-style" content="#2CE3A6" />\n    <meta name="apple-mobile-web-app-title" content="Transfer Kings" />\n    <link\n      rel="apple-touch-icon"\n      href="' + assets2 + '/favicons/apple-touch-icon.png"\n    />\n    <link\n      rel="mask-icon"\n      href="' + assets2 + '/favicons/safari-pinned-tab.svg"\n      color="#2CE3A6"\n    />\n\n    <!-- MS -->\n    <meta name="msapplication-TileColor" content="#101111" />\n    <meta\n      name="msapplication-config"\n      content="' + assets2 + '/favicons/browserconfig.xml"\n    />\n\n    <meta content="#2CE3A6" name="theme-color" />\n    ' + head + '\n\n    <style>\n      html,\n      body {\n        height: 100%;\n        margin: 0;\n      }\n\n      @font-face {\n        font-display: swap;\n        font-family: "Rubik";\n        font-style: normal;\n        font-weight: 400;\n        src: url("' + assets2 + '/Rubik-Regular.woff2") format("woff2");\n      }\n      body {\n        font-family: "Rubik", sans-serif !important;\n        color: white !important;\n        height: 100vh;\n        margin: 0;\n        background-image: url("/background.jpg");\n        background-size: cover;\n        background-position: center;\n        background-repeat: no-repeat;\n        background-attachment: fixed;\n      }\n\n      #app-spinner {\n        --spinner-size: 30px;\n\n        width: var(--spinner-size);\n        height: var(--spinner-size);\n\n        animation: app-spinner-linear-rotate 2000ms linear infinite;\n\n        position: absolute;\n        top: calc(50% - (var(--spinner-size) / 2));\n        left: calc(50% - (var(--spinner-size) / 2));\n\n        --radius: 45px;\n        --circumference: calc(3.14159265359 * var(--radius) * 2);\n\n        --start: calc((1 - 0.05) * var(--circumference));\n        --end: calc((1 - 0.8) * var(--circumference));\n      }\n\n      #app-spinner circle {\n        stroke-dasharray: var(--circumference);\n        stroke-width: 10%;\n        transform-origin: 50% 50% 0;\n\n        transition-property: stroke;\n\n        animation-name: app-spinner-stroke-rotate-100;\n        animation-duration: 4000ms;\n        animation-timing-function: cubic-bezier(0.35, 0, 0.25, 1);\n        animation-iteration-count: infinite;\n\n        fill: transparent;\n        stroke: currentColor;\n\n        transition: stroke-dashoffset 225ms linear;\n      }\n\n      @keyframes app-spinner-linear-rotate {\n        0% {\n          transform: rotate(0deg);\n        }\n        100% {\n          transform: rotate(360deg);\n        }\n      }\n\n      @keyframes app-spinner-stroke-rotate-100 {\n        0% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(0);\n        }\n        12.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(0);\n        }\n        12.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(72.5deg);\n        }\n        25% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(72.5deg);\n        }\n\n        25.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(270deg);\n        }\n        37.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(270deg);\n        }\n        37.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(161.5deg);\n        }\n        50% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(161.5deg);\n        }\n\n        50.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(180deg);\n        }\n        62.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(180deg);\n        }\n        62.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(251.5deg);\n        }\n        75% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(251.5deg);\n        }\n\n        75.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(90deg);\n        }\n        87.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(90deg);\n        }\n        87.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(341.5deg);\n        }\n        100% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(341.5deg);\n        }\n      }\n    </style>\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">' + body2 + '</div>\n\n    <svg\n      id="app-spinner"\n      preserveAspectRatio="xMidYMid meet"\n      focusable="false"\n      aria-hidden="true"\n      data-tid="spinner"\n      viewBox="0 0 100 100"\n    >\n      <circle cx="50%" cy="50%" r="45" />\n    </svg>\n  </body>\n</html>\n',
+    app: ({ head, body: body2, assets: assets2, nonce, env }) => '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta content="width=device-width, initial-scale=1" name="viewport" />\n\n    <title>Transfer Kings</title>\n    <link href="https://transferkings.xyz" rel="canonical" />\n    <meta\n      content="Collect your favourite players on Transfer Kings."\n      name="description"\n    />\n    <meta\n      content="Collect your favourite players on Transfer Kings"\n      property="og:title"\n    />\n    <meta\n      content="Collect your favourite players on Transfer Kings."\n      property="og:description"\n    />\n    <meta content="website" property="og:type" />\n    <meta content="https://transferkings.xyz" property="og:url" />\n    <meta\n      content="https://transferkings.xyz/meta-share.jpg"\n      property="og:image"\n    />\n    <meta content="summary_large_image" name="twitter:card" />\n    <meta content="Transfer Kings" name="twitter:title" />\n    <meta\n      content="Collect your favourite players on Transfer Kings."\n      name="twitter:description"\n    />\n    <meta\n      content="https://transferkings.xyz/meta-share.jpg"\n      name="twitter:image"\n    />\n    <meta content="@beadle1989" name="twitter:creator" />\n\n    <link crossorigin="anonymous" href="/manifest.webmanifest" rel="manifest" />\n\n    <link\n      rel="icon"\n      type="image/png"\n      sizes="32x32"\n      href="' + assets2 + '/favicons/favicon-32x32.png"\n    />\n    <link\n      rel="icon"\n      type="image/png"\n      sizes="16x16"\n      href="' + assets2 + '/favicons/favicon-16x16.png"\n    />\n    <link rel="shortcut icon" href="' + assets2 + '/favicons/favicon.ico" />\n\n    <meta name="mobile-web-app-capable" content="yes" />\n    <meta name="apple-mobile-web-app-status-bar-style" content="#D7FE49" />\n    <meta name="apple-mobile-web-app-title" content="Transfer Kings" />\n    <link\n      rel="apple-touch-icon"\n      href="' + assets2 + '/favicons/apple-touch-icon.png"\n    />\n    <link\n      rel="mask-icon"\n      href="' + assets2 + '/favicons/safari-pinned-tab.svg"\n      color="#D7FE49"\n    />\n\n    <meta name="msapplication-TileColor" content="#D7FE49" />\n    <meta\n      name="msapplication-config"\n      content="' + assets2 + '/favicons/browserconfig.xml"\n    />\n\n    <meta content="#D7FE49" name="theme-color" />\n    ' + head + '\n\n    <style>\n      html,\n      body {\n        height: 100%;\n        margin: 0;\n      }\n\n      @font-face {\n        font-display: swap;\n        font-family: "Tanker";\n        font-style: normal;\n        font-weight: 400;\n        src: url("' + assets2 + '/Tanker-Regular.woff2") format("woff2");\n      }\n      body {\n        font-family: "Tanker", sans-serif !important;\n        color: white !important;\n        background-color: #0d0d0d;\n        height: 100vh;\n        margin: 0;\n      }\n\n      #app-spinner {\n        --spinner-size: 30px;\n\n        width: var(--spinner-size);\n        height: var(--spinner-size);\n\n        animation: app-spinner-linear-rotate 2000ms linear infinite;\n\n        position: absolute;\n        top: calc(50% - (var(--spinner-size) / 2));\n        left: calc(50% - (var(--spinner-size) / 2));\n\n        --radius: 45px;\n        --circumference: calc(3.14159265359 * var(--radius) * 2);\n\n        --start: calc((1 - 0.05) * var(--circumference));\n        --end: calc((1 - 0.8) * var(--circumference));\n      }\n\n      #app-spinner circle {\n        stroke-dasharray: var(--circumference);\n        stroke-width: 10%;\n        transform-origin: 50% 50% 0;\n\n        transition-property: stroke;\n\n        animation-name: app-spinner-stroke-rotate-100;\n        animation-duration: 4000ms;\n        animation-timing-function: cubic-bezier(0.35, 0, 0.25, 1);\n        animation-iteration-count: infinite;\n\n        fill: transparent;\n        stroke: currentColor;\n\n        transition: stroke-dashoffset 225ms linear;\n      }\n\n      @keyframes app-spinner-linear-rotate {\n        0% {\n          transform: rotate(0deg);\n        }\n        100% {\n          transform: rotate(360deg);\n        }\n      }\n\n      @keyframes app-spinner-stroke-rotate-100 {\n        0% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(0);\n        }\n        12.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(0);\n        }\n        12.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(72.5deg);\n        }\n        25% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(72.5deg);\n        }\n\n        25.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(270deg);\n        }\n        37.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(270deg);\n        }\n        37.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(161.5deg);\n        }\n        50% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(161.5deg);\n        }\n\n        50.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(180deg);\n        }\n        62.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(180deg);\n        }\n        62.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(251.5deg);\n        }\n        75% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(251.5deg);\n        }\n\n        75.0001% {\n          stroke-dashoffset: var(--start);\n          transform: rotate(90deg);\n        }\n        87.5% {\n          stroke-dashoffset: var(--end);\n          transform: rotate(90deg);\n        }\n        87.5001% {\n          stroke-dashoffset: var(--end);\n          transform: rotateX(180deg) rotate(341.5deg);\n        }\n        100% {\n          stroke-dashoffset: var(--start);\n          transform: rotateX(180deg) rotate(341.5deg);\n        }\n      }\n    </style>\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">' + body2 + '</div>\n\n    <svg\n      id="app-spinner"\n      preserveAspectRatio="xMidYMid meet"\n      focusable="false"\n      aria-hidden="true"\n      data-tid="spinner"\n      viewBox="0 0 100 100"\n    >\n      <circle cx="50%" cy="50%" r="45" />\n    </svg>\n  </body>\n</html>\n',
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -3424,10 +4984,23 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1slmprz"
+  version_hash: "vfkn6m"
 };
 async function get_hooks() {
-  return {};
+  let handle;
+  let handleFetch;
+  let handleError;
+  let init2;
+  let reroute;
+  let transport;
+  return {
+    handle,
+    handleFetch,
+    handleError,
+    init: init2,
+    reroute,
+    transport
+  };
 }
 function filter_private_env(env, { public_prefix, private_prefix }) {
   return Object.fromEntries(
@@ -3450,6 +5023,7 @@ const prerender_env_handler = {
     );
   }
 };
+let init_promise;
 class Server {
   /** @type {import('types').SSROptions} */
   #options;
@@ -3480,7 +5054,10 @@ class Server {
       prerendering ? new Proxy({ type: "public" }, prerender_env_handler) : public_env2
     );
     set_safe_public_env(public_env2);
-    if (!this.#options.hooks) {
+    if (read) {
+      set_read_implementation(read);
+    }
+    await (init_promise ??= (async () => {
       try {
         const module = await get_hooks();
         this.#options.hooks = {
@@ -3488,14 +5065,18 @@ class Server {
           handleError: module.handleError || (({ error }) => console.error(error)),
           handleFetch: module.handleFetch || (({ request, fetch: fetch2 }) => fetch2(request)),
           reroute: module.reroute || (() => {
-          })
+          }),
+          transport: module.transport || {}
         };
+        if (module.init) {
+          await module.init();
+        }
       } catch (error) {
         {
           throw error;
         }
       }
-    }
+    })());
   }
   /**
    * @param {Request} request
@@ -3509,46 +5090,67 @@ class Server {
     });
   }
 }
-const Layout$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `${slots.default ? slots.default({}) : ``}`;
-});
+function Layout$1($$payload, $$props) {
+  let { children } = $$props;
+  children($$payload);
+  $$payload.out += `<!---->`;
+}
+const SNAPSHOT_KEY = "sveltekit:snapshot";
+const SCROLL_KEY = "sveltekit:scroll";
+function create_updated_store() {
+  const { set: set2, subscribe } = writable(false);
+  {
+    return {
+      subscribe,
+      // eslint-disable-next-line @typescript-eslint/require-await
+      check: async () => false
+    };
+  }
+}
+const is_legacy = noop.toString().includes("$$") || /function \w+\(\) \{\}/.test(noop.toString());
+if (is_legacy) {
+  ({
+    data: {},
+    form: null,
+    error: null,
+    params: {},
+    route: { id: null },
+    state: {},
+    status: -1,
+    url: new URL("https://example.com")
+  });
+}
 function get(key2, parse2 = JSON.parse) {
   try {
     return parse2(sessionStorage[key2]);
   } catch {
   }
 }
-const SNAPSHOT_KEY = "sveltekit:snapshot";
-const SCROLL_KEY = "sveltekit:scroll";
 get(SCROLL_KEY) ?? {};
 get(SNAPSHOT_KEY) ?? {};
-const getStores = () => {
-  const stores = getContext("__svelte__");
-  return {
-    /** @type {typeof page} */
-    page: {
-      subscribe: stores.page.subscribe
-    },
-    /** @type {typeof navigating} */
-    navigating: {
-      subscribe: stores.navigating.subscribe
-    },
-    /** @type {typeof updated} */
-    updated: stores.updated
-  };
+const stores = {
+  updated: /* @__PURE__ */ create_updated_store()
 };
-const page = {
-  subscribe(fn) {
-    const store = getStores().page;
-    return store.subscribe(fn);
+({
+  check: stores.updated.check
+});
+function context() {
+  return getContext("__request__");
+}
+const page$1 = {
+  get error() {
+    return context().page.error;
+  },
+  get status() {
+    return context().page.status;
   }
 };
-const Error$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $page, $$unsubscribe_page;
-  $$unsubscribe_page = subscribe(page, (value) => $page = value);
-  $$unsubscribe_page();
-  return `<h1>${escape($page.status)}</h1> <p>${escape($page.error?.message)}</p>`;
-});
+const page = page$1;
+function Error$1($$payload, $$props) {
+  push();
+  $$payload.out += `<h1>${escape_html(page.status)}</h1> <p>${escape_html(page.error?.message)}</p>`;
+  pop();
+}
 const AUTH_MAX_TIME_TO_LIVE = BigInt(
   60 * 60 * 1e3 * 1e3 * 1e3 * 24 * 14
 );
@@ -3572,19 +5174,18 @@ let authClient;
 const NNS_IC_ORG_ALTERNATIVE_ORIGIN = "https://transferkings.xyz";
 const NNS_IC_APP_DERIVATION_ORIGIN = "https://f2lwq-yaaaa-aaaal-qjfca-cai.icp0.io";
 const isNnsAlternativeOrigin = () => {
-  if (typeof window === "undefined") return false;
   return window.location.origin === NNS_IC_ORG_ALTERNATIVE_ORIGIN;
 };
 const initAuthStore = () => {
-  const { subscribe: subscribe2, set, update } = writable({
+  const { subscribe, set: set2, update } = writable({
     identity: void 0
   });
   return {
-    subscribe: subscribe2,
+    subscribe,
     sync: async () => {
       authClient = authClient ?? await createAuthClient();
       const isAuthenticated = await authClient.isAuthenticated();
-      set({
+      set2({
         identity: isAuthenticated ? authClient.getIdentity() : null
       });
     },
@@ -3627,249 +5228,16 @@ const initAuthStore = () => {
   };
 };
 const authStore = initAuthStore();
-const adminPrincipal = "nn75s-ayupf-j6mj3-kluyb-wjj7y-eang2-dwzzr-cfdxk-etbw7-cgwnb-lqe";
-const authSignedInStore = derived(
+const authRemainingTimeStore = writable(void 0);
+derived(
   authStore,
   ({ identity }) => identity !== null && identity !== void 0
 );
-derived(
-  authStore,
-  ({ identity }) => identity !== null && identity !== void 0 && identity.getPrincipal().toString() === adminPrincipal
-);
-const Logo_icon = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { className = "" } = $$props;
-  let { fill = "" } = $$props;
-  if ($$props.className === void 0 && $$bindings.className && className !== void 0) $$bindings.className(className);
-  if ($$props.fill === void 0 && $$bindings.fill && fill !== void 0) $$bindings.fill(fill);
-  return `<svg xmlns="http://www.w3.org/2000/svg"${add_attribute("class", className, 0)} viewBox="0 0 119 118" fill="none"><path d="M46.6292 95.4787C42.6798 96.3015 39.6731 96.7241 37.73 96.9196C36.5527 97.038 35.6089 98.0884 35.6364 99.2713C35.6872 101.455 35.661 104.079 35.8442 104.995C37.1747 111.647 40.2975 113.94 41.0643 114.412C41.177 114.482 41.2938 114.526 41.422 114.559C42.8638 114.924 52.5373 117.274 64.1689 117.658C64.7159 117.676 65.2461 117.464 65.6331 117.077L74.9523 107.758C75.8724 106.838 75.684 105.298 74.5723 104.622C72.2459 103.207 69.2335 101.349 67.5647 100.237C65.6133 98.9359 61.9793 95.2268 59.7095 92.7894C59.0976 92.1323 58.1266 91.9495 57.2969 92.2924C55.1665 93.1727 51.3886 94.4872 46.6292 95.4787Z"${add_attribute("fill", fill, 0)}></path><path d="M117.683 76.7635C119.161 72.6979 119.159 67.6006 118.804 63.9461C118.657 62.4284 116.898 61.8085 115.742 62.8035L107.915 69.5441C107.3 70.0736 106.998 70.941 107.024 71.7521C107.056 72.7482 107.04 74.3482 106.898 76.7635C106.676 80.5448 103.837 88.1768 101.929 92.7808C101.522 93.7635 101.933 94.9015 102.896 95.3536C104.832 96.2625 107.151 97.2554 107.532 97.0646C108.167 96.7474 115.145 83.742 117.683 76.7635Z"${add_attribute("fill", fill, 0)}></path><path d="M0.482453 49.1884L9.96382 37.1445C10.8242 36.0516 12.5097 36.1488 13.2386 37.3334L21.4796 50.725C21.7417 51.1509 21.8347 51.6597 21.7403 52.1509L17.4628 74.3938C17.2722 75.385 16.3729 76.0788 15.3658 76.0117L4.11115 75.2614C3.34335 75.2102 2.66998 74.7238 2.43392 73.9914C2.24231 73.3969 2.03932 72.686 1.90323 72.0056C1.65867 70.7828 0.608827 57.6772 0.0597851 50.5764C0.0211178 50.0763 0.172196 49.5825 0.482453 49.1884Z"${add_attribute("fill", fill, 0)}></path><path d="M43.1398 1.58602C37.697 2.53261 29.6243 7.23081 25.5588 9.91831C25.0437 10.2588 24.7419 10.8368 24.7419 11.4542C24.7419 12.7933 26.1094 13.7081 27.3592 13.2274C29.8488 12.2698 33.3065 11.0317 36.4785 10.1506C40.5949 9.00711 45.1922 8.46477 47.5309 8.29137C47.9748 8.25846 48.3977 8.08906 48.7341 7.79757L52.808 4.26679C52.9178 4.17166 53.0376 4.08876 53.1653 4.01958L56.8741 2.01066C57.8012 1.50847 57.4236 0.137308 56.3711 0.200833C52.4309 0.438651 47.2056 0.878937 43.1398 1.58602Z"${add_attribute("fill", fill, 0)}></path><path d="M102.14 18.3978C97.9668 13.8453 93.2974 10.3089 90.1455 8.2392C89.6724 7.92853 89.2364 8.47056 89.6238 8.88321C90.9694 10.3167 92.4651 11.895 93.2583 12.6881C94.406 13.8359 96.3324 18.0117 97.394 20.52C97.5927 20.9897 97.9572 21.3691 98.4192 21.585C99.7758 22.2188 101.935 23.2651 103.409 24.1075C104.693 24.8414 107.934 28.3829 110.59 31.4475C110.976 31.8936 111.59 31.4806 111.292 30.9711C109.25 27.482 106.047 22.6603 102.14 18.3978Z"${add_attribute("fill", fill, 0)}></path><path transform="translate(40, 25)" d="M44.6021 24.8356L16.4245 36.8429C15.8284 37.0969 15.5485 37.7924 15.8025 38.3885L16.7262 40.556C16.9802 41.152 17.6757 41.4319 18.2718 41.1779L46.4494 29.1706C47.0455 28.9166 47.3253 28.2211 47.0713 27.625L46.1477 25.4575C45.8937 24.8614 45.1982 24.5816 44.6021 24.8356ZM39.7008 1.31318C37.9058 2.07807 37.0701 4.15493 37.8349 5.9499C38.0399 6.43082 38.3388 6.83169 38.7045 7.16405L35.0532 12.1935C34.2756 13.2611 32.7776 13.4833 31.7245 12.6835L22.0881 5.37695C22.5589 4.47204 22.652 3.3759 22.2191 2.35988C21.4542 0.564907 19.3773 -0.27082 17.5823 0.49407C15.7874 1.25896 14.9516 3.33583 15.7165 5.1308C16.1495 6.14682 17.0046 6.83887 17.9834 7.12609L16.579 19.1375C16.4264 20.451 15.2218 21.3805 13.9199 21.199L7.77002 20.3461C7.77973 19.8618 7.70149 19.3589 7.49655 18.878C6.73167 17.083 4.6548 16.2473 2.85983 17.0122C1.06486 17.7771 0.222357 19.8568 0.987246 21.6518C1.75214 23.4468 3.829 24.2825 5.62397 23.5176C5.80008 23.4425 5.96465 23.3404 6.12244 23.2412L16.5846 34.2136L42.5947 23.1299L41.927 7.98378C42.1079 7.93871 42.2956 7.89076 42.4717 7.81571C44.2666 7.05082 45.1024 4.97396 44.3375 3.17898C43.5726 1.38401 41.4957 0.548287 39.7008 1.31318Z"${add_attribute("fill", fill, 0)}></path></svg>`;
-});
-const core = {
-  close: "Close",
-  back: "Back",
-  menu: "Open menu to access navigation options",
-  collapse: "Collapse",
-  expand: "Expand",
-  copy: "Copy to clipboard"
-};
-const theme = {
-  switch_theme: "Switch theme"
-};
-const progress = {
-  completed: "Completed",
-  in_progress: "In progress"
-};
-const en = {
-  core,
-  theme,
-  progress
-};
-readable({
-  lang: "en",
-  ...en
-});
-const initBusyStore = () => {
-  const DEFAULT_STATE = [];
-  const { subscribe: subscribe2, update, set } = writable(DEFAULT_STATE);
-  return {
-    subscribe: subscribe2,
-    /**
-     * Show the busy-screen if not visible
-     */
-    startBusy({ initiator: newInitiator, text: text2 }) {
-      update((state) => [
-        ...state.filter(({ initiator }) => newInitiator !== initiator),
-        { initiator: newInitiator, text: text2 }
-      ]);
-    },
-    /**
-     * Hide the busy-screen if no other initiators are done
-     */
-    stopBusy(initiatorToRemove) {
-      update((state) => state.filter(({ initiator }) => initiator !== initiatorToRemove));
-    },
-    resetForTesting() {
-      set(DEFAULT_STATE);
-    }
-  };
-};
-const busyStore = initBusyStore();
-const busy = derived(busyStore, ($busyStore) => $busyStore.length > 0);
-const busyMessage = derived(busyStore, ($busyStore) => $busyStore.reverse().find(({ text: text2 }) => nonNullish(text2))?.text);
-const css$2 = {
-  code: ".medium.svelte-85668t{--spinner-size:30px}.small.svelte-85668t{--spinner-size:calc(var(--line-height-standard) * 1rem)}.tiny.svelte-85668t{--spinner-size:calc(var(--line-height-standard) * 0.5rem)}svg.svelte-85668t{width:var(--spinner-size);height:var(--spinner-size);animation:spinner-linear-rotate 2000ms linear infinite;position:absolute;top:calc(50% - var(--spinner-size) / 2);left:calc(50% - var(--spinner-size) / 2);--radius:45px;--circumference:calc(3.1415926536 * var(--radius) * 2);--start:calc((1 - 0.05) * var(--circumference));--end:calc((1 - 0.8) * var(--circumference))}svg.inline.svelte-85668t{display:inline-block;position:relative}circle.svelte-85668t{stroke-dasharray:var(--circumference);stroke-width:10%;transform-origin:50% 50% 0;transition-property:stroke;animation-name:spinner-stroke-rotate-100;animation-duration:4000ms;animation-timing-function:cubic-bezier(0.35, 0, 0.25, 1);animation-iteration-count:infinite;fill:transparent;stroke:currentColor;transition:stroke-dashoffset 225ms linear}@keyframes spinner-linear-rotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes spinner-stroke-rotate-100{0%{stroke-dashoffset:var(--start);transform:rotate(0)}12.5%{stroke-dashoffset:var(--end);transform:rotate(0)}12.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(72.5deg)}25%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(72.5deg)}25.0001%{stroke-dashoffset:var(--start);transform:rotate(270deg)}37.5%{stroke-dashoffset:var(--end);transform:rotate(270deg)}37.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(161.5deg)}50%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(161.5deg)}50.0001%{stroke-dashoffset:var(--start);transform:rotate(180deg)}62.5%{stroke-dashoffset:var(--end);transform:rotate(180deg)}62.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(251.5deg)}75%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(251.5deg)}75.0001%{stroke-dashoffset:var(--start);transform:rotate(90deg)}87.5%{stroke-dashoffset:var(--end);transform:rotate(90deg)}87.5001%{stroke-dashoffset:var(--end);transform:rotateX(180deg) rotate(341.5deg)}100%{stroke-dashoffset:var(--start);transform:rotateX(180deg) rotate(341.5deg)}}",
-  map: '{"version":3,"file":"Spinner.svelte","sources":["Spinner.svelte"],"sourcesContent":["<!-- adapted source: https://github.com/angular/components/tree/master/src/material/progress-spinner -->\\n<script>export let inline = false;\\nexport let size = \\"medium\\";\\n<\/script>\\n\\n<svg\\n  class:inline\\n  class={size}\\n  preserveAspectRatio=\\"xMidYMid meet\\"\\n  focusable=\\"false\\"\\n  aria-hidden=\\"true\\"\\n  data-tid=\\"spinner\\"\\n  viewBox=\\"0 0 100 100\\"><circle cx=\\"50%\\" cy=\\"50%\\" r=\\"45\\" /></svg\\n>\\n\\n<style>.medium {\\n  --spinner-size: 30px;\\n}\\n\\n.small {\\n  --spinner-size: calc(var(--line-height-standard) * 1rem);\\n}\\n\\n.tiny {\\n  --spinner-size: calc(var(--line-height-standard) * 0.5rem);\\n}\\n\\nsvg {\\n  width: var(--spinner-size);\\n  height: var(--spinner-size);\\n  animation: spinner-linear-rotate 2000ms linear infinite;\\n  position: absolute;\\n  top: calc(50% - var(--spinner-size) / 2);\\n  left: calc(50% - var(--spinner-size) / 2);\\n  --radius: 45px;\\n  --circumference: calc(3.1415926536 * var(--radius) * 2);\\n  --start: calc((1 - 0.05) * var(--circumference));\\n  --end: calc((1 - 0.8) * var(--circumference));\\n}\\nsvg.inline {\\n  display: inline-block;\\n  position: relative;\\n}\\n\\ncircle {\\n  stroke-dasharray: var(--circumference);\\n  stroke-width: 10%;\\n  transform-origin: 50% 50% 0;\\n  transition-property: stroke;\\n  animation-name: spinner-stroke-rotate-100;\\n  animation-duration: 4000ms;\\n  animation-timing-function: cubic-bezier(0.35, 0, 0.25, 1);\\n  animation-iteration-count: infinite;\\n  fill: transparent;\\n  stroke: currentColor;\\n  transition: stroke-dashoffset 225ms linear;\\n}\\n\\n/* -global- */\\n@keyframes -global-spinner-linear-rotate {\\n  0% {\\n    transform: rotate(0deg);\\n  }\\n  100% {\\n    transform: rotate(360deg);\\n  }\\n}\\n/* -global- */\\n@keyframes -global-spinner-stroke-rotate-100 {\\n  0% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(0);\\n  }\\n  12.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(0);\\n  }\\n  12.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(72.5deg);\\n  }\\n  25% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(72.5deg);\\n  }\\n  25.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(270deg);\\n  }\\n  37.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(270deg);\\n  }\\n  37.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(161.5deg);\\n  }\\n  50% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(161.5deg);\\n  }\\n  50.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(180deg);\\n  }\\n  62.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(180deg);\\n  }\\n  62.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(251.5deg);\\n  }\\n  75% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(251.5deg);\\n  }\\n  75.0001% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotate(90deg);\\n  }\\n  87.5% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotate(90deg);\\n  }\\n  87.5001% {\\n    stroke-dashoffset: var(--end);\\n    transform: rotateX(180deg) rotate(341.5deg);\\n  }\\n  100% {\\n    stroke-dashoffset: var(--start);\\n    transform: rotateX(180deg) rotate(341.5deg);\\n  }\\n}</style>\\n"],"names":[],"mappings":"AAeO,qBAAQ,CACb,cAAc,CAAE,IAClB,CAEA,oBAAO,CACL,cAAc,CAAE,wCAClB,CAEA,mBAAM,CACJ,cAAc,CAAE,0CAClB,CAEA,iBAAI,CACF,KAAK,CAAE,IAAI,cAAc,CAAC,CAC1B,MAAM,CAAE,IAAI,cAAc,CAAC,CAC3B,SAAS,CAAE,qBAAqB,CAAC,MAAM,CAAC,MAAM,CAAC,QAAQ,CACvD,QAAQ,CAAE,QAAQ,CAClB,GAAG,CAAE,KAAK,GAAG,CAAC,CAAC,CAAC,IAAI,cAAc,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CACxC,IAAI,CAAE,KAAK,GAAG,CAAC,CAAC,CAAC,IAAI,cAAc,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CACzC,QAAQ,CAAE,IAAI,CACd,eAAe,CAAE,sCAAsC,CACvD,OAAO,CAAE,uCAAuC,CAChD,KAAK,CAAE,sCACT,CACA,GAAG,qBAAQ,CACT,OAAO,CAAE,YAAY,CACrB,QAAQ,CAAE,QACZ,CAEA,oBAAO,CACL,gBAAgB,CAAE,IAAI,eAAe,CAAC,CACtC,YAAY,CAAE,GAAG,CACjB,gBAAgB,CAAE,GAAG,CAAC,GAAG,CAAC,CAAC,CAC3B,mBAAmB,CAAE,MAAM,CAC3B,cAAc,CAAE,yBAAyB,CACzC,kBAAkB,CAAE,MAAM,CAC1B,yBAAyB,CAAE,aAAa,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CACzD,yBAAyB,CAAE,QAAQ,CACnC,IAAI,CAAE,WAAW,CACjB,MAAM,CAAE,YAAY,CACpB,UAAU,CAAE,iBAAiB,CAAC,KAAK,CAAC,MACtC,CAGA,WAAmB,qBAAsB,CACvC,EAAG,CACD,SAAS,CAAE,OAAO,IAAI,CACxB,CACA,IAAK,CACH,SAAS,CAAE,OAAO,MAAM,CAC1B,CACF,CAEA,WAAmB,yBAA0B,CAC3C,EAAG,CACD,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,OAAO,CAAC,CACrB,CACA,KAAM,CACJ,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,OAAO,CAAC,CACrB,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,OAAO,CAC3C,CACA,GAAI,CACF,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,OAAO,CAC3C,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,OAAO,MAAM,CAC1B,CACA,KAAM,CACJ,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,OAAO,MAAM,CAC1B,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACA,GAAI,CACF,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,OAAO,MAAM,CAC1B,CACA,KAAM,CACJ,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,OAAO,MAAM,CAC1B,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACA,GAAI,CACF,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,OAAO,KAAK,CACzB,CACA,KAAM,CACJ,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,OAAO,KAAK,CACzB,CACA,QAAS,CACP,iBAAiB,CAAE,IAAI,KAAK,CAAC,CAC7B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACA,IAAK,CACH,iBAAiB,CAAE,IAAI,OAAO,CAAC,CAC/B,SAAS,CAAE,QAAQ,MAAM,CAAC,CAAC,OAAO,QAAQ,CAC5C,CACF"}'
-};
-const Spinner = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { inline = false } = $$props;
-  let { size = "medium" } = $$props;
-  if ($$props.inline === void 0 && $$bindings.inline && inline !== void 0) $$bindings.inline(inline);
-  if ($$props.size === void 0 && $$bindings.size && size !== void 0) $$bindings.size(size);
-  $$result.css.add(css$2);
-  return `  <svg class="${[escape(null_to_empty(size), true) + " svelte-85668t", inline ? "inline" : ""].join(" ").trim()}" preserveAspectRatio="xMidYMid meet" focusable="false" aria-hidden="true" data-tid="spinner" viewBox="0 0 100 100"><circle cx="50%" cy="50%" r="45" class="svelte-85668t"></circle></svg>`;
-});
-const css$1 = {
-  code: "div.svelte-14plyno{z-index:calc(var(--z-index) + 1000);position:fixed;top:0;right:0;bottom:0;left:0;background:var(--backdrop);color:var(--backdrop-contrast)}.content.svelte-14plyno{display:flex;flex-direction:column;justify-content:center;align-items:center}p.svelte-14plyno{padding-bottom:var(--padding);max-width:calc(var(--section-max-width) / 2)}",
-  map: '{"version":3,"file":"BusyScreen.svelte","sources":["BusyScreen.svelte"],"sourcesContent":["<script>import { fade } from \\"svelte/transition\\";\\nimport { busy, busyMessage } from \\"../stores/busy.store\\";\\nimport Spinner from \\"./Spinner.svelte\\";\\nimport { nonNullish } from \\"@dfinity/utils\\";\\n<\/script>\\n\\n<!-- Display spinner and lock UI if busyStore is not empty -->\\n{#if $busy}\\n  <div data-tid=\\"busy\\" transition:fade|global>\\n    <div class=\\"content\\">\\n      {#if nonNullish($busyMessage)}\\n        <p>{$busyMessage}</p>\\n      {/if}\\n      <span>\\n        <Spinner inline />\\n      </span>\\n    </div>\\n  </div>\\n{/if}\\n\\n<style>div {\\n  z-index: calc(var(--z-index) + 1000);\\n  position: fixed;\\n  top: 0;\\n  right: 0;\\n  bottom: 0;\\n  left: 0;\\n  background: var(--backdrop);\\n  color: var(--backdrop-contrast);\\n}\\n\\n.content {\\n  display: flex;\\n  flex-direction: column;\\n  justify-content: center;\\n  align-items: center;\\n}\\n\\np {\\n  padding-bottom: var(--padding);\\n  max-width: calc(var(--section-max-width) / 2);\\n}</style>\\n"],"names":[],"mappings":"AAoBO,kBAAI,CACT,OAAO,CAAE,KAAK,IAAI,SAAS,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,CACpC,QAAQ,CAAE,KAAK,CACf,GAAG,CAAE,CAAC,CACN,KAAK,CAAE,CAAC,CACR,MAAM,CAAE,CAAC,CACT,IAAI,CAAE,CAAC,CACP,UAAU,CAAE,IAAI,UAAU,CAAC,CAC3B,KAAK,CAAE,IAAI,mBAAmB,CAChC,CAEA,uBAAS,CACP,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,MAAM,CACvB,WAAW,CAAE,MACf,CAEA,gBAAE,CACA,cAAc,CAAE,IAAI,SAAS,CAAC,CAC9B,SAAS,CAAE,KAAK,IAAI,mBAAmB,CAAC,CAAC,CAAC,CAAC,CAAC,CAC9C"}'
-};
-const BusyScreen = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $busy, $$unsubscribe_busy;
-  let $busyMessage, $$unsubscribe_busyMessage;
-  $$unsubscribe_busy = subscribe(busy, (value) => $busy = value);
-  $$unsubscribe_busyMessage = subscribe(busyMessage, (value) => $busyMessage = value);
-  $$result.css.add(css$1);
-  $$unsubscribe_busy();
-  $$unsubscribe_busyMessage();
-  return ` ${$busy ? `<div data-tid="busy" class="svelte-14plyno"><div class="content svelte-14plyno">${nonNullish($busyMessage) ? `<p class="svelte-14plyno">${escape($busyMessage)}</p>` : ``} <span>${validate_component(Spinner, "Spinner").$$render($$result, { inline: true }, {}, {})}</span></div></div>` : ``}`;
-});
-var Theme;
-(function(Theme2) {
-  Theme2["DARK"] = "dark";
-  Theme2["LIGHT"] = "light";
-})(Theme || (Theme = {}));
-const isNode = () => typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-const enumFromStringExists = ({ obj, value }) => Object.values(obj).includes(value);
-const THEME_ATTRIBUTE = "theme";
-const LOCALSTORAGE_THEME_KEY = "nnsTheme";
-const initTheme = () => {
-  if (isNode()) {
-    return void 0;
-  }
-  const theme2 = document.documentElement.getAttribute(THEME_ATTRIBUTE);
-  const initialTheme = enumFromStringExists({
-    obj: Theme,
-    value: theme2
-  }) ? theme2 : Theme.DARK;
-  applyTheme({ theme: initialTheme, preserve: false });
-  return initialTheme;
-};
-const applyTheme = ({ theme: theme2, preserve = true }) => {
-  const { documentElement, head } = document;
-  documentElement.setAttribute(THEME_ATTRIBUTE, theme2);
-  const color = getComputedStyle(documentElement).getPropertyValue("--theme-color");
-  head?.children?.namedItem("theme-color")?.setAttribute("content", color.trim());
-  if (preserve) {
-    localStorage.setItem(LOCALSTORAGE_THEME_KEY, JSON.stringify(theme2));
-  }
-};
-initTheme();
-var Menu;
-(function(Menu2) {
-  Menu2["COLLAPSED"] = "collapsed";
-  Menu2["EXPANDED"] = "expanded";
-})(Menu || (Menu = {}));
-const MENU_ATTRIBUTE = "menu";
-const LOCALSTORAGE_MENU_KEY = "nnsMenu";
-const initMenu = () => {
-  if (isNode()) {
-    return void 0;
-  }
-  const menu = document.documentElement.getAttribute(MENU_ATTRIBUTE);
-  const initialMenu2 = enumFromStringExists({
-    obj: Menu,
-    value: menu
-  }) ? menu : Menu.EXPANDED;
-  applyMenu({ menu: initialMenu2, preserve: false });
-  return initialMenu2;
-};
-const applyMenu = ({ menu, preserve = true }) => {
-  const { documentElement } = document;
-  documentElement.setAttribute(MENU_ATTRIBUTE, menu);
-  if (preserve) {
-    localStorage.setItem(LOCALSTORAGE_MENU_KEY, JSON.stringify(menu));
-  }
-};
-const initialMenu = initMenu();
-const initMenuStore = () => {
-  const { subscribe: subscribe2, update } = writable(initialMenu);
-  return {
-    subscribe: subscribe2,
-    toggle: () => {
-      update((state) => {
-        const menu = state === Menu.EXPANDED ? Menu.COLLAPSED : Menu.EXPANDED;
-        applyMenu({ menu, preserve: true });
-        return menu;
-      });
-    }
-  };
-};
-const menuStore = initMenuStore();
-derived(menuStore, ($menuStore) => $menuStore === Menu.COLLAPSED);
-const Menu_icon = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { className = "w-6" } = $$props;
-  let { fill = "#FFFFFF" } = $$props;
-  if ($$props.className === void 0 && $$bindings.className && className !== void 0) $$bindings.className(className);
-  if ($$props.fill === void 0 && $$bindings.fill && fill !== void 0) $$bindings.fill(fill);
-  return `<svg${add_attribute("class", className, 0)} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect y="4" width="24" height="2"${add_attribute("fill", fill, 0)}></rect><rect y="11" width="24" height="2"${add_attribute("fill", fill, 0)}></rect><rect y="18" width="24" height="2"${add_attribute("fill", fill, 0)}></rect></svg>`;
-});
-const css = {
-  code: "aside.svelte-4loizu{position:absolute;left:-500px;transition:all 0.5s;height:var(--sidebar-height);width:300px;display:flex;flex-direction:column;justify-content:space-between}aside.expanded.svelte-4loizu{left:0px}",
-  map: `{"version":3,"file":"Layout.svelte","sources":["Layout.svelte"],"sourcesContent":["<script lang=\\"ts\\">import { onMount, onDestroy } from \\"svelte\\";\\nimport { browser } from \\"$app/environment\\";\\nimport { initAuthWorker } from \\"$lib/services/worker.auth.services\\";\\nimport { authStore } from \\"$lib/stores/auth-store\\";\\nimport { BusyScreen, Spinner } from \\"@dfinity/gix-components\\";\\nimport { fade } from \\"svelte/transition\\";\\nimport LogoIcon from \\"$lib/icons/logo-icon.svelte\\";\\nimport \\"../app.css\\";\\nimport MenuIcon from \\"$lib/icons/menu-icon.svelte\\";\\nimport { authSignedInStore } from \\"$lib/derived/auth.derived\\";\\nimport { goto } from \\"$app/navigation\\";\\nlet expanded = false;\\nlet worker;\\nlet buttonHeight = 0;\\nlet sidebar;\\nconst init = async () => await Promise.all([syncAuthStore()]);\\n$: links = $authSignedInStore ? [\\n    { name: 'Contract Center', href: '/contract-center' },\\n    { name: 'Agent Hub', href: '/agent-hub' },\\n    { name: 'Private Agencies', href: '/private-agencies' },\\n    { name: 'Profile', href: '/profile' },\\n    { name: 'Connect', href: '#' },\\n] :\\n    [\\n        { name: 'Connect', href: '#' },\\n    ];\\nlet lessImportantOptions = [\\n    { name: 'Game Rules', href: '/rules' }\\n];\\nconst syncAuthStore = async () => {\\n    if (!browser) {\\n        return;\\n    }\\n    try {\\n        await authStore.sync();\\n    }\\n    catch (err) {\\n        console.error(\\"Error syncing auth store\\", err);\\n    }\\n};\\nconst updateSidebarHeight = () => {\\n    if (browser) {\\n        requestAnimationFrame(() => {\\n            const button = document.querySelector(\\".menu-row\\");\\n            if (button) {\\n                buttonHeight = button.clientHeight;\\n                const sidebarHeight = window.innerHeight - buttonHeight;\\n                document.documentElement.style.setProperty('--sidebar-height', \`\${sidebarHeight}px\`);\\n            }\\n        });\\n    }\\n};\\nconst handleClickOutside = (event) => {\\n    if (browser && expanded && sidebar && !sidebar.contains(event.target)) {\\n        expanded = false;\\n    }\\n};\\nconst handleButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = !expanded;\\n};\\nconst handleCloseButtonClick = (event) => {\\n    event.stopPropagation();\\n    expanded = false;\\n};\\nonMount(async () => {\\n    worker = await initAuthWorker();\\n    if (browser) {\\n        window.addEventListener('resize', updateSidebarHeight);\\n        document.addEventListener('click', handleClickOutside);\\n    }\\n    requestAnimationFrame(() => {\\n        updateSidebarHeight();\\n    });\\n});\\nonDestroy(() => {\\n    if (browser) {\\n        document.removeEventListener('click', handleClickOutside);\\n        window.removeEventListener('resize', updateSidebarHeight);\\n    }\\n});\\n$: worker, $authStore, (() => worker?.syncAuthIdle($authStore))();\\n$: (() => {\\n    if (!browser) {\\n        return;\\n    }\\n    if ($authStore === undefined) {\\n        return;\\n    }\\n    const spinner = document.querySelector(\\"body > #app-spinner\\");\\n    spinner?.remove();\\n})();\\nfunction handleLogin() {\\n    let params = {\\n        domain: import.meta.env.VITE_AUTH_PROVIDER_URL,\\n    };\\n    authStore.signIn(params);\\n}\\nfunction handleLogout() {\\n    authStore.signOut();\\n    goto(\\"/\\");\\n}\\n<\/script>\\n\\n<svelte:window on:storage={syncAuthStore} />\\n{#await init()}\\n  <div in:fade>\\n    <Spinner />\\n  </div>\\n{:then _}\\n  <div class=\\"menu-row flex items-center bg-Brand5b w-full p-2\\">\\n    <button on:click={handleButtonClick} class=\\"flex items-center\\">\\n      <MenuIcon fill='#FFFFFF' className=\\"w-5 m-1\\" />\\n    </button>\\n    <div class=\\"ml-auto\\">\\n      <a class=\\"flex flex-row items-center ml-auto\\" href=\\"/\\">\\n        <p class=\\"text-sm\\">Transfer Kings</p>\\n        <LogoIcon fill='#FFFFFF' className=\\"w-4 m-1\\" />\\n      </a>\\n    </div>\\n  </div>\\n\\n<aside class=\\"bg-Brand5 p-4\\" bind:this={sidebar} class:expanded={expanded}>\\n  <div class=\\"p-2\\">\\n    <div class=\\"p-2 flex justify-between items-center\\">\\n      <h2 class=\\"text-xl font-bold p-2\\">Options</h2>\\n      <button on:click={handleCloseButtonClick} class=\\"close-button\\">\\n        <svg xmlns=\\"http://www.w3.org/2000/svg\\" class=\\"h-6 w-6\\" fill=\\"none\\" viewBox=\\"0 0 24 24\\" stroke=\\"currentColor\\">\\n          <path stroke-linecap=\\"round\\" stroke-linejoin=\\"round\\" stroke-width=\\"2\\" d=\\"M15 19l-7-7 7-7\\" />\\n        </svg>\\n      </button>\\n    </div>\\n    \\n    <ul class=\\"mt-4 space-y-2\\">\\n      {#each links as option}\\n        <li>\\n          \\n          {#if option.name === 'Connect'}\\n\\n            {#if $authSignedInStore}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogout}>Disconnect</a>\\n            {:else}\\n              <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\" on:click={handleLogin}>Connect</a>\\n            {/if}\\n          {:else}\\n            <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n          {/if}\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n  <div class=\\"less-important p-2\\">\\n    <div class=\\"horizontal-divider my-2\\" />\\n    <ul class=\\"space-y-2 text-xs\\">\\n      {#each lessImportantOptions as option}\\n        <li>\\n          <a href={option.href} class=\\"block rounded hover:bg-Brand5b px-4 py-2\\">{option.name}</a>\\n        </li>\\n      {/each}\\n    </ul>\\n  </div>\\n</aside>\\n  <div class=\\"flex\\">\\n    <div class=\\"flex-1 p-4\\">\\n      <slot />\\n    </div>\\n  </div>\\n{/await}\\n\\n<BusyScreen />\\n\\n<style>\\n  aside {\\n    position: absolute;\\n    left: -500px;\\n    transition: all 0.5s;\\n    height: var(--sidebar-height);\\n    width: 300px;\\n    display: flex;\\n    flex-direction: column;\\n    justify-content: space-between;\\n  }\\n\\n  aside.expanded {\\n    left: 0px;\\n  }</style>\\n"],"names":[],"mappings":"AA4KE,mBAAM,CACJ,QAAQ,CAAE,QAAQ,CAClB,IAAI,CAAE,MAAM,CACZ,UAAU,CAAE,GAAG,CAAC,IAAI,CACpB,MAAM,CAAE,IAAI,gBAAgB,CAAC,CAC7B,KAAK,CAAE,KAAK,CACZ,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,aACnB,CAEA,KAAK,uBAAU,CACb,IAAI,CAAE,GACR"}`
-};
-const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let links;
-  let $$unsubscribe_authStore;
-  let $authSignedInStore, $$unsubscribe_authSignedInStore;
-  $$unsubscribe_authStore = subscribe(authStore, (value) => value);
-  $$unsubscribe_authSignedInStore = subscribe(authSignedInStore, (value) => $authSignedInStore = value);
-  let sidebar;
-  const init2 = async () => await Promise.all([syncAuthStore()]);
-  let lessImportantOptions = [{ name: "Game Rules", href: "/rules" }];
-  const syncAuthStore = async () => {
-    {
-      return;
-    }
-  };
-  onDestroy(() => {
+const idlFactory$1 = ({ IDL }) => {
+  const AppStatusDTO = IDL.Record({
+    version: IDL.Text,
+    onHold: IDL.Bool
   });
-  $$result.css.add(css);
-  links = $authSignedInStore ? [
-    {
-      name: "Contract Center",
-      href: "/contract-center"
-    },
-    { name: "Agent Hub", href: "/agent-hub" },
-    {
-      name: "Private Agencies",
-      href: "/private-agencies"
-    },
-    { name: "Profile", href: "/profile" },
-    { name: "Connect", href: "#" }
-  ] : [{ name: "Connect", href: "#" }];
-  $$unsubscribe_authStore();
-  $$unsubscribe_authSignedInStore();
-  return ` ${function(__value) {
-    if (is_promise(__value)) {
-      __value.then(null, noop);
-      return ` <div>${validate_component(Spinner, "Spinner").$$render($$result, {}, {}, {})}</div> `;
-    }
-    return function(_) {
-      return ` <div class="menu-row flex items-center bg-Brand5b w-full p-2"><button class="flex items-center">${validate_component(Menu_icon, "MenuIcon").$$render($$result, { fill: "#FFFFFF", className: "w-5 m-1" }, {}, {})}</button> <div class="ml-auto"><a class="flex flex-row items-center ml-auto" href="/"><p class="text-sm" data-svelte-h="svelte-12o8gze">Transfer Kings</p> ${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-4 m-1" }, {}, {})}</a></div></div> <aside class="${["bg-Brand5 p-4 svelte-4loizu", ""].join(" ").trim()}"${add_attribute("this", sidebar, 0)}><div class="p-2"><div class="p-2 flex justify-between items-center"><h2 class="text-xl font-bold p-2" data-svelte-h="svelte-1yxjhcx">Options</h2> <button class="close-button" data-svelte-h="svelte-8sut70"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button></div> <ul class="mt-4 space-y-2">${each(links, (option) => {
-        return `<li>${option.name === "Connect" ? `${$authSignedInStore ? `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">Disconnect</a>` : `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">Connect</a>`}` : `<a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">${escape(option.name)}</a>`} </li>`;
-      })}</ul></div> <div class="less-important p-2"><div class="horizontal-divider my-2"></div> <ul class="space-y-2 text-xs">${each(lessImportantOptions, (option) => {
-        return `<li><a${add_attribute("href", option.href, 0)} class="block rounded hover:bg-Brand5b px-4 py-2">${escape(option.name)}</a> </li>`;
-      })}</ul></div></aside> <div class="flex"><div class="flex-1 p-4">${slots.default ? slots.default({}) : ``}</div></div> `;
-    }();
-  }(init2())} ${validate_component(BusyScreen, "BusyScreen").$$render($$result, {}, {}, {})}`;
-});
-const Page$5 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $authSignedInStore, $$unsubscribe_authSignedInStore;
-  $$unsubscribe_authSignedInStore = subscribe(authSignedInStore, (value) => $authSignedInStore = value);
-  $$unsubscribe_authSignedInStore();
-  return `${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4"><div class="flex flex-row items-center"><p class="text-2xl" data-svelte-h="svelte-f8yx6x">Welcome to Transfer Kings</p> ${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-10 ml-4" }, {}, {})}</div> <p class="my-2" data-svelte-h="svelte-12804q6">Become your own football agent.</p> <a href="/rules" data-svelte-h="svelte-tn5wjp"><button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button></a> ${$authSignedInStore ? `<a href="/contract-center" data-svelte-h="svelte-9jtukm"><button class="bg-gray-500 my-2 px-4 py-2 rounded-sm">Play</button></a>` : `<button class="bg-gray-500 my-2 px-4 py-2 rounded-sm" data-svelte-h="svelte-1t8spuv">Connect</button>`}</div>`;
-    }
-  })}`;
-});
-const Page$4 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4"><div class="flex flex-row items-center">${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-6 mr-2" }, {}, {})} <p class="text-xl" data-svelte-h="svelte-z9g5hv">Agent Hub Coming Soon</p></div></div>`;
-    }
-  })}`;
-});
-const idlFactory = ({ IDL }) => {
-  const AddContractDTO = IDL.Record({});
   const Error2 = IDL.Variant({
     DecodeError: IDL.Null,
     NotAllowed: IDL.Null,
@@ -3880,60 +5248,632 @@ const idlFactory = ({ IDL }) => {
     AlreadyExists: IDL.Null,
     PaymentError: IDL.Null
   });
-  const Result_5 = IDL.Variant({ ok: AddContractDTO, err: Error2 });
-  const CreateAgentDTO = IDL.Record({
-    displayName: IDL.Text,
-    agentName: IDL.Text,
-    profilePictureExtension: IDL.Text,
-    profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8))
-  });
-  const Result_1 = IDL.Variant({ ok: IDL.Null, err: Error2 });
-  const EndContractDTO = IDL.Record({});
-  const AgencyId = IDL.Nat;
-  const PlayerId = IDL.Nat;
-  const Contract = IDL.Record({ playerId: PlayerId });
-  const ContractLimits = IDL.Record({
-    academyContractMax: IDL.Nat,
-    lowerLeagueContractMax: IDL.Nat,
-    prospectsContractMax: IDL.Nat,
-    allStarContractMax: IDL.Nat,
-    squadPlayerContractMax: IDL.Nat
-  });
+  const Result_1 = IDL.Variant({ ok: AppStatusDTO, err: Error2 });
   const PrincipalId = IDL.Text;
-  const AgentDTO = IDL.Record({
-    displayName: IDL.Text,
-    agentName: IDL.Text,
-    createDate: IDL.Int,
-    agencyId: IDL.Opt(AgencyId),
+  const Profile = IDL.Record({
+    username: IDL.Text,
+    createdOn: IDL.Int,
     profilePictureExtension: IDL.Text,
-    contracts: IDL.Vec(Contract),
-    profilePicture: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    contractLimits: ContractLimits,
+    profilePicture: IDL.Vec(IDL.Nat8),
+    termsAgreed: IDL.Bool,
     principalId: PrincipalId
   });
-  const Result_4 = IDL.Variant({ ok: AgentDTO, err: Error2 });
-  const GetContractsDTO = IDL.Record({});
-  const ContractDTO = IDL.Record({});
-  const Result_3 = IDL.Variant({ ok: IDL.Vec(ContractDTO), err: Error2 });
-  const Result_2 = IDL.Variant({ ok: IDL.Bool, err: Error2 });
-  const PromoteClientDTO = IDL.Record({});
-  const SwapClientFocusDTO = IDL.Record({});
-  const UpdateAgentDTO = IDL.Record({});
-  const Result = IDL.Variant({ ok: UpdateAgentDTO, err: Error2 });
+  const Result = IDL.Variant({ ok: Profile, err: Error2 });
   return IDL.Service({
-    addContract: IDL.Func([AddContractDTO], [Result_5], []),
-    createAgent: IDL.Func([CreateAgentDTO], [Result_1], []),
-    endContract: IDL.Func([EndContractDTO], [Result_1], []),
-    getAgent: IDL.Func([], [Result_4], ["query"]),
-    getContracts: IDL.Func([GetContractsDTO], [Result_3], ["query"]),
-    isAgentNameTaken: IDL.Func([IDL.Text], [Result_2], ["query"]),
-    promoteClient: IDL.Func([PromoteClientDTO], [Result_1], []),
-    swapClientFocus: IDL.Func([SwapClientFocusDTO], [Result_1], []),
-    updateAgent: IDL.Func([UpdateAgentDTO], [Result], [])
+    getAppStatus: IDL.Func([], [Result_1], ["query"]),
+    getProfile: IDL.Func([], [Result], ["query"])
   });
 };
-var define_process_env_default$2 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
-const canisterId = define_process_env_default$2.CANISTER_ID_BACKEND;
+const canisterId$1 = "fpmh5-ziaaa-aaaal-qjfbq-cai";
+const createActor$1 = (canisterId2, options2 = {}) => {
+  const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });
+  if (options2.agent && options2.agentOptions) {
+    console.warn(
+      "Detected both agent and agentOptions passed to createActor. Ignoring agentOptions and proceeding with the provided agent."
+    );
+  }
+  return Actor.createActor(idlFactory$1, {
+    agent,
+    canisterId: canisterId2,
+    ...options2.actorOptions
+  });
+};
+createActor$1(canisterId$1);
+const idlFactory = ({ IDL }) => {
+  const List = IDL.Rec();
+  const List_1 = IDL.Rec();
+  const List_2 = IDL.Rec();
+  const List_3 = IDL.Rec();
+  const List_4 = IDL.Rec();
+  const List_5 = IDL.Rec();
+  const SeasonId = IDL.Nat16;
+  const FixtureStatusType = IDL.Variant({
+    Unplayed: IDL.Null,
+    Finalised: IDL.Null,
+    Active: IDL.Null,
+    Complete: IDL.Null
+  });
+  const ClubId = IDL.Nat16;
+  const FixtureId = IDL.Nat32;
+  const PlayerEventType = IDL.Variant({
+    PenaltyMissed: IDL.Null,
+    Goal: IDL.Null,
+    GoalConceded: IDL.Null,
+    Appearance: IDL.Null,
+    PenaltySaved: IDL.Null,
+    RedCard: IDL.Null,
+    KeeperSave: IDL.Null,
+    CleanSheet: IDL.Null,
+    YellowCard: IDL.Null,
+    GoalAssisted: IDL.Null,
+    OwnGoal: IDL.Null,
+    HighestScoringPlayer: IDL.Null
+  });
+  const PlayerEventData = IDL.Record({
+    fixtureId: FixtureId,
+    clubId: ClubId,
+    playerId: IDL.Nat16,
+    eventStartMinute: IDL.Nat8,
+    eventEndMinute: IDL.Nat8,
+    eventType: PlayerEventType
+  });
+  const GameweekNumber = IDL.Nat8;
+  const FixtureDTO = IDL.Record({
+    id: IDL.Nat32,
+    status: FixtureStatusType,
+    highestScoringPlayerId: IDL.Nat16,
+    seasonId: SeasonId,
+    awayClubId: ClubId,
+    events: IDL.Vec(PlayerEventData),
+    homeClubId: ClubId,
+    kickOff: IDL.Int,
+    homeGoals: IDL.Nat8,
+    gameweek: GameweekNumber,
+    awayGoals: IDL.Nat8
+  });
+  const LeagueId = IDL.Nat16;
+  const AddInitialFixturesDTO = IDL.Record({
+    seasonId: SeasonId,
+    seasonFixtures: IDL.Vec(FixtureDTO),
+    leagueId: LeagueId
+  });
+  const ShirtType = IDL.Variant({ Filled: IDL.Null, Striped: IDL.Null });
+  const CreateClubDTO = IDL.Record({
+    secondaryColourHex: IDL.Text,
+    name: IDL.Text,
+    friendlyName: IDL.Text,
+    thirdColourHex: IDL.Text,
+    abbreviatedName: IDL.Text,
+    shirtType: ShirtType,
+    primaryColourHex: IDL.Text,
+    leagueId: LeagueId
+  });
+  const Gender = IDL.Variant({ Male: IDL.Null, Female: IDL.Null });
+  const CountryId = IDL.Nat16;
+  const CreateLeagueDTO = IDL.Record({
+    logo: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    name: IDL.Text,
+    teamCount: IDL.Nat8,
+    relatedGender: Gender,
+    countryId: CountryId,
+    abbreviation: IDL.Text,
+    governingBody: IDL.Text,
+    formed: IDL.Int
+  });
+  const PlayerPosition = IDL.Variant({
+    Goalkeeper: IDL.Null,
+    Midfielder: IDL.Null,
+    Forward: IDL.Null,
+    Defender: IDL.Null
+  });
+  const CreatePlayerDTO = IDL.Record({
+    clubId: ClubId,
+    valueQuarterMillions: IDL.Nat16,
+    dateOfBirth: IDL.Int,
+    nationality: CountryId,
+    shirtNumber: IDL.Nat8,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    leagueId: LeagueId,
+    firstName: IDL.Text
+  });
+  const Error2 = IDL.Variant({
+    DecodeError: IDL.Null,
+    NotAllowed: IDL.Null,
+    NotFound: IDL.Null,
+    NotAuthorized: IDL.Null,
+    InvalidData: IDL.Null,
+    AlreadyExists: IDL.Null,
+    CanisterCreateError: IDL.Null,
+    CanisterFull: IDL.Null
+  });
+  const Result_1 = IDL.Variant({ ok: IDL.Vec(FixtureDTO), err: Error2 });
+  const ClubDTO = IDL.Record({
+    id: ClubId,
+    secondaryColourHex: IDL.Text,
+    name: IDL.Text,
+    friendlyName: IDL.Text,
+    thirdColourHex: IDL.Text,
+    abbreviatedName: IDL.Text,
+    shirtType: ShirtType,
+    primaryColourHex: IDL.Text
+  });
+  const Result_2 = IDL.Variant({ ok: IDL.Vec(ClubDTO), err: Error2 });
+  const CountryDTO = IDL.Record({
+    id: CountryId,
+    code: IDL.Text,
+    name: IDL.Text
+  });
+  const Result_14 = IDL.Variant({ ok: IDL.Vec(CountryDTO), err: Error2 });
+  const DataHashDTO = IDL.Record({ hash: IDL.Text, category: IDL.Text });
+  const Result_13 = IDL.Variant({ ok: IDL.Vec(DataHashDTO), err: Error2 });
+  const Result_12 = IDL.Variant({
+    ok: IDL.Tuple(LeagueId, IDL.Vec(ClubId)),
+    err: Error2
+  });
+  const Result_11 = IDL.Variant({
+    ok: IDL.Vec(IDL.Tuple(LeagueId, LeagueId)),
+    err: Error2
+  });
+  const CalendarMonth = IDL.Nat8;
+  const LeagueStatus = IDL.Record({
+    transferWindowEndMonth: IDL.Nat8,
+    transferWindowEndDay: IDL.Nat8,
+    transferWindowStartMonth: IDL.Nat8,
+    transferWindowActive: IDL.Bool,
+    totalGameweeks: IDL.Nat8,
+    completedGameweek: GameweekNumber,
+    transferWindowStartDay: IDL.Nat8,
+    unplayedGameweek: GameweekNumber,
+    activeMonth: CalendarMonth,
+    activeSeasonId: SeasonId,
+    activeGameweek: GameweekNumber,
+    leagueId: LeagueId,
+    seasonActive: IDL.Bool
+  });
+  const Result_10 = IDL.Variant({ ok: LeagueStatus, err: Error2 });
+  const LeagueTableEntry = IDL.Record({
+    won: IDL.Nat,
+    homeDrawn: IDL.Nat,
+    clubId: ClubId,
+    awayDrawn: IDL.Nat,
+    homeLost: IDL.Nat,
+    played: IDL.Nat,
+    scored: IDL.Nat,
+    lost: IDL.Nat,
+    homeWon: IDL.Nat,
+    conceded: IDL.Nat,
+    awayPoints: IDL.Nat,
+    awayWon: IDL.Nat,
+    homePoints: IDL.Nat,
+    awayConceded: IDL.Nat,
+    awayLost: IDL.Nat,
+    awayPlayed: IDL.Nat,
+    awayScored: IDL.Nat,
+    homePlayed: IDL.Nat,
+    position: IDL.Nat,
+    homeScored: IDL.Nat,
+    drawn: IDL.Nat,
+    homeConceded: IDL.Nat,
+    points: IDL.Nat
+  });
+  const LeagueTable = IDL.Record({
+    seasonId: SeasonId,
+    entries: IDL.Vec(LeagueTableEntry),
+    leagueId: LeagueId
+  });
+  const Result_9 = IDL.Variant({ ok: LeagueTable, err: Error2 });
+  const FootballLeagueDTO = IDL.Record({
+    id: LeagueId,
+    logo: IDL.Vec(IDL.Nat8),
+    name: IDL.Text,
+    teamCount: IDL.Nat8,
+    relatedGender: Gender,
+    countryId: CountryId,
+    abbreviation: IDL.Text,
+    governingBody: IDL.Text,
+    formed: IDL.Int
+  });
+  const Result_3 = IDL.Variant({
+    ok: IDL.Vec(FootballLeagueDTO),
+    err: Error2
+  });
+  const PlayerStatus = IDL.Variant({
+    OnLoan: IDL.Null,
+    Active: IDL.Null,
+    FreeAgent: IDL.Null,
+    Retired: IDL.Null
+  });
+  const LoanedPlayerDTO = IDL.Record({
+    id: IDL.Nat16,
+    status: PlayerStatus,
+    clubId: ClubId,
+    parentClubId: ClubId,
+    valueQuarterMillions: IDL.Nat16,
+    dateOfBirth: IDL.Int,
+    nationality: CountryId,
+    currentLoanEndDate: IDL.Int,
+    shirtNumber: IDL.Nat8,
+    parentLeagueId: LeagueId,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    leagueId: LeagueId,
+    firstName: IDL.Text
+  });
+  const Result_8 = IDL.Variant({
+    ok: IDL.Vec(LoanedPlayerDTO),
+    err: Error2
+  });
+  const GetPlayerDetailsDTO = IDL.Record({
+    playerId: ClubId,
+    seasonId: SeasonId
+  });
+  const PlayerId = IDL.Nat16;
+  const InjuryHistory = IDL.Record({
+    description: IDL.Text,
+    injuryStartDate: IDL.Int,
+    expectedEndDate: IDL.Int
+  });
+  const PlayerGameweekDTO = IDL.Record({
+    fixtureId: FixtureId,
+    events: IDL.Vec(PlayerEventData),
+    number: IDL.Nat8,
+    points: IDL.Int16
+  });
+  const ValueHistory = IDL.Record({
+    oldValue: IDL.Nat16,
+    changedOn: IDL.Int,
+    newValue: IDL.Nat16
+  });
+  const PlayerDetailDTO = IDL.Record({
+    id: PlayerId,
+    status: PlayerStatus,
+    clubId: ClubId,
+    parentClubId: ClubId,
+    valueQuarterMillions: IDL.Nat16,
+    dateOfBirth: IDL.Int,
+    injuryHistory: IDL.Vec(InjuryHistory),
+    seasonId: SeasonId,
+    gameweeks: IDL.Vec(PlayerGameweekDTO),
+    nationality: CountryId,
+    retirementDate: IDL.Int,
+    valueHistory: IDL.Vec(ValueHistory),
+    latestInjuryEndDate: IDL.Int,
+    shirtNumber: IDL.Nat8,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    firstName: IDL.Text
+  });
+  const Result_7 = IDL.Variant({ ok: PlayerDetailDTO, err: Error2 });
+  const GameweekFiltersDTO = IDL.Record({
+    seasonId: SeasonId,
+    gameweek: GameweekNumber
+  });
+  const PlayerPointsDTO = IDL.Record({
+    id: IDL.Nat16,
+    clubId: ClubId,
+    events: IDL.Vec(PlayerEventData),
+    position: PlayerPosition,
+    gameweek: GameweekNumber,
+    points: IDL.Int16
+  });
+  const Result_6 = IDL.Variant({
+    ok: IDL.Vec(PlayerPointsDTO),
+    err: Error2
+  });
+  const PlayerDTO = IDL.Record({
+    id: IDL.Nat16,
+    status: PlayerStatus,
+    clubId: ClubId,
+    parentClubId: ClubId,
+    valueQuarterMillions: IDL.Nat16,
+    dateOfBirth: IDL.Int,
+    nationality: CountryId,
+    currentLoanEndDate: IDL.Int,
+    shirtNumber: IDL.Nat8,
+    parentLeagueId: LeagueId,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    leagueId: LeagueId,
+    firstName: IDL.Text
+  });
+  const Result = IDL.Variant({ ok: IDL.Vec(PlayerDTO), err: Error2 });
+  const PlayerScoreDTO = IDL.Record({
+    id: IDL.Nat16,
+    clubId: ClubId,
+    assists: IDL.Int16,
+    dateOfBirth: IDL.Int,
+    nationality: CountryId,
+    goalsScored: IDL.Int16,
+    saves: IDL.Int16,
+    goalsConceded: IDL.Int16,
+    events: IDL.Vec(PlayerEventData),
+    position: PlayerPosition,
+    points: IDL.Int16
+  });
+  const Result_5 = IDL.Variant({
+    ok: IDL.Vec(IDL.Tuple(IDL.Nat16, PlayerScoreDTO)),
+    err: Error2
+  });
+  const ClubFilterDTO = IDL.Record({
+    clubId: ClubId,
+    leagueId: LeagueId
+  });
+  const SeasonDTO = IDL.Record({
+    id: SeasonId,
+    name: IDL.Text,
+    year: IDL.Nat16
+  });
+  const Result_4 = IDL.Variant({ ok: IDL.Vec(SeasonDTO), err: Error2 });
+  const LoanPlayerDTO = IDL.Record({
+    loanEndDate: IDL.Int,
+    playerId: ClubId,
+    loanClubId: ClubId,
+    newValueQuarterMillions: IDL.Nat16,
+    loanLeagueId: LeagueId,
+    leagueId: LeagueId
+  });
+  const MoveFixtureDTO = IDL.Record({
+    fixtureId: FixtureId,
+    updatedFixtureGameweek: GameweekNumber,
+    updatedFixtureDate: IDL.Int,
+    seasonId: SeasonId,
+    leagueId: LeagueId
+  });
+  const SubmitFixtureDataDTO = IDL.Record({
+    fixtureId: FixtureId,
+    seasonId: SeasonId,
+    gameweek: GameweekNumber,
+    playerEventData: IDL.Vec(PlayerEventData),
+    leagueId: LeagueId
+  });
+  List_3.fill(IDL.Opt(IDL.Tuple(PlayerEventData, List_3)));
+  const PlayerGameweek = IDL.Record({
+    events: List_3,
+    number: GameweekNumber,
+    points: IDL.Int16
+  });
+  List_2.fill(IDL.Opt(IDL.Tuple(PlayerGameweek, List_2)));
+  const PlayerSeason = IDL.Record({
+    id: SeasonId,
+    gameweeks: List_2,
+    totalPoints: IDL.Int16
+  });
+  List_1.fill(IDL.Opt(IDL.Tuple(PlayerSeason, List_1)));
+  List.fill(IDL.Opt(IDL.Tuple(InjuryHistory, List)));
+  const TransferHistory = IDL.Record({
+    transferDate: IDL.Int,
+    loanEndDate: IDL.Int,
+    toLeagueId: LeagueId,
+    toClub: ClubId,
+    fromLeagueId: LeagueId,
+    fromClub: ClubId
+  });
+  List_4.fill(IDL.Opt(IDL.Tuple(TransferHistory, List_4)));
+  List_5.fill(IDL.Opt(IDL.Tuple(ValueHistory, List_5)));
+  const Player = IDL.Record({
+    id: PlayerId,
+    status: PlayerStatus,
+    clubId: ClubId,
+    parentClubId: ClubId,
+    seasons: List_1,
+    valueQuarterMillions: IDL.Nat16,
+    dateOfBirth: IDL.Int,
+    injuryHistory: List,
+    transferHistory: List_4,
+    nationality: CountryId,
+    retirementDate: IDL.Int,
+    valueHistory: List_5,
+    latestInjuryEndDate: IDL.Int,
+    gender: Gender,
+    currentLoanEndDate: IDL.Int,
+    shirtNumber: IDL.Nat8,
+    parentLeagueId: LeagueId,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    leagueId: LeagueId,
+    firstName: IDL.Text
+  });
+  const PostponeFixtureDTO = IDL.Record({
+    fixtureId: FixtureId,
+    seasonId: SeasonId,
+    leagueId: LeagueId
+  });
+  const RecallPlayerDTO = IDL.Record({
+    playerId: ClubId,
+    newValueQuarterMillions: IDL.Nat16,
+    leagueId: LeagueId
+  });
+  const RescheduleFixtureDTO = IDL.Record({
+    fixtureId: FixtureId,
+    updatedFixtureGameweek: GameweekNumber,
+    updatedFixtureDate: IDL.Int,
+    seasonId: SeasonId,
+    leagueId: LeagueId
+  });
+  const RetirePlayerDTO = IDL.Record({
+    playerId: ClubId,
+    retirementDate: IDL.Int,
+    leagueId: LeagueId
+  });
+  const RevaluePlayerDownDTO = IDL.Record({
+    playerId: PlayerId,
+    leagueId: LeagueId
+  });
+  const RevaluePlayerUpDTO = IDL.Record({
+    playerId: PlayerId,
+    leagueId: LeagueId
+  });
+  const SetFreeAgentDTO = IDL.Record({
+    playerId: ClubId,
+    newValueQuarterMillions: IDL.Nat16,
+    leagueId: LeagueId
+  });
+  const SetPlayerInjuryDTO = IDL.Record({
+    playerId: ClubId,
+    description: IDL.Text,
+    leagueId: LeagueId,
+    expectedEndDate: IDL.Int
+  });
+  const TransferPlayerDTO = IDL.Record({
+    clubId: ClubId,
+    newLeagueId: LeagueId,
+    playerId: ClubId,
+    newShirtNumber: IDL.Nat8,
+    newValueQuarterMillions: IDL.Nat16,
+    newClubId: ClubId,
+    leagueId: LeagueId
+  });
+  const UnretirePlayerDTO = IDL.Record({
+    playerId: ClubId,
+    newValueQuarterMillions: IDL.Nat16,
+    leagueId: LeagueId
+  });
+  const UpdateClubDTO = IDL.Record({
+    clubId: ClubId,
+    secondaryColourHex: IDL.Text,
+    name: IDL.Text,
+    friendlyName: IDL.Text,
+    thirdColourHex: IDL.Text,
+    abbreviatedName: IDL.Text,
+    shirtType: ShirtType,
+    primaryColourHex: IDL.Text,
+    leagueId: LeagueId
+  });
+  const UpdateLeagueDTO = IDL.Record({
+    logo: IDL.Vec(IDL.Nat8),
+    name: IDL.Text,
+    teamCount: IDL.Nat8,
+    relatedGender: Gender,
+    countryId: CountryId,
+    abbreviation: IDL.Text,
+    governingBody: IDL.Text,
+    leagueId: LeagueId,
+    formed: IDL.Int
+  });
+  const UpdatePlayerDTO = IDL.Record({
+    dateOfBirth: IDL.Int,
+    playerId: ClubId,
+    nationality: CountryId,
+    shirtNumber: IDL.Nat8,
+    position: PlayerPosition,
+    lastName: IDL.Text,
+    leagueId: LeagueId,
+    firstName: IDL.Text
+  });
+  const RustResult = IDL.Variant({ Ok: IDL.Text, Err: IDL.Text });
+  const PromoteClubDTO = IDL.Record({
+    clubId: ClubId,
+    toLeagueId: LeagueId,
+    leagueId: LeagueId
+  });
+  const RelegateClubDTO = IDL.Record({
+    clubId: ClubId,
+    relegatedToLeagueId: LeagueId,
+    leagueId: LeagueId
+  });
+  return IDL.Service({
+    addInitialFixtures: IDL.Func([AddInitialFixturesDTO], [], []),
+    createClub: IDL.Func([CreateClubDTO], [], []),
+    createLeague: IDL.Func([CreateLeagueDTO], [], []),
+    createPlayer: IDL.Func([CreatePlayerDTO], [], []),
+    getBettableFixtures: IDL.Func([LeagueId, SeasonId], [Result_1], ["query"]),
+    getClubs: IDL.Func([LeagueId], [Result_2], ["query"]),
+    getCountries: IDL.Func([], [Result_14], ["query"]),
+    getDataHashes: IDL.Func([LeagueId], [Result_13], ["query"]),
+    getFixtures: IDL.Func([LeagueId, SeasonId], [Result_1], ["query"]),
+    getLeagueClubsRequiringData: IDL.Func([LeagueId], [Result_12], ["query"]),
+    getLeagueRelegationPairs: IDL.Func([], [Result_11], ["query"]),
+    getLeagueStatus: IDL.Func([LeagueId], [Result_10], ["query"]),
+    getLeagueTable: IDL.Func([LeagueId, SeasonId], [Result_9], ["query"]),
+    getLeagues: IDL.Func([], [Result_3], ["query"]),
+    getLoanedPlayers: IDL.Func([LeagueId], [Result_8], ["query"]),
+    getPlayerDetails: IDL.Func(
+      [LeagueId, GetPlayerDetailsDTO],
+      [Result_7],
+      ["query"]
+    ),
+    getPlayerDetailsForGameweek: IDL.Func(
+      [LeagueId, GameweekFiltersDTO],
+      [Result_6],
+      ["query"]
+    ),
+    getPlayers: IDL.Func([LeagueId], [Result], ["query"]),
+    getPlayersMap: IDL.Func(
+      [LeagueId, GameweekFiltersDTO],
+      [Result_5],
+      ["query"]
+    ),
+    getPostponedFixtures: IDL.Func([LeagueId], [Result_1], ["query"]),
+    getRetiredPlayers: IDL.Func([LeagueId, ClubFilterDTO], [Result], ["query"]),
+    getSeasons: IDL.Func([LeagueId], [Result_4], ["query"]),
+    getUpToDateLeagues: IDL.Func([], [Result_3], ["query"]),
+    getVerifiedClubs: IDL.Func([LeagueId], [Result_2], []),
+    getVerifiedFixtures: IDL.Func([LeagueId, SeasonId], [Result_1], []),
+    getVerifiedPlayers: IDL.Func([LeagueId], [Result], []),
+    loanPlayer: IDL.Func([LoanPlayerDTO], [], []),
+    moveFixture: IDL.Func([MoveFixtureDTO], [], []),
+    populatePlayerEventData: IDL.Func(
+      [SubmitFixtureDataDTO, IDL.Vec(Player)],
+      [IDL.Opt(IDL.Vec(PlayerEventData))],
+      []
+    ),
+    postponeFixture: IDL.Func([PostponeFixtureDTO], [], []),
+    recallPlayer: IDL.Func([RecallPlayerDTO], [], []),
+    rescheduleFixture: IDL.Func([RescheduleFixtureDTO], [], []),
+    retirePlayer: IDL.Func([RetirePlayerDTO], [], []),
+    revaluePlayerDown: IDL.Func([RevaluePlayerDownDTO], [], []),
+    revaluePlayerUp: IDL.Func([RevaluePlayerUpDTO], [], []),
+    setFreeAgent: IDL.Func([SetFreeAgentDTO], [], []),
+    setPlayerInjury: IDL.Func([SetPlayerInjuryDTO], [], []),
+    submitFixtureData: IDL.Func([SubmitFixtureDataDTO], [], []),
+    transferPlayer: IDL.Func([TransferPlayerDTO], [], []),
+    unretirePlayer: IDL.Func([UnretirePlayerDTO], [], []),
+    updateClub: IDL.Func([UpdateClubDTO], [], []),
+    updateLeague: IDL.Func([UpdateLeagueDTO], [], []),
+    updatePlayer: IDL.Func([UpdatePlayerDTO], [], []),
+    validateAddInitialFixtures: IDL.Func(
+      [AddInitialFixturesDTO],
+      [RustResult],
+      []
+    ),
+    validateCreateClub: IDL.Func([CreateClubDTO], [RustResult], []),
+    validateCreateLeague: IDL.Func([CreateLeagueDTO], [RustResult], []),
+    validateCreatePlayer: IDL.Func([CreatePlayerDTO], [RustResult], []),
+    validateLoanPlayer: IDL.Func([LoanPlayerDTO], [RustResult], []),
+    validateMoveFixture: IDL.Func([MoveFixtureDTO], [RustResult], []),
+    validatePostponeFixture: IDL.Func([PostponeFixtureDTO], [RustResult], []),
+    validatePromoteClub: IDL.Func([PromoteClubDTO], [RustResult], []),
+    validateRecallPlayer: IDL.Func([RecallPlayerDTO], [RustResult], []),
+    validateRelegateClub: IDL.Func([RelegateClubDTO], [RustResult], []),
+    validateRescheduleFixture: IDL.Func(
+      [RescheduleFixtureDTO],
+      [RustResult],
+      []
+    ),
+    validateRetirePlayer: IDL.Func([RetirePlayerDTO], [RustResult], []),
+    validateRevaluePlayerDown: IDL.Func(
+      [RevaluePlayerDownDTO],
+      [RustResult],
+      []
+    ),
+    validateRevaluePlayerUp: IDL.Func([RevaluePlayerUpDTO], [RustResult], []),
+    validateSetFreeAgent: IDL.Func([SetFreeAgentDTO], [RustResult], []),
+    validateSetPlayerInjury: IDL.Func([SetPlayerInjuryDTO], [RustResult], []),
+    validateSubmitFixtureData: IDL.Func(
+      [SubmitFixtureDataDTO],
+      [RustResult],
+      []
+    ),
+    validateTransferPlayer: IDL.Func([TransferPlayerDTO], [RustResult], []),
+    validateUnretirePlayer: IDL.Func([UnretirePlayerDTO], [RustResult], []),
+    validateUpdateClub: IDL.Func([UpdateClubDTO], [RustResult], []),
+    validateUpdateLeague: IDL.Func([UpdateLeagueDTO], [RustResult], []),
+    validateUpdatePlayer: IDL.Func([UpdatePlayerDTO], [RustResult], [])
+  });
+};
+var define_process_env_default$1 = {};
+const canisterId = define_process_env_default$1.CANISTER_ID_DATA_CANISTER;
 const createActor = (canisterId2, options2 = {}) => {
   const agent = options2.agent || new HttpAgent({ ...options2.agentOptions });
   if (options2.agent && options2.agentOptions) {
@@ -3948,7 +5888,6 @@ const createActor = (canisterId2, options2 = {}) => {
   });
 };
 canisterId ? createActor(canisterId) : void 0;
-var define_process_env_default$1 = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
 class ActorFactory {
   static createActor(idlFactory2, canisterId2 = "", identity = null, options2 = null) {
     const hostOptions = {
@@ -3965,21 +5904,29 @@ class ActorFactory {
       options2.agentOptions.host = hostOptions.host;
     }
     const agent = new HttpAgent({ ...options2.agentOptions });
-    if (define_process_env_default$1.NODE_ENV !== "production") {
-      agent.fetchRootKey().catch((err) => {
-        console.warn(
-          "Unable to fetch root key. Ensure your local replica is running"
-        );
-        console.error(err);
-      });
-    }
     return Actor.createActor(idlFactory2, {
       agent,
       canisterId: canisterId2,
       ...options2?.actorOptions
     });
   }
-  static createIdentityActor(authStore2, canisterId2) {
+  static getAgent(canisterId2 = "", identity = null, options2 = null) {
+    const hostOptions = {
+      host: `https://${canisterId2}.icp-api.io`,
+      identity
+    };
+    if (!options2) {
+      options2 = {
+        agentOptions: hostOptions
+      };
+    } else if (!options2.agentOptions) {
+      options2.agentOptions = hostOptions;
+    } else {
+      options2.agentOptions.host = hostOptions.host;
+    }
+    return new HttpAgent({ ...options2.agentOptions });
+  }
+  static createDataCanisterIdentityActor(authStore2, canisterId2) {
     let unsubscribe;
     return new Promise((resolve2, reject) => {
       unsubscribe = authStore2.subscribe((store) => {
@@ -3992,121 +5939,121 @@ class ActorFactory {
       return ActorFactory.createActor(idlFactory, canisterId2, identity);
     });
   }
+  static createBackendIdentityActor(authStore2, canisterId2) {
+    let unsubscribe;
+    return new Promise((resolve2, reject) => {
+      unsubscribe = authStore2.subscribe((store) => {
+        if (store.identity) {
+          resolve2(store.identity);
+        }
+      });
+    }).then((identity) => {
+      unsubscribe();
+      return ActorFactory.createActor(idlFactory$1, canisterId2, identity);
+    });
+  }
 }
 function isError(response) {
   return response && response.err !== void 0;
 }
-function getFileExtensionFromFile(file) {
-  const filename = file.name;
-  const lastIndex = filename.lastIndexOf(".");
-  return lastIndex !== -1 ? filename.substring(lastIndex + 1) : "";
-}
-var define_process_env_default = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic" };
-function createAgentStore() {
-  const { subscribe: subscribe2, set } = writable(null);
+var define_process_env_default = { BACKEND_CANISTER_ID: "fpmh5-ziaaa-aaaal-qjfbq-cai", FRONTEND_CANISTER_ID: "f2lwq-yaaaa-aaaal-qjfca-cai", DFX_NETWORK: "ic", DATA_CANISTER_ID: "52fzd-2aaaa-aaaal-qmzsa-cai" };
+function createUserStore() {
+  const { subscribe, set: set2 } = writable(null);
   async function sync() {
-    let localStorageString = localStorage.getItem("agent_data");
-    if (localStorageString && localStorageString != "undefined") {
-      const localAgent = JSON.parse(localStorageString);
-      set(localAgent);
+    let localStorageString = localStorage.getItem("user_profile_data");
+    if (localStorageString) {
+      const localProfile = JSON.parse(localStorageString);
+      set2(localProfile);
       return;
     }
     try {
-      await cacheAgent();
+      await cacheProfile();
     } catch (error) {
-      console.error("Error fetching agent data:", error);
+      console.error("Error fetching user profile:", error);
       throw error;
     }
   }
-  async function cacheAgent() {
-    const identityActor = await ActorFactory.createIdentityActor(
-      authStore,
-      define_process_env_default.BACKEND_CANISTER_ID
-    );
-    let getAgentResponse = await identityActor.getAgent();
-    let error = isError(getAgentResponse);
-    if (error) {
-      console.error("Error fetching user agent");
-      return;
-    }
-    let agentData = getAgentResponse.ok;
-    set(agentData);
-  }
-  async function createAgent(agentName, displayName, profilePicture) {
+  async function updateUsername(username) {
     try {
-      const identityActor = await ActorFactory.createIdentityActor(
+      const identityActor = await ActorFactory.createBackendIdentityActor(
         authStore,
         define_process_env_default.BACKEND_CANISTER_ID ?? ""
       );
-      const readFileAsArrayBuffer = (file) => {
-        return new Promise((resolve2, reject) => {
-          const reader = new FileReader();
-          reader.readAsArrayBuffer(file);
-          reader.onloadend = () => {
-            const arrayBuffer = reader.result;
-            resolve2(new Uint8Array(arrayBuffer));
-          };
-          reader.onerror = () => {
-            reject(new Error("Error reading file"));
-          };
-        });
-      };
-      try {
-        var extension = "";
-        const maxPictureSize = 500;
-        if (profilePicture && profilePicture.size > maxPictureSize * 1024) {
-          throw new Error("File size exceeds the limit of 500KB");
+      const result = await identityActor.updateDisplayName(username);
+      if (isError(result)) {
+        console.error("Error updating username");
+        return;
+      }
+      await cacheProfile();
+      return result;
+    } catch (error) {
+      console.error("Error updating username:", error);
+      throw error;
+    }
+  }
+  async function withdrawFPL(withdrawalAddress, withdrawalAmount) {
+    try {
+      let identity;
+      authStore.subscribe(async (auth) => {
+        identity = auth.identity;
+      });
+      if (!identity) {
+        return;
+      }
+      let principalId = identity.getPrincipal();
+      const agent = await createAgent({
+        identity,
+        host: void 0,
+        fetchRootKey: define_process_env_default.DFX_NETWORK === "local"
+      });
+      const { transfer } = IcrcLedgerCanister.create({
+        agent,
+        canisterId: define_process_env_default.DFX_NETWORK === "ic" ? Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai") : Principal.fromText("avqkn-guaaa-aaaaa-qaaea-cai")
+      });
+      if (principalId) {
+        try {
+          let transfer_result = await transfer({
+            to: {
+              owner: Principal.fromText(withdrawalAddress),
+              subaccount: []
+            },
+            fee: 100000n,
+            memo: new Uint8Array(Text$1.encodeValue("0")),
+            from_subaccount: void 0,
+            created_at_time: BigInt(Date.now()) * BigInt(1e6),
+            amount: withdrawalAmount - 100000n
+          });
+        } catch (err) {
+          console.error(err.errorType);
         }
-        if (profilePicture) {
-          extension = getFileExtensionFromFile(profilePicture);
-        }
-        let dto = {
-          agentName,
-          displayName,
-          profilePicture: profilePicture ? [await readFileAsArrayBuffer(profilePicture)] : [],
-          profilePictureExtension: extension
-        };
-        const result = await identityActor.createAgent(dto);
-        return result;
-      } catch (error) {
-        console.error("Error updating profile picture:", error);
-        throw error;
       }
     } catch (error) {
-      console.error("Error creating agent:", error);
+      console.error("Error withdrawing FPL.", error);
       throw error;
     }
   }
-  async function updateAgent(updatedAgent) {
+  async function agreeTerms() {
     try {
-      const identityActor = await ActorFactory.createIdentityActor(
+      const identityActor = await ActorFactory.createBackendIdentityActor(
         authStore,
         define_process_env_default.BACKEND_CANISTER_ID ?? ""
       );
-      const result = await identityActor.updateAgentDetail(updatedAgent);
-      sync();
+      const result = await identityActor.agreeTerms();
+      if (isError(result)) {
+        console.error("Error agreeing terms");
+        return;
+      }
+      await cacheProfile();
       return result;
     } catch (error) {
-      console.error("Error updating agent:", error);
-      throw error;
+      console.error(error);
+      console.error("Error agreeing terms:", error);
     }
   }
-  async function isAgentNameTaken(username) {
-    try {
-      const identityActor = await ActorFactory.createIdentityActor(
-        authStore,
-        define_process_env_default.BACKEND_CANISTER_ID ?? ""
-      );
-      const result = await identityActor.isAgentNameTaken(username);
-      return result;
-    } catch (error) {
-      console.error("Error getting agent:", error);
-      throw error;
-    }
-  }
-  async function updateAgentPicture(picture) {
+  async function updateProfilePicture(picture) {
     try {
       const maxPictureSize = 1e3;
+      const extension = getFileExtensionFromFile(picture);
       if (picture.size > maxPictureSize * 1024) {
         return null;
       }
@@ -4116,12 +6063,19 @@ function createAgentStore() {
         const arrayBuffer = reader.result;
         const uint8Array = new Uint8Array(arrayBuffer);
         try {
-          const identityActor = await ActorFactory.createIdentityActor(
+          const identityActor = await ActorFactory.createBackendIdentityActor(
             authStore,
             define_process_env_default.BACKEND_CANISTER_ID ?? ""
           );
-          const result = await identityActor.updateAgentPicture(uint8Array);
-          sync();
+          const result = await identityActor.updateProfilePicture(
+            uint8Array,
+            extension
+          );
+          if (isError(result)) {
+            console.error("Error updating profile picture");
+            return;
+          }
+          await cacheProfile();
           return result;
         } catch (error) {
           console.error(error);
@@ -4132,73 +6086,225 @@ function createAgentStore() {
       throw error;
     }
   }
+  function getFileExtensionFromFile(file) {
+    const filename = file.name;
+    const lastIndex = filename.lastIndexOf(".");
+    return lastIndex !== -1 ? filename.substring(lastIndex + 1) : "";
+  }
+  async function isUsernameAvailable(username) {
+    const identityActor = await ActorFactory.createBackendIdentityActor(
+      authStore,
+      define_process_env_default.BACKEND_CANISTER_ID
+    );
+    return await identityActor.isUsernameValid(username);
+  }
+  async function cacheProfile() {
+    const identityActor = await ActorFactory.createBackendIdentityActor(
+      authStore,
+      define_process_env_default.BACKEND_CANISTER_ID
+    );
+    let getProfileResponse = await identityActor.getProfile();
+    let error = isError(getProfileResponse);
+    if (error) {
+      console.error("Error fetching user profile");
+      return;
+    }
+    let profileData = getProfileResponse.ok;
+    set2(profileData);
+  }
+  async function getFPLBalance() {
+    let identity;
+    authStore.subscribe(async (auth) => {
+      identity = auth.identity;
+    });
+    if (!identity) {
+      return 0n;
+    }
+    let principalId = identity.getPrincipal();
+    const agent = await createAgent({
+      identity,
+      host: void 0,
+      fetchRootKey: define_process_env_default.DFX_NETWORK === "local"
+    });
+    const { balance } = IcrcLedgerCanister.create({
+      agent,
+      canisterId: Principal.fromText("ddsp7-7iaaa-aaaaq-aacqq-cai")
+    });
+    if (principalId) {
+      try {
+        let result = await balance({
+          owner: principalId,
+          certified: false
+        });
+        return result;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    return 0n;
+  }
   return {
-    subscribe: subscribe2,
+    subscribe,
     sync,
-    createAgent,
-    updateAgent,
-    updateAgentPicture,
-    isAgentNameTaken
+    agreeTerms,
+    updateUsername,
+    updateProfilePicture,
+    isUsernameAvailable,
+    cacheProfile,
+    withdrawFPL,
+    getFPLBalance
   };
 }
-const agentStore = createAgentStore();
-const Page$3 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $$unsubscribe_agentStore;
-  $$unsubscribe_agentStore = subscribe(agentStore, (value) => value);
-  $$unsubscribe_agentStore();
-  return `${``} ${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4">${`${validate_component(Spinner, "Spinner").$$render($$result, {}, {}, {})}`}</div>`;
+createUserStore();
+const idleSignOut = async () => logout();
+const logout = async () => {
+  await authStore.signOut();
+  window.location.reload();
+};
+const initAuthWorker = async () => {
+  const AuthWorker = await Promise.resolve().then(() => auth_worker);
+  const authWorker = new AuthWorker.default();
+  authWorker.onmessage = async ({
+    data
+  }) => {
+    const { msg, data: value } = data;
+    switch (msg) {
+      case "signOutIdleTimer":
+        await idleSignOut();
+        return;
+      case "delegationRemainingTime":
+        authRemainingTimeStore.set(value?.authRemainingTime);
+        return;
     }
-  })}`;
-});
-const Page$2 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4"><div class="flex flex-row items-center">${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-6 mr-2" }, {}, {})} <p class="text-xl" data-svelte-h="svelte-p3h7jn">Private Agencies Coming Soon</p></div></div>`;
+  };
+  return {
+    syncAuthIdle: (auth) => {
+      if (!auth.identity) {
+        authWorker.postMessage({ msg: "stopIdleTimer" });
+        return;
+      }
+      authWorker.postMessage({
+        msg: "startIdleTimer"
+      });
     }
-  })}`;
-});
-const Page$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4"><div class="flex flex-row items-center">${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-6 mr-2" }, {}, {})} <p class="text-xl" data-svelte-h="svelte-14za60w">Profile Coming Soon</p></div></div>`;
+  };
+};
+function Full_screen_spinner($$payload) {
+  $$payload.out += `<div class="local-spinner svelte-pvdm52"></div>`;
+}
+function Dashboard($$payload, $$props) {
+  push();
+  {
+    $$payload.out += "<!--[-->";
+    Full_screen_spinner($$payload);
+  }
+  $$payload.out += `<!--]-->`;
+  pop();
+}
+function createToastsStore() {
+  const { subscribe, update } = writable([]);
+  let idCounter = 0;
+  function addToast2(toast) {
+    update((toasts2) => [...toasts2, { ...toast, id: ++idCounter }]);
+  }
+  function removeToast(id) {
+    update((toasts2) => toasts2.filter((toast) => toast.id !== id));
+  }
+  return {
+    subscribe,
+    addToast: addToast2,
+    removeToast
+  };
+}
+const toasts = createToastsStore();
+const { addToast } = toasts;
+function Toast_item($$payload, $$props) {
+  push();
+  let toast = $$props["toast"];
+  $$payload.out += `<div${attr("class", `fixed top-0 left-0 right-0 z-[9999] p-4 text-white shadow-md flex justify-between items-center bg-${toast.type}`)}><span>${escape_html(toast.message)}</span> `;
+  if (toast.type == "frontend-update") {
+    $$payload.out += "<!--[-->";
+    $$payload.out += `<button class="brand-button">Update Transfer Kings</button>`;
+  } else {
+    $$payload.out += "<!--[!-->";
+  }
+  $$payload.out += `<!--]--> <button class="font-bold ml-4">×</button></div>`;
+  bind_props($$props, { toast });
+  pop();
+}
+function Toasts($$payload) {
+  var $$store_subs;
+  const each_array = ensure_array_like(store_get($$store_subs ??= {}, "$toasts", toasts));
+  $$payload.out += `<!--[-->`;
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let toast = each_array[$$index];
+    $$payload.out += `<div>`;
+    Toast_item($$payload, { toast });
+    $$payload.out += `<!----></div>`;
+  }
+  $$payload.out += `<!--]-->`;
+  if ($$store_subs) unsubscribe_stores($$store_subs);
+}
+function Layout($$payload, $$props) {
+  push();
+  var $$store_subs;
+  let worker;
+  async function syncAuthStore() {
+    return;
+  }
+  const init2 = async () => {
+    await Promise.all([syncAuthStore()]);
+    worker = await initAuthWorker();
+  };
+  store_get($$store_subs ??= {}, "$authStore", authStore), (() => worker?.syncAuthIdle(store_get($$store_subs ??= {}, "$authStore", authStore)))();
+  $$payload.out += `<!---->`;
+  await_block(
+    init2(),
+    () => {
+      $$payload.out += `<div>`;
+      Full_screen_spinner($$payload);
+      $$payload.out += `<!----></div>`;
+    },
+    (_) => {
+      Dashboard($$payload);
+      $$payload.out += `<!----> `;
+      Toasts($$payload);
+      $$payload.out += `<!---->`;
     }
-  })}`;
-});
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `${validate_component(Layout, "Layout").$$render($$result, {}, {}, {
-    default: () => {
-      return `<div class="p-4"><div class="flex flex-row items-center">${validate_component(Logo_icon, "LogoIcon").$$render($$result, { fill: "#FFFFFF", className: "w-6 mr-2" }, {}, {})} <p class="text-xl" data-svelte-h="svelte-1qncmot">Transfer Kings Gameplay Rules</p></div> <div class="bg-Brand5z w-full p-4 mt-4 rounded-lg border-solid border-Brand5w border-2" data-svelte-h="svelte-689fdb"><b class="text-lg"><u>How It Works</u></b> <p class="mt-2 mb-4">Transfer Kings is all about being a good football agent. 
-                You run your own agency, creating contracts with football players from around the world at at all levels. 
-                As your clients perform well in the real world, your portfolio value increases, earning you $FOOTBALL tokens.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Contract Center</u></b> <b class="text-lg"></b> <p class="mt-2">You can fill contracts by accessing the &#39;Contract Center&#39; through the side navigation panel.</p> <p class="my-2">When you setup your agency you receive a default set of contracts you can fill, selecting from any player around the world.
-                There are 5 Transfer Kings contract types, each is listed below with the number allocated with your starting team:</p> <ul class="my-2"><li>All Star <small>(5 Initially)</small></li> <li>Squad Player <small>(20 Initially)</small></li> <li>Prospect <small>(20 Initially)</small></li> <li>Academy <small>(25 Initially)</small></li> <li>Lower League <small>(30 Initially)</small></li></ul> <p class="mt-2 mb-4">After you have your contracts setup you can manage your clients through the &#39;Agent Hub&#39;.</p> <p>An agency starts with a budget of €250m. 
-                The acquisition and sale price of a player is 10% of their value, the cost associated with the on going promotion of your clients.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Agent Hub</u></b> <p class="mt-2">The Agent Hub is where you manage your clients on a day to day basis. 
-                Here you select clients to be promoted, multiplying your rewards for real life football achievements.</p> <p class="mt-2">The Agent Hub contains 15 places, ranked from your favourite client down. 
-                The client in your first promotion position will earn you the biggest multiplier, reducing as you get to promotion position 15.
-                The multiplier percentages are listed below:</p> <div class="mt-2"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><ul><li>1st: 3X</li> <li>2nd: 2.8X</li> <li>3rd: 2.6X</li> <li>4th: 2.4X</li> <li>5th: 2.2X</li></ul></div> <div><ul><li>6th: 2X</li> <li>7th: 1.9X</li> <li>8th: 1.8X</li> <li>9th: 1.7X</li> <li>10th: 1.6X</li></ul></div> <div><ul><li>11th: 1.5X</li> <li>12th: 1.4X</li> <li>13th: 1.3X</li> <li>14th: 1.2X</li> <li>15th: 1.1X</li></ul></div></div></div> <p class="mt-2 mb-4">To prevent your players going stale they have to be rotated out of the Agent Hub every 4 weeks. A player is then restricted from being repromoted for a further 4 weeks. 
-                This ensures each of your clients receives the attention they deserve.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>How You Earn</u></b> <p class="mt-2">Gameplay: The players you promote in the Agent Hub will earn $FOOTBALL tokens each week based on their in game performances combined with the level of competition they are playing. 
-                This revenue can then be banked and viewed within the Contract Center earnings to date. Before depositing earnings into the Contract Center, you can swap earnings for additional contracts of any type.</p> <p class="mt-2 mb-4">Career Achievements: All players listed within your Contract Center will earn you $FOOTBALL tokens based on their career achievements. 
-                Each achievement is weighted based on how difficult it is to acheive. All achievement rewards are multiplied by the change in value of a player since you signed their contract.
-                This means that if you get a player at the beginning of their career and hold them until they win the World Cup, 
-                the $FOOTBALL earned would increase by the factor the player&#39;s value changed since you purchased them.</p> <div class="horizontal-divider my-2"></div> <b class="text-lg">Growing Your Agency</b> <p class="mt-2">The players you have under contract are worth the same amount as their real world counter parts. 
-                As their value changes, you will be able to increase your budget through selling high performing players.
-                When a player&#39;s contract ends, the current value of that player is added back to your budget.
-                You can end a contract early, receiving 80% of a player&#39;s current value.
-                To grow your agency you will need to obtain more than the 100 contracts initially available for you to fill. 
-                This can be done when earnings are made through the players you promote in the Agent Hub.
-                To realise Agent Hub $FOOTBALL token earnings you deposit the tokens into your Contract center, increasing the contract earnings of the player. 
-                When transferring these earnings you are able to select the % of earnings to transfer, obtaining additional contracts for the reduced amount.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Private Agencies</u></b> <p class="mt-2 mb-4">Along with participating in the free global Transfer Kings game, you can setup a paid private agency to enhance your experience with your friends.
-                Within a Private Agency, you select from the same group of players, with no one allowed to select the same player. 
-                You can customise your league design, rewards and entry requirements to suit your needs.</p> <div class="horizontal-divider my-2 mb-4"></div> <b class="text-lg"><u>Bot Prevention Controls</u></b> <p>Our built in controls will ensure rewards are based on genuine user participation, with rewards directly effected by how often you manage your global agency.</p></div></div>`;
+  );
+  $$payload.out += `<!---->`;
+  if ($$store_subs) unsubscribe_stores($$store_subs);
+  pop();
+}
+function _page$2($$payload, $$props) {
+  push();
+  Layout($$payload);
+  pop();
+}
+function _page$1($$payload) {
+  Layout($$payload);
+}
+function _page($$payload) {
+  Layout($$payload);
+}
+function WorkerWrapper(options2) {
+  return new Worker(
+    "/_app/immutable/workers/auth.worker-BiRwNjgM.js",
+    {
+      type: "module",
+      name: options2?.name
     }
-  })}`;
-});
+  );
+}
+const auth_worker = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: WorkerWrapper
+}, Symbol.toStringTag, { value: "Module" }));
 export {
   Error$1 as E,
   Layout$1 as L,
-  Page$5 as P,
   Server as S,
+  _page$2 as _,
   set_building as a,
   set_manifest as b,
   set_prerendering as c,
@@ -4207,11 +6313,8 @@ export {
   set_read_implementation as f,
   get_hooks as g,
   set_safe_public_env as h,
-  Page$4 as i,
-  Page$3 as j,
-  Page$2 as k,
-  Page$1 as l,
-  Page as m,
+  _page$1 as i,
+  _page as j,
   options as o,
   set_assets as s
 };

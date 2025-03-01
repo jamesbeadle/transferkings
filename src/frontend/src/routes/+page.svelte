@@ -20,7 +20,7 @@ import Layout from "./Layout.svelte";
         </div>
         <p class="my-2">Become your own football agent.</p>
         <a href="/rules">
-            <button class="bg-Brand1b my-2 px-4 py-2 rounded-sm">Rules</button>
+            <button class="my-2 px-4 py-2 rounded-sm">Rules</button>
         </a>
         {#if $authSignedInStore}
             <a href="/contract-center">

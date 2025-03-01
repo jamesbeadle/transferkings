@@ -1,31 +1,33 @@
+<div class="widget">
+  <div class="widget-spinner"></div>
+</div>
+
 <style>
-  .local-spinner {
+  .widget {
+    position: relative;
+    width: 100%;
+    height: 50px;
+  }
+
+  .widget-spinner {
     border: 5px solid rgba(255, 255, 255, 0.3);
     border-top: 5px solid white;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 25px;
+    height: 25px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
     0% {
-      transform: rotate(0deg);
+      transform: translate(-50%, -50%) rotate(0deg);
     }
     100% {
-      transform: rotate(360deg);
+      transform: translate(-50%, -50%) rotate(360deg);
     }
   }
-
-  .spinner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-  }
 </style>
-
-<div class="spinner-container">
-  <div class="local-spinner"></div>
-</div>

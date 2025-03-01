@@ -1,11 +1,11 @@
-import { idleSignOut } from "$lib/services/auth.services";
-import type { AuthStoreData } from "$lib/stores/auth-store";
-import { authRemainingTimeStore } from "$lib/stores/auth-store";
+import { idleSignOut } from "./auth.services";
+import type { AuthStoreData } from "../stores/auth-store";
+import { authRemainingTimeStore } from "../stores/auth-store";
 
 import type {
   PostMessage,
   PostMessageDataResponseAuth,
-} from "$lib/types/post-message";
+} from "../types/post-message";
 
 export const initAuthWorker = async () => {
   const AuthWorker = await import("$lib/workers/auth.worker?worker");

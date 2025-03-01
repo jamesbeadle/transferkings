@@ -2,10 +2,10 @@ import {
   AUTH_MAX_TIME_TO_LIVE,
   AUTH_POPUP_HEIGHT,
   AUTH_POPUP_WIDTH,
-} from "$lib/constants/app.constants";
-import type { OptionIdentity } from "$lib/types/identity";
-import { createAuthClient } from "$lib/utils/auth.utils";
-import { popupCenter } from "$lib/utils/window.utils";
+} from "../constants/app.constants";
+import type { OptionIdentity } from "../types/identity";
+import { createAuthClient } from "../utils/auth.utils";
+import { popupCenter } from "../utils/window.utils";
 import type { AuthClient } from "@dfinity/auth-client";
 import { writable, type Readable } from "svelte/store";
 
@@ -20,7 +20,6 @@ const NNS_IC_APP_DERIVATION_ORIGIN =
   "https://f2lwq-yaaaa-aaaal-qjfca-cai.icp0.io";
 
 const isNnsAlternativeOrigin = () => {
-  if (typeof window === "undefined") return false;
   return window.location.origin === NNS_IC_ORG_ALTERNATIVE_ORIGIN;
 };
 

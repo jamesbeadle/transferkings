@@ -1,1 +1,1 @@
-Transfer Kings
+Transfer Kings is the decentralised football trading card gane

@@ -1,29 +1,14 @@
 // Version: 1.0.0
-type AgencyId = Nat;
-type Agent =
-  {
-    agencyId : ?AgencyId;
-    agentName : Text;
-    contractLimits : ContractLimits;
-    contracts : [Contract];
-    createDate : Int;
-    displayName : Text;
-    principalId : PrincipalId;
-    profilePicture : ?Blob;
-    profilePictureExtension : Text
-  };
-type Contract = {playerId : PlayerId};
-type ContractLimits =
-  {
-    academyContractMax : Nat;
-    allStarContractMax : Nat;
-    lowerLeagueContractMax : Nat;
-    prospectsContractMax : Nat;
-    squadPlayerContractMax : Nat
-  };
-type PlayerId = Nat;
 type PrincipalId = Text;
+type Profile =
+  {
+    createdOn : Int;
+    principalId : PrincipalId;
+    profilePicture : Blob;
+    profilePictureExtension : Text;
+    termsAgreed : Bool;
+    username : Text
+  };
 actor {
-  stable var stable_agents : [Agent];
-  stable var stable_unique_agent_names : [Text]
+  stable var profiles : [Profile]
 };
