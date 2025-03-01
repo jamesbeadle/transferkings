@@ -37,10 +37,14 @@ export default {
     },
     extend: {
       colors: {
-        BrandBase: "#0D0D0D",
-        BrandGray: "#87888C",
-        BrandGreen: "#D7FE49",
+        BrandBlue: "#2D64E3",
+        BrandDarkBlue: "#1D54D3",
+        BrandGreen: "#23DC89",
+        BrandGray: "#232323",
+        BrandLightGray: "#5E5E5E",
         BrandWhite: "#FFFFFF",
+        BrandRed: "#FF403C",
+        BrandInfo: "#3CA1FF"
       },
     },
   },

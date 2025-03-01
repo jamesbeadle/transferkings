@@ -118,3 +118,15 @@ input {
   min-height: 2px;
   @apply flex-shrink-0 h-px self-stretch;
 }
+
+.bg-info {
+  @apply bg-BrandGray;
+}
+
+.bg-success {
+  @apply bg-BrandGreen;
+}
+
+.bg-error {
+  @apply bg-BrandRed;
+}

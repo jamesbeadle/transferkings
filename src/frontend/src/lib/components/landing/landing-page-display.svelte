@@ -8,16 +8,16 @@
 <div class="relative flex flex-col items-center justify-center w-full md:min-h-screen">
     <div class="items-center w-full max-w-sm mx-4">
         <div class="flex flex-col items-center justify-center mb-5">
-            <LogoIcon className="w-32 h-32 md:w-40 md:h-40" />
-            <p>Transfer Kings</p>
+            <LogoIcon className="w-32 h-32 md:w-40 md:h-40 mb-8" />
+            <p class="text-4xl">Transfer Kings</p>
         </div>
-        <p class="mb-8 text-lg text-center text-BrandGrayShade3">
+        <p class="mb-8 text-lg text-center">
             Collect official ICFC trading cards today.
         </p>
         <div class="flex flex-row items-center justify-center mx-2 mb-4 space-x-2 md:space-x-4">
-            <div class="w-full border border-l border-BrandGrayShade1"></div>
+            <div class="w-full border border-l border-BrandLightGray"></div>
             <p class="text-center text-xxs whitespace-nowrap">Connect Instantly</p>
-            <div class="w-full border border-r border-BrandGrayShade1"></div>
+            <div class="w-full border border-r border-BrandLightGray"></div>
         </div>
         <div class="mx-2 space-y-4">
             <button 

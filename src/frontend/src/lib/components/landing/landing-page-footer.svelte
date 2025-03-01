@@ -1,5 +1,6 @@
 <script lang="ts">
     import JunoIcon from "$lib/icons/juno-icon.svelte";
+    import OpenChatIcon from "$lib/icons/OpenChatIcon.svelte";
 </script>
 <footer class="absolute bottom-0 flex flex-row w-full md:w-1/2">
     
@@ -11,11 +12,7 @@
             target="_blank"
             rel="noopener noreferrer"
             >
-            <img
-                src="/openchat.png"
-                class="w-auto h-4 mb-2 mr-2"
-                alt="OpenChat"
-            />
+                <OpenChatIcon className="w-auto h-4 mb-2 mr-2" />
             </a>
             <a
             href="https://x.com/OpenFPL_DAO"
