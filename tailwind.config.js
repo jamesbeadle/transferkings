@@ -44,7 +44,7 @@ export default {
         BrandLightGray: "#5E5E5E",
         BrandWhite: "#FFFFFF",
         BrandRed: "#FF403C",
-        BrandInfo: "#3CA1FF"
+        BrandInfo: "#3CA1FF",
       },
     },
   },
