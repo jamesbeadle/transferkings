@@ -46,6 +46,9 @@ export default {
         BrandRed: "#FF403C",
         BrandInfo: "#3CA1FF",
       },
+      backgroundImage: {
+        'diagonal-stripes': 'linear-gradient(45deg, #FFD700 33.33%, #C0C0C0 33.33%, #C0C0C0 66.66%, red 66.66%)',
+      }
     },
   },
   plugins: [],
