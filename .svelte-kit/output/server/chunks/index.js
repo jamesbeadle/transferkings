@@ -4997,7 +4997,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1gvnrp3"
+  version_hash: "hy1ivt"
 };
 async function get_hooks() {
   let handle;
@@ -6369,7 +6369,7 @@ function Landing_page($$payload, $$props) {
     await authStore.signIn(params);
     goto("/", {});
   }
-  $$payload.out += `<div class="flex flex-col w-full min-h-screen space-y-4 md:bg-BrandGrayBg md:p-3 md:flex-row"><div class="relative flex flex-col w-full min-h-screen bg-center bg-cover md:rounded-lg md:w-1/2" style="background-image: url('landing-background.jpg')"><div class="items-end h-full p-4 md:flex bg-gradient-to-t from-black/70 to-transparent md:rounded-lg"><h1 class="hidden w-full text-2xl font-bold text-center md:block md:mb-8 md:py-1">Collect official ICFC player cards with rarity linked to form.</h1> <div class="flex items-center justify-center min-h-[55%] mx-4 my-24 rounded-lg bg-BrandGray md:hidden">`;
+  $$payload.out += `<div class="flex flex-col w-full min-h-screen space-y-4 md:bg-BrandGrayBg md:p-3 md:flex-row"><div class="relative flex flex-col w-full min-h-screen bg-center bg-cover md:rounded-lg md:w-1/2" style="background-image: url('landing-background.jpg')"><div class="items-end h-full p-4 md:flex bg-gradient-to-t from-black/70 to-transparent md:rounded-lg"><h1 class="hidden w-full text-2xl font-bold text-center md:block md:mb-8 md:py-1">Collect official ICFC player cards with rarity linked to form.</h1> <div class="flex items-center justify-center min-h-[55%] mx-4 my-24 py-16 px-4 rounded-lg bg-BrandGray md:hidden">`;
   Landing_page_display($$payload, { handleLoginClick });
   $$payload.out += `<!----></div> <div class="pt-4 pb-6 md:hidden"><h2 class="mx-4 text-xl text-center xxs:pb-8 text-bold md:hidden">Collect official ICFC player cards with rarity linked to form.</h2></div></div></div> <div class="items-center justify-center hidden w-1/2 h-full md:block md:px-auto">`;
   Landing_page_display($$payload, { handleLoginClick });
