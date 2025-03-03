@@ -9,7 +9,7 @@
     <div class="items-center w-full max-w-sm mx-4">
         <div class="flex flex-col items-center justify-center mb-5">
             <LogoIcon className="w-32 h-32 md:w-40 md:h-40 mb-8" />
-            <p class="text-4xl">Transfer Kings</p>
+            <p class="text-3xl">Transfer Kings</p>
         </div>
         <p class="mb-8 text-lg text-center">
             Collect official ICFC trading cards today.
