@@ -7,16 +7,17 @@ function __memo(fn) {
 return {
 	appDir: "_app",
 	appPath: "_app",
-	assets: new Set([".DS_Store",".ic-assets.json",".well-known/ic-domains",".well-known/ii-alternative-origins","Rubik-Regular.woff2","background.jpg","favicons/.DS_Store","favicons/apple-touch-icon.png","favicons/browserconfig.xml","favicons/favicon-16x16.png","favicons/favicon-32x32.png","favicons/favicon.ico","favicons/icon-192x192.png","favicons/icon-512x512.png","favicons/mstile-150x150.png","favicons/safari-pinned-tab.svg","github.png","landing-background.jpg","manifest.webmanifest","meta-share.jpg","placeholder.png","twitter.png"]),
+	assets: new Set([".DS_Store",".ic-assets.json",".well-known/ic-domains",".well-known/ii-alternative-origins","Rubik-Regular.woff2","background.jpg","favicons/.DS_Store","favicons/apple-touch-icon.png","favicons/browserconfig.xml","favicons/favicon-16x16.png","favicons/favicon-32x32.png","favicons/favicon.ico","favicons/icon-192x192.png","favicons/icon-512x512.png","favicons/mstile-150x150.png","favicons/safari-pinned-tab.svg","github.png","landing-background.jpg","manifest.webmanifest","meta-share.jpg","placeholder.png","poppins-regular-webfont.woff2","twitter.png"]),
 	mimeTypes: {".json":"application/json",".woff2":"font/woff2",".jpg":"image/jpeg",".png":"image/png",".xml":"text/xml",".svg":"image/svg+xml",".webmanifest":"application/manifest+json"},
 	_: {
-		client: {start:"_app/immutable/entry/start.CWSWx9KS.js",app:"_app/immutable/entry/app.BhAT3Jmt.js",imports:["_app/immutable/entry/start.CWSWx9KS.js","_app/immutable/chunks/Df6TWxTr.js","_app/immutable/chunks/DIcIrt1g.js","_app/immutable/entry/app.BhAT3Jmt.js","_app/immutable/chunks/Df6TWxTr.js","_app/immutable/chunks/DIcIrt1g.js"],stylesheets:["_app/immutable/assets/index.ibpvf4ZB.css","_app/immutable/assets/index.ibpvf4ZB.css"],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.h3NxzC_h.js",app:"_app/immutable/entry/app.R5lluSqM.js",imports:["_app/immutable/entry/start.h3NxzC_h.js","_app/immutable/chunks/U4PVxs2w.js","_app/immutable/chunks/vbJKIisJ.js","_app/immutable/entry/app.R5lluSqM.js","_app/immutable/chunks/U4PVxs2w.js","_app/immutable/chunks/vbJKIisJ.js"],stylesheets:["_app/immutable/assets/index.CedxDUwz.css","_app/immutable/assets/index.CedxDUwz.css"],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
 			__memo(() => import('./nodes/2.js')),
 			__memo(() => import('./nodes/3.js')),
-			__memo(() => import('./nodes/4.js'))
+			__memo(() => import('./nodes/4.js')),
+			__memo(() => import('./nodes/5.js'))
 		],
 		routes: [
 			{
@@ -27,17 +28,24 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/cards",
+				pattern: /^\/cards\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 3 },
+				endpoint: null
+			},
+			{
 				id: "/profile",
 				pattern: /^\/profile\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 3 },
+				page: { layouts: [0,], errors: [1,], leaf: 4 },
 				endpoint: null
 			},
 			{
 				id: "/terms",
 				pattern: /^\/terms\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 4 },
+				page: { layouts: [0,], errors: [1,], leaf: 5 },
 				endpoint: null
 			}
 		],

@@ -15,7 +15,7 @@
       "_vendor.js"
     ],
     "css": [
-      "_app/immutable/assets/index.ibpvf4ZB.css"
+      "_app/immutable/assets/index.CedxDUwz.css"
     ]
   },
   "_vendor.js": {
@@ -53,6 +53,15 @@
     "file": "entries/pages/_page.svelte.js",
     "name": "entries/pages/_page.svelte",
     "src": "src/frontend/src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "src/frontend/src/routes/cards/+page.svelte": {
+    "file": "entries/pages/cards/_page.svelte.js",
+    "name": "entries/pages/cards/_page.svelte",
+    "src": "src/frontend/src/routes/cards/+page.svelte",
     "isEntry": true,
     "imports": [
       "_index.js"
