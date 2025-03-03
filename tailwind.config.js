@@ -45,10 +45,18 @@ export default {
         BrandWhite: "#FFFFFF",
         BrandRed: "#FF403C",
         BrandInfo: "#3CA1FF",
+        BrandGrayBg: "#2F2F2F",
+        BrandGrayShade1: "#484848",
+        BrandGrayShade2: "#757575",
+        BrandGrayShade3: "#8C8C8C",
+        BrandGrayShade4: "#D1D1D1",
+        BrandGrayShade5: "#E8E8E8",
+        BrandGrayShade6: "#F9F9F9",
       },
       backgroundImage: {
-        'diagonal-stripes': 'linear-gradient(45deg, #FFD700 33.33%, #C0C0C0 33.33%, #C0C0C0 66.66%, red 66.66%)',
-      }
+        "diagonal-stripes":
+          "linear-gradient(45deg, #FFD700 33.33%, #C0C0C0 33.33%, #C0C0C0 66.66%, red 66.66%)",
+      },
     },
   },
   plugins: [],

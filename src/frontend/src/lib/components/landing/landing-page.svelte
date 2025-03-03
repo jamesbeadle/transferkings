@@ -2,7 +2,6 @@
     import { authStore, type AuthSignInParams } from "$lib/stores/auth-store"
     import { goto } from "$app/navigation";
     import LandingPageDisplay from "./landing-page-display.svelte";
-    import LandingPageFooter from "./landing-page-footer.svelte";
     
     async function handleLoginClick() {
         let params: AuthSignInParams = {
@@ -19,7 +18,7 @@
             <h1 class="hidden w-full text-2xl font-bold text-center md:block md:mb-8 md:py-1">
                 Collect official ICFC player cards with rarity linked to form.
             </h1>
-            <div class="py-24 mx-4 rounded-lg bg-BrandGrayBg md:hidden">
+            <div class="flex items-center justify-center min-h-[55%] mx-4 my-24 rounded-lg bg-BrandGray md:hidden">
                 <LandingPageDisplay {handleLoginClick} />
             </div>
     
@@ -27,14 +26,10 @@
                 <h2 class="mx-4 text-xl text-center xxs:pb-8 text-bold md:hidden">
                     Collect official ICFC player cards with rarity linked to form.
                 </h2>
-                <div class="md:hidden">
-                    <LandingPageFooter />
-                </div>
             </div>
         </div>
     </div>
     <div class="items-center justify-center hidden w-1/2 h-full md:block md:px-auto">
         <LandingPageDisplay {handleLoginClick} />
-        <LandingPageFooter />
     </div>
 </div>
