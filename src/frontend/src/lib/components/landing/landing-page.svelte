@@ -18,7 +18,7 @@
             <h1 class="hidden w-full text-2xl font-bold text-center md:block md:mb-8 md:py-1">
                 Collect official ICFC player cards with rarity linked to form.
             </h1>
-            <div class="flex items-center justify-center min-h-[55%] mx-4 my-24 rounded-lg bg-BrandGray md:hidden">
+            <div class="flex items-center justify-center min-h-[55%] mx-4 my-24 py-16 px-4 rounded-lg bg-BrandGray md:hidden">
                 <LandingPageDisplay {handleLoginClick} />
             </div>
     
