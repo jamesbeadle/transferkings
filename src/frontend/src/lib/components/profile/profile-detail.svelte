@@ -100,29 +100,6 @@
       console.error("Failed to copy:", err);
     }
   }
-
-  function createIframe(src: string) {
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.id = "shuftipro-iframe";
-    iframe.name = "shuftipro-iframe";
-    iframe.allow = "camera";
-    iframe.src = src;
-    iframe.style.top = "0";
-    iframe.style.left = "0";
-    iframe.style.bottom = "0";
-    iframe.style.right = "0";
-    iframe.style.margin = "0";
-    iframe.style.padding = "0";
-    iframe.style.overflow = "hidden";
-    iframe.style.border = "none";
-    iframe.style.zIndex = "2147483647";
-    iframe.width = "100%";
-    iframe.height = "100%";
-    iframe.dataset.removable = "true";
-
-    document.body.appendChild(iframe);
-  }
 </script>
 
 {#if isLoading}
