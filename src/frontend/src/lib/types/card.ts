@@ -1,6 +1,5 @@
 export type Card = {
   id: string;
-  name: string;
   background: any;
   logo: any;
   color: string;
@@ -10,4 +9,5 @@ export type Card = {
   backgroundOpacity: string;
   backgroundSize: string;
   backgroundPosition: string;
+  title: string;
 };

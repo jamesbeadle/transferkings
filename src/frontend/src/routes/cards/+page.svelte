@@ -14,11 +14,11 @@ import IcfcIcon from "$lib/icons/icfc-icon.svelte";
 
     let card: Card = {
           id: "00000000000001",
-          name: "Jamie Vardy",
+          title: "Jamie Vardy",
           background: FootballGodIcon,
           logo: FootballGodLogo,
           color: "FootballGodBackground",
-          textColor: "text-white",
+          textColor: "white",
           description: "Jamie Vardy is a massive legend.",
           link: "https://footballgod.xyz",
           backgroundOpacity: "opacity-[0.15]",
