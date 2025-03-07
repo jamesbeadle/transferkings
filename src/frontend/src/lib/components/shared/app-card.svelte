@@ -10,7 +10,7 @@
     export let isFlipped: boolean;
     export let onFlip: (id: string, event: MouseEvent) => void;
 
-    let club: ClubDTO = {
+    let clubs: ClubDTO[] = [{
         id:14,
         secondaryColourHex:"#FFFFFF",
         name:"Manchester United",
@@ -19,15 +19,26 @@
         abbreviatedName:"MUN",
         shirtType: { Filled : null },
         primaryColourHex:"#C00814"
+    },
+    {
+        id:21,
+        secondaryColourHex:"#FFFFFF", 
+        name:"Leicester City", 
+        friendlyName:"Leicester", 
+        thirdColourHex:"#C8A851", 
+        abbreviatedName:"LEI",
+        shirtType: { Filled: null }, 
+        primaryColourHex: "#2A4282"
     }
+    ]
 </script>
 
-<div class="relative min-h-[420px] w-full aspect-[1/1.4] group perspective hover:scale-[1.02] transition-transform duration-300">
+<div class="relative min-h-[420px] w-full aspect-[1/1.54] group perspective hover:scale-[1.02] transition-transform duration-300">
     <div class={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden bg-{card.color} text-{card.textColor} transform transition-all duration-200 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col">
             <div class="flex items-center justify-between">
                 <div class="relative z-20 w-7 h-7">
-                    <svelte:component this={card.logo} className="w-full h-full" />
+                    <svelte:component this={card.logo} fill={card.textColor} className="w-full h-full" />
                 </div>
 
                 <button
@@ -38,13 +49,13 @@
                     <InfoIcon className="w-7 h-7 transition-transform duration-300" fill={card.textColor}  />
                 </button>
             </div>
-
+            
             <div class="absolute transform {card.backgroundPosition} {card.backgroundOpacity}">
                 <svelte:component this={card.background} className={card.backgroundSize} />
             </div>
-                    
+
             <div class="relative z-10 flex items-center justify-center my-4 h-full">
-                <ShirtIcon className='w-32 m-auto' {club} />
+                <ShirtIcon className='w-32 m-auto' club={clubs.find(x => x.id == card.clubId)!} />
             </div>
             
             <div class="relative z-10 mt-auto">
@@ -56,7 +67,7 @@
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden rotate-y-180 bg-{card.color} text-{card.textColor} flex flex-col">
             <div class="flex items-center justify-between">
                 <div class="relative z-20 w-7 h-7">
-                    <svelte:component this={card.logo} className="w-full h-full" />
+                    <svelte:component this={card.logo} fill={card.textColor}  className="w-full h-full" />
                 </div>
 
                 <button

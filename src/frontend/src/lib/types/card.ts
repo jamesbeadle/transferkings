@@ -10,4 +10,5 @@ export type Card = {
   backgroundSize: string;
   backgroundPosition: string;
   title: string;
+  clubId: number;
 };
