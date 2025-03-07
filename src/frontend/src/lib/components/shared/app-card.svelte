@@ -26,7 +26,7 @@
     <div class={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden bg-{card.color} text-{card.textColor} transform transition-all duration-200 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col">
             <div class="flex items-center justify-between">
-                <div class="relative z-20 w-12 h-12">
+                <div class="relative z-20 w-7 h-7">
                     <svelte:component this={card.logo} className="w-full h-full" />
                 </div>
 
@@ -35,7 +35,7 @@
                     aria-label="Show card details"
                     class="z-30 flex items-center justify-center group"
                 >
-                    <InfoIcon className="w-7 h-7 transition-transform duration-300 group-hover:rotate-180" fill={card.textColor}  />
+                    <InfoIcon className="w-7 h-7 transition-transform duration-300" fill={card.textColor}  />
                 </button>
             </div>
 
@@ -43,8 +43,8 @@
                 <svelte:component this={card.background} className={card.backgroundSize} />
             </div>
                     
-            <div class="relative z-10 flex justify-center my-4">
-                <ShirtIcon className='w-32' {club} />
+            <div class="relative z-10 flex items-center justify-center my-4 h-full">
+                <ShirtIcon className='w-32 m-auto' {club} />
             </div>
             
             <div class="relative z-10 mt-auto">
@@ -55,7 +55,7 @@
 
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden rotate-y-180 bg-{card.color} text-{card.textColor} flex flex-col">
             <div class="flex items-center justify-between">
-                <div class="relative z-20 w-12 h-12">
+                <div class="relative z-20 w-7 h-7">
                     <svelte:component this={card.logo} className="w-full h-full" />
                 </div>
 
@@ -64,7 +64,7 @@
                     aria-label="Hide card details"
                     class="z-30 flex items-center justify-center group"
                 >
-                    <InfoIcon className="w-7 h-7 transition-transform duration-300 group-hover:-rotate-180" fill={card.textColor} />
+                    <InfoIcon className="w-7 h-7 transition-transform duration-300" fill={card.textColor} />
                 </button>
             </div>
 
