@@ -4997,7 +4997,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "hy1ivt"
+  version_hash: "1vm6m2f"
 };
 async function get_hooks() {
   let handle;
@@ -6419,12 +6419,14 @@ function _page$3($$payload, $$props) {
   pop();
 }
 function _page$2($$payload, $$props) {
+  push();
   let cardId = fallback($$props["cardId"], "0000000000001");
   let playerName = fallback($$props["playerName"], "Darwin Nunez");
   let team = fallback($$props["team"], "Liverpool");
   let position = fallback($$props["position"], "Forward");
   Layout($$payload);
   bind_props($$props, { cardId, playerName, team, position });
+  pop();
 }
 function _page$1($$payload) {
   Layout($$payload);

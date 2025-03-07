@@ -1,48 +1,70 @@
-<script>
-    import IcfcIcon from "$lib/icons/icfc-icon.svelte";
+<script lang="ts">
+    import AppCard from "$lib/components/shared/app-card.svelte";
+    import FootballGodIcon from "$lib/icons/appIcons/background/FootballGodIcon.svelte";
+    import FootballGodLogo from "$lib/icons/appIcons/logo/FootballGodLogo.svelte";
+import IcfcIcon from "$lib/icons/icfc-icon.svelte";
     import ShirtIcon from "$lib/icons/shirt-icon.svelte";
+    import type { Card } from "$lib/types/card";
     import Layout from "../Layout.svelte";
 
     export let cardId = "0000000000001";
     export let playerName = "Darwin Nunez";
     export let team = "Liverpool";
     export let position = "Forward";
+
+    let card: Card = {
+          id: "00000000000001",
+          name: "Jamie Vardy",
+          background: FootballGodIcon,
+          logo: FootballGodLogo,
+          color: "FootballGodBackground",
+          textColor: "text-white",
+          description: "Jamie Vardy is a massive legend.",
+          link: "https://footballgod.xyz",
+          backgroundOpacity: "opacity-[0.15]",
+          backgroundSize: "w-[80%] h-[80%]",
+          backgroundPosition: "-bottom-10 -right-20"
+      }
+
+
+    let flippedCards = new Set();
+
+    const toggleFlip = (id: string, event: MouseEvent) => {
+        event.preventDefault();
+        if (flippedCards.has(id)) {
+            flippedCards.delete(id);
+        } else {
+            flippedCards.add(id);
+        }
+        flippedCards = flippedCards;
+    };
+
+
 </script>
 
-<Layout>
-    <div class="flex flex-row text-black space-x-4">
-       
-        <div class="w-full h-full bg-white rounded-lg p-4 shadow-lg test-card">
-            <div class="bg-white w-full h-full p-4">
 
-            <p class="text-sm text-gray-600">
-                Card ID: {cardId}
-            </p>
 
-            <div class="badge-container">
-                <IcfcIcon 
-                    className="w-96 py-4 rotated-badge ml-8 mt-16" 
-                    borderFill="#2CC4B9" 
-                    icfcFill="#000000" 
-                    innerFill="#E50113" 
-                    ballFill="#000000" 
-                />
-                <p>2024/25</p>
-            </div>
-
-                <h1 class="player-name absolute transform top-[150px] text-4xl font-bold text-black">
-                    <div class="flex flex-row items-center">
-                        <ShirtIcon className='w-16 mt-4' club={{id:1, abbreviatedName: '', shirtType: { Filled: null }, primaryColourHex: '#E50113', secondaryColourHex: '#FFFFFF', name: '', friendlyName: '', thirdColourHex: '#2CC4B9'}} />
-                        {playerName}        
-                    </div>
-                    
-                    <div class="details text-sm">
-                        <p class="text-gray-700">{team}</p>
-                        <p class="text-gray-600">{position}</p>
-                    </div>
-                </h1>
-
-            </div>
-        </div>
+<Layout> 
+    <div class="grid grid-cols-1 gap-6 pb-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <AppCard {card} 
+            isFlipped={flippedCards.has(card.id)}
+            onFlip={toggleFlip}
+         />
+        <AppCard {card} 
+        isFlipped={flippedCards.has(card.id)}
+        onFlip={toggleFlip}
+        />
+        <AppCard {card} 
+            isFlipped={flippedCards.has(card.id)}
+            onFlip={toggleFlip}
+         />
+         <AppCard {card} 
+            isFlipped={flippedCards.has(card.id)}
+            onFlip={toggleFlip}
+         />
+         <AppCard {card} 
+            isFlipped={flippedCards.has(card.id)}
+            onFlip={toggleFlip}
+         />
     </div>
 </Layout>

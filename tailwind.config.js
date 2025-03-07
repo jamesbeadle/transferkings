@@ -1,6 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./src/**/*.{html,js,svelte,ts}"],
+  safelist: [
+    "hover:text-OpenWSLBackground",
+    "hover:text-OpenFPLBackground",
+    "hover:text-JeffBetsBackground",
+    "hover:text-FootballGodBackground",
+    "hover:text-TransferKingsBackground",
+    "hover:text-BrandGrayShade6",
+    "bg-OpenWSLBackground",
+    "bg-OpenFPLBackground",
+    "bg-JeffBetsBackground",
+    "bg-FootballGodBackground",
+    "bg-TransferKingsBackground",
+    "bg-BrandGrayShade6",
+  ],
   theme: {
     screens: {
       xxs: "420px",
@@ -52,6 +66,16 @@ export default {
         BrandGrayShade4: "#D1D1D1",
         BrandGrayShade5: "#E8E8E8",
         BrandGrayShade6: "#F9F9F9",
+        FootballGodBackground: "#7F56F1",
+        OpenFPLBackground: "#2CE3A6",
+        TransferKingsBackground: "#2D64E3",
+        OpenWSLBackground: "#F156D2",
+        JeffBetsBackground: "#D7FE49",
+        FootballGodFont: "#FFFFFF",
+        OpenFPLFont: "#000000",
+        TransferKingsFont: "#FFFFFF",
+        OpenWSLFont: "#FFFFFF",
+        JeffBetsFont: "#000000",
       },
       backgroundImage: {
         "diagonal-stripes":

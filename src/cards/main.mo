@@ -5,6 +5,7 @@ import T "../backend/data-types/types";
 
 actor Self {
 
+    private stable var gallery: [T.Card] = [];
     private stable var cardsPool: [T.Card] = [];
   
     public shared query ({ caller }) func puchasePackOfCards() : async Result.Result<[T.Card], T.Error> {
@@ -19,20 +20,35 @@ actor Self {
         return #ok(cardsPool);
     };
 
+/*
     private func getRandomCard() : T.Card {
         
     };
-
+*/
     private func resetCardsPool(){
         cardsPool := [];
         cardsPool := generateCardsPool();
     };
 
     private func generateCardsPool() : [T.Card]{
+
+        //generate club cards
+            //Shirt
+            //Badge
+
+        //generate player cards
+
+        //
+
+
+        //store one of each card in the gallery
+
+
         //use the footballgod data to make cards based on the live players
             //base it on the live data
             //base it on club form
             //create special cards at special moments
+            return []
     };
         
     system func preupgrade() {
