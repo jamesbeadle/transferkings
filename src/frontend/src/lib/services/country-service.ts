@@ -14,7 +14,7 @@ export class CountryService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
       const result = await identityActor.getCountries();
       if (isError(result)) throw new Error("Failed to fetch countries");

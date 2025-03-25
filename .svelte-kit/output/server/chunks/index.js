@@ -4997,7 +4997,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "16bmi7o"
+  version_hash: "nbvnp2"
 };
 async function get_hooks() {
   let handle;
@@ -6102,7 +6102,7 @@ class PlayerEventsService {
       };
       const identityActor = await ActorFactory.createDataCanisterIdentityActor(
         authStore,
-        define_process_env_default$2.CANISTER_ID_DATA ?? ""
+        define_process_env_default$2.DATA_CANISTER_ID ?? ""
       );
       const leagueId = 1;
       let result = await identityActor.getPlayerDetails(leagueId, dto);
@@ -6123,7 +6123,7 @@ class PlayerEventsService {
       };
       const identityActor = await ActorFactory.createDataCanisterIdentityActor(
         authStore,
-        define_process_env_default$2.CANISTER_ID_DATA ?? ""
+        define_process_env_default$2.DATA_CANISTER_ID ?? ""
       );
       const leagueId = 1;
       let result = await identityActor.getPlayerDetailsForGameweek(
@@ -6262,7 +6262,7 @@ class FixtureService {
     try {
       const identityActor = await ActorFactory.createDataCanisterIdentityActor(
         authStore,
-        define_process_env_default.CANISTER_ID_DATA ?? ""
+        define_process_env_default.DATA_CANISTER_ID ?? ""
       );
       const leagueId = 1;
       const seasonId = 1;
@@ -6278,7 +6278,7 @@ class FixtureService {
     try {
       const identityActor = await ActorFactory.createDataCanisterIdentityActor(
         authStore,
-        define_process_env_default.CANISTER_ID_DATA ?? ""
+        define_process_env_default.DATA_CANISTER_ID ?? ""
       );
       const leagueId = 1;
       const result = await identityActor.getPostponedFixtures(leagueId);

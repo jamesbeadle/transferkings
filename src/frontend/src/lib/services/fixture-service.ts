@@ -18,7 +18,7 @@ export class FixtureService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
       const leagueId: LeagueId = 1;
       const seasonId: SeasonId = 1;
@@ -36,7 +36,7 @@ export class FixtureService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
       const leagueId: LeagueId = 1;
       const result = await identityActor.getPostponedFixtures(leagueId);

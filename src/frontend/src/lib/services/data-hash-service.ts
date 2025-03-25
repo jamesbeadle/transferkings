@@ -32,9 +32,9 @@ export class DataHashService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
-      const result = await identityActor.getDataHashes(process.env.LEAGUE_ID);
+      const result = await identityActor.getDataHashes(1);
 
       if (isError(result))
         throw new Error("Failed to fetch data hashes from data cansiter.");

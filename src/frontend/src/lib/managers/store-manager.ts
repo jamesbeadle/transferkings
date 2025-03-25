@@ -66,8 +66,8 @@ class StoreManager {
     this.isSyncing = true;
     globalDataLoaded.set(false);
     try {
-      await this.syncAppDataHashes();
-      await this.syncDataCanisterDataHashes();
+      //await this.syncAppDataHashes();
+      //await this.syncDataCanisterDataHashes();
       globalDataLoaded.set(true);
     } catch (error) {
       console.error("Error syncing stores:", error);

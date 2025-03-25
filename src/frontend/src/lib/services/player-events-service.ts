@@ -45,7 +45,7 @@ export class PlayerEventsService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
       const leagueId: LeagueId = 1;
 
@@ -74,7 +74,7 @@ export class PlayerEventsService {
       const identityActor: any =
         await ActorFactory.createDataCanisterIdentityActor(
           authStore,
-          process.env.CANISTER_ID_DATA ?? "",
+          process.env.DATA_CANISTER_ID ?? "",
         );
       const leagueId: LeagueId = 1;
       let result = await identityActor.getPlayerDetailsForGameweek(
