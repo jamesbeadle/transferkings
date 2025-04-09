@@ -1,9 +1,25 @@
+
+/* ----- Mops Packages ----- */
+
 import Principal "mo:base/Principal";
 import Base "mo:waterway-mops/BaseTypes";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
+
+
+/* ----- Queries ----- */
+
+
+
+
+/* ----- Commands ----- */
+
+//MOVE TO MOPS
+import BaseCommands "commands/commands";
+
+/* ----- Only Stable Variables Should Use Types ----- */
+
 import T "data-types/types";
-import BaseCommands "commands/commands"
 
 actor Self {
 
@@ -39,6 +55,7 @@ actor Self {
   };
 
   system func postupgrade() {
+    //set mint and destroy timers
   };
 
 };
