@@ -8,7 +8,7 @@ import IcfcIcon from "$lib/icons/icfc-icon.svelte";
     import LogoutIcon from "$lib/icons/logout-icon.svelte";
     import ShirtIcon from "$lib/icons/shirt-icon.svelte";
     import type { Card } from "$lib/types/card";
-    import Layout from "../Layout.svelte";
+    import Layout from "../+layout.svelte";
 
     export let cardId = "0000000000001";
     export let playerName = "Darwin Nunez";
@@ -64,7 +64,6 @@ import IcfcIcon from "$lib/icons/icfc-icon.svelte";
 
 
 
-<Layout> 
     <div class="grid grid-cols-1 gap-6 pb-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {#each cards as card}
             <AppCard {card} 
@@ -73,4 +72,3 @@ import IcfcIcon from "$lib/icons/icfc-icon.svelte";
             />
         {/each}
     </div>
-</Layout>

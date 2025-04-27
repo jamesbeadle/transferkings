@@ -9,7 +9,7 @@
     </div>
 
     <div class="flex items-center gap-4">
-        <button class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-BrandBlue rounded-lg transition" on:click={onLogout}>
+        <button class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-BrandBlue rounded-lg transition" onclick={onLogout}>
             Disconnect
         </button>
     </div>

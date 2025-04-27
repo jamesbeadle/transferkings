@@ -4,7 +4,7 @@
   import UpdateUsernameModal from "$lib/components/profile/update-username-modal.svelte";
   import CopyIcon from "$lib/icons/copy-icon.svelte";
   import { writable } from "svelte/store";
-  import WithdrawFplModal from "./withdraw-fpl-modal.svelte";
+  import WithdrawFplModal from "./withdraw-icfc-modal.svelte";
   import { authStore } from "$lib/stores/auth-store";
   import FullScreenSpinner from "../shared/full-screen-spinner.svelte";
   import { toasts } from "$lib/stores/toasts-store";
@@ -128,7 +128,7 @@
           </h2>
           <button
             class="brand-button"
-            on:click={displayUsernameModal}
+            onclick={displayUsernameModal}
           >
             Update
           </button>
@@ -137,7 +137,7 @@
           <div class="flex items-center">
             <button
               class="flex items-center text-left text-xxs break-all"
-              on:click={() => copyAndShowToast(principalId)}
+              onclick={() => copyAndShowToast(principalId)}
             >
               <span>{ principalId }</span>
               <CopyIcon className="w-7 xs:w-6 text-left" fill="#FFFFFF" />
@@ -171,7 +171,7 @@
                 <div class="flex items-center text-xs">
                   <button
                     class="flex items-center text-left break-all"
-                    on:click={() => copyAndShowToast(principalId)}
+                    onclick={() => copyAndShowToast(principalId)}
                   >
                     <span>{principalId}</span>
                     <CopyIcon className="w-7 xs:w-6 text-left" fill="#FFFFFF" />
@@ -183,7 +183,7 @@
                 <div class="flex items-center text-xs mt-2">
                   <button
                   class="brand-button"
-                    on:click={loadWithdrawFPLModal}
+                    onclick={loadWithdrawFPLModal}
                   >
                     Withdraw
                   </button>

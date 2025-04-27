@@ -2,7 +2,12 @@
     import IcpLogo from "$lib/icons/icp-icon.svelte";
     import LogoIcon from "$lib/icons/logo-icon.svelte";
     
-    export let handleLoginClick: () => void;
+    interface Props {
+        handleLoginClick: () => void;
+    }
+
+    let { handleLoginClick } : Props = $props();
+    
 </script>
 
 <div class="relative flex flex-col items-center justify-center w-full md:min-h-screen">
@@ -22,7 +27,7 @@
         <div class="mx-2 space-y-4">
             <button 
                 class="flex items-center justify-center w-full py-2 mr-8 rounded lg:mx-0 bg-BrandGrayShade1 hover:bg-BrandGrayShade2"
-                on:click={handleLoginClick}
+                onclick={handleLoginClick}
             >
               <span class="mr-2"><IcpLogo /></span> Internet Identity
             </button>

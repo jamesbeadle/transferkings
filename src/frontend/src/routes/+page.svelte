@@ -2,7 +2,7 @@
     import { authSignedInStore } from "$lib/derived/auth.derived";
 import LogoIcon from "$lib/icons/logo-icon.svelte";
     import { authStore, type AuthSignInParams } from "$lib/stores/auth-store";
-import Layout from "./Layout.svelte";
+import Layout from "./+layout.svelte";
 
 
     function handleLogin() {
@@ -12,7 +12,6 @@ import Layout from "./Layout.svelte";
         authStore.signIn(params);
     }
 </script>
-<Layout>    
     <div class="p-4">
         <div class="flex flex-row items-center">
             <p class="text-2xl">Welcome to Transfer Kings</p>
@@ -25,7 +24,6 @@ import Layout from "./Layout.svelte";
         {#if $authSignedInStore}
             <a href="/cards" class="brand-button">Cards</a>
         {:else}
-            <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm" on:click={handleLogin}>Connect</button>
+            <button class="bg-gray-500 my-2 px-4 py-2 rounded-sm" onclick={handleLogin}>Connect</button>
         {/if}
     </div>
-</Layout>

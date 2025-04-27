@@ -62,7 +62,7 @@ aria-modal="true"
 tabindex="-1" 
 bind:this={modalContainer}
 >
-<slot />
+{@render children()}
 </div>
 
 </div>

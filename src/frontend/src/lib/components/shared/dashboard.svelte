@@ -87,7 +87,7 @@
                         {/if}
                     </a>
                     <button
-                        on:click={() => (isMenuOpen = !isMenuOpen)}
+                        onclick={() => (isMenuOpen = !isMenuOpen)}
                         class={`w-8 h-8 bg-zinc-700 flex items-center justify-center rounded-full hover:bg-zinc-600 transition-all ${
                             isMenuOpen ? "absolute right-4 top-1/2 -translate-y-1/2" : ""
                         }`}
@@ -144,7 +144,7 @@
                     class={`absolute bottom-4 left-4 right-4 flex items-center justify-center ${
                         isMenuOpen ? "px-4 py-2 space-x-2" : "p-2"
                     } bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-all`}
-                    on:click={handleLogout}
+                    onclick={handleLogout}
                 >
                     <Disconnect className="w-6" />
                     {#if isMenuOpen}
@@ -210,7 +210,7 @@
             {/if}
 
             <div class={`w-full mt-16 md:px-4 md:mx-2 md:rounded-lg md:mt-0 ${isMenuOpen ? "md:ml-[288px]" : "md:ml-20"} transition-all`}>
-                <slot></slot>
+                {@render children()}
             </div>
         </div>
 

@@ -42,7 +42,7 @@
                 </div>
 
                 <button
-                    on:click={(e) => onFlip(card.id, e)}
+                    onclick={(e) => onFlip(card.id, e)}
                     aria-label="Show card details"
                     class="z-30 flex items-center justify-center group"
                 >
@@ -71,7 +71,7 @@
                 </div>
 
                 <button
-                    on:click={(e) => onFlip(card.id, e)}
+                    onclick={(e) => onFlip(card.id, e)}
                     aria-label="Hide card details"
                     class="z-30 flex items-center justify-center group"
                 >
