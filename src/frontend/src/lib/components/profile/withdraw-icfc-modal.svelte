@@ -1,24 +1,29 @@
 <script lang="ts">
-    import { toasts } from "$lib/stores/toasts-store";
+  import { toasts } from "$lib/stores/toasts-store";
   import { userStore } from "$lib/stores/user-store";
-    import { onMount } from "svelte";
-    import Modal from "../shared/modal.svelte";
-    import { writable } from "svelte/store";
-    import LocalSpinner from "../shared/local-spinner.svelte";
+  import { onMount } from "svelte";
+  import Modal from "../shared/modal.svelte";
+  import { writable } from "svelte/store";
+  import LocalSpinner from "../shared/local-spinner.svelte";
 
-  export let visible: boolean;
-  export let closeModal: () => void;
-  export let cancelModal: () => void;
-  export let withdrawalAddress: string = "";
-  export let withdrawalInputAmount: string = "";
+  interface Props {
+    closeModal: () => void;
+    cancelModal: () => void;
+    withdrawalAddress: string;
+    withdrawalInputAmount: string;
+  }
+
+  let { closeModal, cancelModal, withdrawalAddress, withdrawalInputAmount  } : Props = $props();
+
+  let isLoading = $state(true);
   let dots = writable('.');
   let dot_interval: ReturnType<typeof setInterval>;
 
   let fplBalance = 0n;
-  let fplBalanceFormatted = "0.0000"; 
+  let fplBalanceFormatted = $state("0.0000"); 
 
-  let errorMessage: string = "";
-  let isLoading = true;
+  let isSubmitDisabled = $state(true);
+  let errorMessage = $state("");
 
   onMount(async () => {
     try {
@@ -92,11 +97,15 @@
     withdrawalInputAmount = maxAmount.toFixed(4);
   }
 
-  $: isSubmitDisabled = !isPrincipalValid(withdrawalAddress) || !isWithdrawAmountValid(withdrawalInputAmount, fplBalance);
+  $effect(() => {
+    isSubmitDisabled = !isPrincipalValid(withdrawalAddress) || !isWithdrawAmountValid(withdrawalInputAmount, fplBalance);
+  });
 
-  $: errorMessage = (!isAmountValid(withdrawalInputAmount) || !isWithdrawAmountValid(withdrawalInputAmount, fplBalance)) && withdrawalInputAmount
+  $effect(() => {
+    errorMessage = (!isAmountValid(withdrawalInputAmount) || !isWithdrawAmountValid(withdrawalInputAmount, fplBalance)) && withdrawalInputAmount
     ? "Withdrawal amount greater than account balance."
     : "";
+  });
 
   async function withdrawFPL() {
     try {
@@ -114,16 +123,15 @@
   }
 </script>
 
-<Modal showModal={visible} onClose={closeModal}>
+<Modal title="Withdraw ICFC" onClose={closeModal}>
   <div class="mx-4 p-4">
     <div class="flex justify-between items-center my-2">
-      <h3 class="default-header">Withdraw FPL</h3>
-      <button class="times-button" on:click={cancelModal}>&times;</button>
+      <h3 class="default-header">Withdraw ICFC</h3>
+      <button class="times-button" onclick={cancelModal}>&times;</button>
     </div>
     {#if isLoading}
       <LocalSpinner />
     {:else}
-      <form on:submit|preventDefault={withdrawFPL}>
         <p>FPL Balance: {fplBalanceFormatted}</p>
         <div class="mt-4">
           <input
@@ -143,7 +151,7 @@
           <button
             type="button"
             class="brand-button text-xs"
-            on:click={setMaxWithdrawAmount}
+            onclick={setMaxWithdrawAmount}
           >
             Max
           </button>
@@ -155,7 +163,7 @@
           <button
             class="px-4 py-2 brand-cancel-button"
             type="button"
-            on:click={cancelModal}
+            onclick={cancelModal}
           >
             Cancel
           </button>
@@ -163,13 +171,12 @@
             class={`px-4 py-2 ${
               isSubmitDisabled ? "brand-button-disabled" : "brand-button"
             }`}
-            type="submit"
+            onclick={withdrawFPL}
             disabled={isSubmitDisabled}
           >
             Withdraw
           </button>
         </div>
-      </form>
     {/if}
   </div>
 </Modal>

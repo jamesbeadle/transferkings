@@ -1,6 +1,9 @@
 <script lang="ts">
     import LogoIcon from "$lib/icons/logo-icon.svelte";
-    export let onLogout: () => void;
+    interface Props {
+        onLogout: () => void;
+    }
+    let { onLogout } : Props = $props(); 
 </script>
 
 <header class="fixed top h-16 flex items-center justify-between w-full px-4 bg-gray-900 text-white shadow-md">

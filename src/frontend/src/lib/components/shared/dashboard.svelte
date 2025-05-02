@@ -159,7 +159,7 @@
                 <div class="flex items-center space-x-4">
                     <button 
                         class="p-2 text-white transition-colors rounded-full"
-                        on:click={toggleMobileMenu}
+                        onclick={toggleMobileMenu}
                     >
                         <MenuIcon className="w-6" />
                     </button>
@@ -173,7 +173,7 @@
                                 <a
                                     href={item.route}
                                     class="flex items-center p-2 space-x-4 text-white transition-colors rounded"
-                                    on:click={() => isMobileMenuOpen = false}
+                                    onclick={() => isMobileMenuOpen = false}
                                 >
                                     <svelte:component 
                                         this={item.icon} 
@@ -194,7 +194,7 @@
                             </a>
                             <button 
                                 class="flex items-center justify-center w-10 h-10 text-white rounded-full"
-                                on:click={handleLogout}
+                                onclick={handleLogout}
                             >
                                 <Disconnect className="w-6" />
                             </button>
@@ -237,7 +237,7 @@
             </p>
             <button 
                 class="brand-button"
-                on:click={handleLogin}
+                onclick={handleLogin}
             >
                 Connect Internet Indentity
             </button>

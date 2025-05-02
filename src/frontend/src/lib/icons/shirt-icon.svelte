@@ -1,9 +1,11 @@
+
 <script lang="ts">
     import type { ClubDTO } from "../../../../declarations/data_canister/data_canister.did";
-
-   
-    export let className = "";
-    export let club: ClubDTO;
+    interface Props {
+      className: string;
+      club: ClubDTO;
+    }
+    let { className } : Props = $props();
 </script>
 
 <svg

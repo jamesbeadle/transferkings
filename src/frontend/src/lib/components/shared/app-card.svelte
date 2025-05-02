@@ -4,11 +4,13 @@
     import type { Card } from "$lib/types/card";
     import type { ClubDTO } from "../../../../../declarations/data_canister/data_canister.did";
 
+    interface Props {
+        card: Card;
+        isFlipped: boolean;
+        onFlip: (id: string, event: MouseEvent) => void;
+    }
 
-    export let card: Card;
-
-    export let isFlipped: boolean;
-    export let onFlip: (id: string, event: MouseEvent) => void;
+    let { card, isFlipped, onFlip } : Props = $props();
 
     let clubs: ClubDTO[] = [{
         id:14,
@@ -38,7 +40,7 @@
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden bg-{card.color} text-{card.textColor} transform transition-all duration-200 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col">
             <div class="flex items-center justify-between">
                 <div class="relative z-20 w-7 h-7">
-                    <svelte:component this={card.logo} fill={card.textColor} className="w-full h-full" />
+                    <card.logo fill={card.textColor} className="w-full h-full" />
                 </div>
 
                 <button
@@ -51,7 +53,7 @@
             </div>
             
             <div class="absolute transform {card.backgroundPosition} {card.backgroundOpacity}">
-                <svelte:component this={card.background} className={card.backgroundSize} />
+                <card.background className={card.backgroundSize} />
             </div>
 
             <div class="relative z-10 flex items-center justify-center my-4 h-full">
@@ -67,7 +69,7 @@
         <div class="absolute w-full h-full p-8 rounded-2xl backface-hidden rotate-y-180 bg-{card.color} text-{card.textColor} flex flex-col">
             <div class="flex items-center justify-between">
                 <div class="relative z-20 w-7 h-7">
-                    <svelte:component this={card.logo} fill={card.textColor}  className="w-full h-full" />
+                    <card.logo fill={card.textColor}  className="w-full h-full" />
                 </div>
 
                 <button
