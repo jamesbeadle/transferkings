@@ -1,3 +1,5 @@
+import { busy } from "$lib/stores/busy-store";
+import { toasts, type Toast } from "$lib/stores/toasts-store";
 import { authStore, type AuthSignInParams } from "../stores/auth-store";
 import { replaceHistory } from "../utils/route.utils";
 import { isNullish } from "@dfinity/utils";
@@ -11,7 +13,6 @@ export const signIn = async (
     return { success: "ok" };
   } catch (err: unknown) {
     if (err === "UserInterrupt") {
-      // We do not display an error if user explicitly cancelled the process of sign-in
       return { success: "cancelled" };
     }
 
@@ -20,21 +21,37 @@ export const signIn = async (
   }
 };
 
-export const signOut = (): Promise<void> => logout();
+export const signOut = (): Promise<void> => logout({});
 
-export const idleSignOut = async () => logout();
+export const idleSignOut = async () => logout({});
 
-const logout = async () => {
-  await authStore.signOut();
+export const initErrorSignOut = async () =>
+  await logout({
+    msg: {
+      message:
+        "You have been signed out because there was an error initalizing your profile.",
+      type: "error",
+    },
+  });
 
-  // Auth: Delegation and identity are cleared from indexedDB by agent-js so, we do not need to clear these
-
-  // Preferences: We do not clear local storage as well. It contains anonymous information such as the selected theme.
-  // Information the user want to preserve across sign-in. e.g. if I select the light theme, logout and sign-in again, I am happy if the dapp still uses the light theme.
-
-  // We reload the page to make sure all the states are cleared
-  window.location.reload();
-};
+  const logout = async ({ msg = undefined, clearStorages = true,
+    }: {
+      msg?: Omit<Toast, "id">;
+      clearStorages?: boolean;
+    }) => {
+      busy.start();
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("user_signup_choice");
+      }
+      if (clearStorages) {
+        await Promise.all([]);
+      }
+      await authStore.signOut();
+      if (msg) {
+        toasts.addToast(msg);
+      }
+      window.location.reload();
+    };
 
 const PARAM_MSG = "msg";
 const PARAM_LEVEL = "level";
@@ -64,3 +81,4 @@ const cleanUpMsgUrl = () => {
 
   replaceHistory(url);
 };
+

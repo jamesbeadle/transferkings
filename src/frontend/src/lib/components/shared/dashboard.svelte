@@ -13,7 +13,7 @@
     import Disconnect from "$lib/icons/wallet-icon.svelte";
     import { goto } from "$app/navigation";
     import { userStore } from "$lib/stores/user-store";
-    import FullScreenSpinner from "./full-screen-spinner.svelte";
+    import FullScreenSpinner from "./global/full-screen-spinner.svelte";
     import ProfileIcon from "$lib/icons/profile-icon.svelte";
 
     let checkingTerms = true;

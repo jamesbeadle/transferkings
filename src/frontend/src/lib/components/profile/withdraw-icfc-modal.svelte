@@ -2,9 +2,9 @@
   import { toasts } from "$lib/stores/toasts-store";
   import { userStore } from "$lib/stores/user-store";
   import { onMount } from "svelte";
-  import Modal from "../shared/modal.svelte";
+  import Modal from "../shared/global/modal.svelte";
   import { writable } from "svelte/store";
-  import LocalSpinner from "../shared/local-spinner.svelte";
+  import LocalSpinner from "../shared/global/local-spinner.svelte";
 
   interface Props {
     closeModal: () => void;

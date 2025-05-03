@@ -6,7 +6,7 @@
   import { writable } from "svelte/store";
   import WithdrawFplModal from "./withdraw-icfc-modal.svelte";
   import { authStore } from "$lib/stores/auth-store";
-  import FullScreenSpinner from "../shared/full-screen-spinner.svelte";
+  import FullScreenSpinner from "../shared/global/full-screen-spinner.svelte";
   import { toasts } from "$lib/stores/toasts-store";
   import type { Profile } from "../../../../../declarations/backend/backend.did";
 
